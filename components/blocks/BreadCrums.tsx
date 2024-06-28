@@ -9,7 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { BreadCrumType } from "@/lib/VTypes";
+import { BreadCrumType } from "@/utils/VTypes";
 import { usePathname } from "next/navigation";
 
 const BreadCrums = () => {
@@ -27,10 +27,10 @@ const BreadCrums = () => {
       <BreadcrumbList>
         {breadcrumbs.length > 0 &&
           breadcrumbs.map((breadCrum, index) => (
-            <>
+            <span key={index}>
               {index !== BreadCrums.length - 1 ? (
                 <>
-                  <BreadcrumbItem key={index}>
+                  <BreadcrumbItem>
                     <BreadcrumbLink asChild>
                       <Link href={breadCrum.href}>{breadCrum.name}</Link>
                     </BreadcrumbLink>
@@ -38,11 +38,11 @@ const BreadCrums = () => {
                   <BreadcrumbSeparator />
                 </>
               ) : (
-                <BreadcrumbItem>
+                <BreadcrumbItem key={index}>
                   <BreadcrumbPage>{breadCrum.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               )}
-            </>
+            </span>
           ))}
       </BreadcrumbList>
     </Breadcrumb>
