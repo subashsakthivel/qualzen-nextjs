@@ -1,21 +1,7 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  Home,
-  LineChart,
-  Package,
-  Package2,
-  PanelLeft,
-  PlusCircle,
-  Search,
-  Settings,
-  ShoppingCart,
-  Upload,
-  Users2,
-} from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
+import { PlusCircle, RefreshCcwIcon, Trash2Icon, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,11 +32,37 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import TagInput from "@/components/ui/taginput";
+import { PropertyType } from "@/utils/VTypes";
+import { useState } from "react";
 
 export default function Dashboard() {
+  const [properties, setProperties] = useState<PropertyType[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
+
+  function onImageFileChange(ev: React.FormEvent<EventTarget>) {
+    if (imageFiles?.length === 9) {
+      return;
+    }
+    const { files } = ev.target as HTMLInputElement & {
+      files: FileList;
+    };
+    var fileList: File[] = [];
+    for (let i = 0; i < files.length && i < 9; i++) {
+      fileList.push(files[i]);
+    }
+    console.log("list ", fileList);
+    setImageFiles((f) =>
+      f === undefined ? [...fileList] : [...f, ...fileList]
+    );
+  }
+
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <div className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4">
+      <form
+        className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4"
+        autoComplete="off"
+      >
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Product Form
@@ -133,117 +145,137 @@ export default function Dashboard() {
             </Card>
             <Card x-chunk="dashboard-07-chunk-1">
               <CardHeader>
-                <CardTitle>Stock</CardTitle>
+                <CardTitle>Price</CardTitle>
                 <CardDescription>
-                  Lipsum dolor sit amet, consectetur adipiscing elit
+                  Margin Price(cost of manufacture) strictly not share to client
+                  anyways
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-semibold">
+                        Margin Price
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          id="stock-1"
+                          name="margin-price"
+                          type="number"
+                          placeholder="Optional"
+                          autoComplete="off"
+                          resource="off"
+                        />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-semibold">
+                        Market Price
+                      </TableCell>
+                      <TableCell>
+                        <Input id="stock-2" name="market-price" type="number" />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-semibold">
+                        Selling Price
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          id="stock-3"
+                          name="selling-price"
+                          type="number"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Card x-chunk="dashboard-07-chunk-1">
+              <CardHeader>
+                <CardTitle>Properties</CardTitle>
+                <CardDescription>
+                  Enter the properties of the category that should be available
+                  for all the product under this category
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[100px]">SKU</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead className="w-[100px]">Size</TableHead>
+                      <TableHead></TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Options</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-semibold">GGPC-001</TableCell>
-                      <TableCell>
-                        <Label htmlFor="stock-1" className="sr-only">
-                          Stock
-                        </Label>
-                        <Input id="stock-1" type="number" defaultValue="100" />
-                      </TableCell>
-                      <TableCell>
-                        <Label htmlFor="price-1" className="sr-only">
-                          Price
-                        </Label>
-                        <Input
-                          id="price-1"
-                          type="number"
-                          defaultValue="99.99"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <ToggleGroup
-                          type="single"
-                          defaultValue="s"
-                          variant="outline"
-                        >
-                          <ToggleGroupItem value="s">S</ToggleGroupItem>
-                          <ToggleGroupItem value="m">M</ToggleGroupItem>
-                          <ToggleGroupItem value="l">L</ToggleGroupItem>
-                        </ToggleGroup>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-semibold">GGPC-002</TableCell>
-                      <TableCell>
-                        <Label htmlFor="stock-2" className="sr-only">
-                          Stock
-                        </Label>
-                        <Input id="stock-2" type="number" defaultValue="143" />
-                      </TableCell>
-                      <TableCell>
-                        <Label htmlFor="price-2" className="sr-only">
-                          Price
-                        </Label>
-                        <Input
-                          id="price-2"
-                          type="number"
-                          defaultValue="99.99"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <ToggleGroup
-                          type="single"
-                          defaultValue="m"
-                          variant="outline"
-                        >
-                          <ToggleGroupItem value="s">S</ToggleGroupItem>
-                          <ToggleGroupItem value="m">M</ToggleGroupItem>
-                          <ToggleGroupItem value="l">L</ToggleGroupItem>
-                        </ToggleGroup>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-semibold">GGPC-003</TableCell>
-                      <TableCell>
-                        <Label htmlFor="stock-3" className="sr-only">
-                          Stock
-                        </Label>
-                        <Input id="stock-3" type="number" defaultValue="32" />
-                      </TableCell>
-                      <TableCell>
-                        <Label htmlFor="price-3" className="sr-only">
-                          Stock
-                        </Label>
-                        <Input
-                          id="price-3"
-                          type="number"
-                          defaultValue="99.99"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <ToggleGroup
-                          type="single"
-                          defaultValue="s"
-                          variant="outline"
-                        >
-                          <ToggleGroupItem value="s">S</ToggleGroupItem>
-                          <ToggleGroupItem value="m">M</ToggleGroupItem>
-                          <ToggleGroupItem value="l">L</ToggleGroupItem>
-                        </ToggleGroup>
-                      </TableCell>
-                    </TableRow>
+                    {properties.map((property, index) => (
+                      <TableRow key={index} className="">
+                        <TableCell className="m-0 p-1 align-top">
+                          <Label className="sr-only">remove Property</Label>
+                          <Trash2Icon
+                            className="h-3.5 w-3.5 m-0 my-6"
+                            onClick={() =>
+                              setProperties(
+                                properties.filter((p, i) => i !== index)
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Label className="sr-only">Name</Label>
+                          <Input
+                            id="stock-1"
+                            value={property.name}
+                            onChange={(val) =>
+                              setProperties(
+                                properties.map((p, i) => {
+                                  if (i === index) {
+                                    p.name = val.target.value;
+                                  }
+                                  return p;
+                                })
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Label className="sr-only">Options</Label>
+                          <TagInput
+                            defaulttags={
+                              typeof property.value === "string"
+                                ? []
+                                : property.value
+                            }
+                            onTagValueChange={(tags: string[]) =>
+                              setProperties(
+                                properties.map((p, i) => {
+                                  if (i === index) {
+                                    p.value = tags;
+                                  }
+                                  return p;
+                                })
+                              )
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>
               <CardFooter className="justify-center border-t p-4">
-                <Button size="sm" variant="ghost" className="gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1"
+                  onClick={() =>
+                    setProperties((p) => [...p, { name: "", value: "" }])
+                  }
+                >
                   <PlusCircle className="h-3.5 w-3.5" />
                   Add Variant
                 </Button>
@@ -274,44 +306,68 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
-              <CardHeader>
+              <CardHeader className="felx flex-row items-center justify-around">
                 <CardTitle>Product Images</CardTitle>
-                <CardDescription>
-                  Lipsum dolor sit amet, consectetur adipiscing elit
-                </CardDescription>
+                <RefreshCcwIcon
+                  className="size-5 cursor-pointer"
+                  onClick={() => setImageFiles([])}
+                />
               </CardHeader>
               <CardContent>
                 <div className="grid gap-2">
-                  <Image
-                    alt="Product image"
-                    className="aspect-square w-full rounded-md object-cover"
-                    height="300"
-                    src="/placeholder.svg"
-                    width="300"
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    <button>
+                  {imageFiles && imageFiles.length >= 1 && (
+                    <div className="grid gap-2">
                       <Image
                         alt="Product image"
                         className="aspect-square w-full rounded-md object-cover"
-                        height="84"
-                        src="/placeholder.svg"
-                        width="84"
+                        height="300"
+                        width="300"
+                        src={URL.createObjectURL(imageFiles[0])}
                       />
-                    </button>
-                    <button>
-                      <Image
-                        alt="Product image"
-                        className="aspect-square w-full rounded-md object-cover"
-                        height="84"
-                        src="/placeholder.svg"
-                        width="84"
-                      />
-                    </button>
-                    <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
-                      <Upload className="h-4 w-4 text-muted-foreground" />
-                      <span className="sr-only">Upload</span>
-                    </button>
+                    </div>
+                  )}
+
+                  <div
+                    className={`grid grid-flow-* gap-2 ${
+                      imageFiles ? "grid-cols-2" : ""
+                    }`}
+                  >
+                    {imageFiles &&
+                      imageFiles.slice(1).map((imageFile, index) => (
+                        <div key={index} className="relative">
+                          <span className="absolute rounded-full border bg-background m-1 size-5 text-center">
+                            {index + 2}
+                          </span>
+                          <Image
+                            alt="Product image"
+                            className="aspect-square rounded-md object-cover"
+                            height="84"
+                            width="84"
+                            src={URL.createObjectURL(imageFile)}
+                            key={index}
+                          />
+                        </div>
+                      ))}
+
+                    <div className="flex justify-center relative ">
+                      <label
+                        className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
+                          imageFiles
+                            ? "relative shadow-lg min-w-20"
+                            : "shadow-sm min-h-80"
+                        }`}
+                      >
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                        <input
+                          type="file"
+                          name="productImages"
+                          className="hidden"
+                          onChange={onImageFileChange}
+                          multiple
+                          accept="image/png, image/gif, image/jpeg"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -338,7 +394,7 @@ export default function Dashboard() {
           </Button>
           <Button size="sm">Save Product</Button>
         </div>
-      </div>
+      </form>
     </main>
   );
 }
