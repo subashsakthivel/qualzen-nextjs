@@ -30,17 +30,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useState } from "react";
 import { PropertyType } from "@/utils/VTypes";
 import TagInput from "@/components/ui/taginput";
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<PropertyType[]>([]);
+  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
+
+  function onImageFileChange(ev: React.FormEvent<EventTarget>) {
+    const { files } = ev.target as HTMLInputElement & {
+      files: FileList;
+    };
+    console.log(typeof files[0]);
+    setImageFile(files[0]);
+  }
+
+  function saveCategory(formData: FormData) {
+    console.log(
+      formData.get("name"),
+      formData.get("description"),
+      formData.get("parentCategory"),
+      formData.get("categoryImage")
+    );
+  }
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <div className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4">
+      <form
+        className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4"
+        action={saveCategory}
+      >
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Category Form
@@ -67,6 +87,7 @@ export default function Dashboard() {
                     <Label htmlFor="name">Name</Label>
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       className="w-full"
                       placeholder="Shirts"
@@ -76,6 +97,7 @@ export default function Dashboard() {
                     <Label htmlFor="description">Description</Label>
                     <Textarea
                       id="description"
+                      name="description"
                       placeholder="Description should mention category values over relaiable"
                       className="min-h-32"
                     />
@@ -84,7 +106,7 @@ export default function Dashboard() {
                     <Label htmlFor="subcategory">
                       Parent Category (optional)
                     </Label>
-                    <Select>
+                    <Select name="parentCategory">
                       <SelectTrigger
                         id="subcategory"
                         aria-label="Select subcategory"
@@ -123,19 +145,51 @@ export default function Dashboard() {
                       <TableRow key={index} className="">
                         <TableCell className="m-0 p-1 align-top">
                           <Label className="sr-only">remove Property</Label>
-                          <Trash2Icon className="h-3.5 w-3.5 m-0 my-6" />
+                          <Trash2Icon
+                            className="h-3.5 w-3.5 m-0 my-6"
+                            onClick={() =>
+                              setProperties(
+                                properties.filter((p, i) => i !== index)
+                              )
+                            }
+                          />
                         </TableCell>
                         <TableCell className="align-top">
                           <Label className="sr-only">Name</Label>
                           <Input
                             id="stock-1"
                             value={property.name}
-                            onChange={(value) => value}
+                            onChange={(val) =>
+                              setProperties(
+                                properties.map((p, i) => {
+                                  if (i === index) {
+                                    p.name = val.target.value;
+                                  }
+                                  return p;
+                                })
+                              )
+                            }
                           />
                         </TableCell>
                         <TableCell>
                           <Label className="sr-only">Options</Label>
-                          <TagInput />
+                          <TagInput
+                            defaulttags={
+                              typeof property.value === "string"
+                                ? []
+                                : property.value
+                            }
+                            onTagValueChange={(tags: string[]) =>
+                              setProperties(
+                                properties.map((p, i) => {
+                                  if (i === index) {
+                                    p.value = tags;
+                                  }
+                                  return p;
+                                })
+                              )
+                            }
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -144,6 +198,7 @@ export default function Dashboard() {
               </CardContent>
               <CardFooter className="justify-center border-t p-4">
                 <Button
+                  type="button"
                   size="sm"
                   variant="ghost"
                   className="gap-1"
@@ -161,43 +216,35 @@ export default function Dashboard() {
             <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
               <CardHeader>
                 <CardTitle>Category Image</CardTitle>
-                <CardDescription>
-                  Lipsum dolor sit amet, consectetur adipiscing elit
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-2">
-                  <Image
-                    alt="Product image"
-                    className="aspect-square w-full rounded-md object-cover"
-                    height="300"
-                    src="/placeholder.svg"
-                    width="300"
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    <button>
+                <div className="flex justify-center relative">
+                  <label
+                    className={`w-full min-h-80  text-center flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
+                      imageFile
+                        ? "relative shadow-lg"
+                        : "border border-dashed shadow-sm"
+                    }`}
+                  >
+                    {imageFile ? (
                       <Image
-                        alt="Product image"
-                        className="aspect-square w-full rounded-md object-cover"
-                        height="84"
-                        src="/placeholder.svg"
-                        width="84"
+                        src={URL.createObjectURL(imageFile)}
+                        alt="category image"
+                        className="rounded-sm border shadow-sm"
+                        fill
+                        style={{ objectFit: "cover" }}
                       />
-                    </button>
-                    <button>
-                      <Image
-                        alt="Product image"
-                        className="aspect-square w-full rounded-md object-cover"
-                        height="84"
-                        src="/placeholder.svg"
-                        width="84"
-                      />
-                    </button>
-                    <button className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed">
+                    ) : (
                       <Upload className="h-4 w-4 text-muted-foreground" />
-                      <span className="sr-only">Upload</span>
-                    </button>
-                  </div>
+                    )}
+                    <input
+                      type="file"
+                      className="hidden"
+                      name="categoryImage"
+                      onChange={onImageFileChange}
+                      accept="image/png, image/gif, image/jpeg"
+                    />
+                  </label>
                 </div>
               </CardContent>
             </Card>
@@ -207,9 +254,9 @@ export default function Dashboard() {
           <Button variant="outline" size="sm">
             Discard
           </Button>
-          <Button size="sm">Save Product</Button>
+          <Button size="sm">Save Category</Button>
         </div>
-      </div>
+      </form>
     </main>
   );
 }

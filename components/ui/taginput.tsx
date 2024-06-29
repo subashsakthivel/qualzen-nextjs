@@ -7,20 +7,22 @@ export interface TagType {
   label: string;
 }
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface TagInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  onTagValueChange: (tasg: string[]) => void;
+  defaulttags: string[];
+}
 
-const TagInput = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    const [tags, setTags] = React.useState<string[]>([]);
+const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
+  ({ className, type, defaulttags, onTagValueChange, ...props }, ref) => {
+    const [tags, setTags] = React.useState<string[]>(defaulttags);
     const [tag, setTag] = React.useState<string>("");
-    function onTagInput(e: React.ChangeEvent<HTMLInputElement>) {}
 
     function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-      console.log(e);
       if (e.key === "," || e.key === "Enter" || e.keyCode === 13) {
         if (tag.length && tag !== " " && tag !== "," && !tags.includes(tag)) {
           setTags((t) => [...t, tag]);
+          onTagValueChange(tags);
         }
         setTimeout(() => {
           setTag("");
