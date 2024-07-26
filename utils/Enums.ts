@@ -1,5 +1,6 @@
 export enum ProdcutStatus {
-  ACTIVE = "Active",
-  DRAFT = "Draft",
+  ACTIVE = "Sale",
+  DRAFT = "Comming soon",
+  SOLD = "Sold out",
   ARCHIVED = "Archived",
 }

@@ -2,12 +2,11 @@
 import React from "react";
 import InfiniteScroll from "@/components/ui/infinitescroll";
 import { Loader2 } from "lucide-react";
-import { ProductType } from "@/utils/VTypes";
 import ProductCard from "@/components/blocks/ProductCard";
-import { ProdcutStatus } from "@/utils/Enums";
+import { IProduct } from "@/model/Product";
 
 interface ProductListResponse {
-  products: ProductType[];
+  products: IProduct[];
   hasMore: boolean;
 }
 
@@ -15,97 +14,31 @@ const InfiniteScrollDemo = () => {
   const [page, setPage] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const [hasMore, setHasMore] = React.useState(true);
-  const [products, setProducts] = React.useState<ProductType[]>([]);
+  const [products, setProducts] = React.useState<IProduct[]>([]);
 
   const next = async () => {
-    setLoading(true);
+    if (hasMore) {
+      setLoading(true);
 
-    /**
-     * Intentionally delay the search by 800ms before execution so that you can see the loading spinner.
-     * In your app, you can remove this setTimeout.
-     **/
-    setTimeout(async () => {
-      console.log(products);
-      const data: ProductListResponse = {
-        hasMore: true,
-        products: [
-          {
-            _id: "sdvsdvs",
-            category: {
-              name: "gooo",
-              properties: [],
-            },
-            description: "csdfsd",
-            imageUrls: [
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-            ],
-            marketPrice: 100,
-            sellingPrice: 900,
-            name: "cksdv",
-            status: ProdcutStatus.ACTIVE,
-          },
-          {
-            _id: "sdvsdvs",
-            category: {
-              name: "gooo",
-              properties: [],
-            },
-            description: "csdfsd",
-            imageUrls: [
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-            ],
-            marketPrice: 100,
-            sellingPrice: 900,
-            name: "cksdv",
-            status: ProdcutStatus.ACTIVE,
-          },
-          {
-            _id: "sdvsdvs",
-            category: {
-              name: "gooo",
-              properties: [],
-            },
-            description: "csdfsd",
-            imageUrls: [
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-            ],
-            marketPrice: 100,
-            sellingPrice: 900,
-            name: "cksdv",
-            status: ProdcutStatus.ACTIVE,
-          },
-
-          {
-            _id: "sdvsdvs",
-            category: {
-              name: "gooo",
-              properties: [],
-            },
-            description: "csdfsd",
-            imageUrls: [
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-              "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
-            ],
-            marketPrice: 100,
-            sellingPrice: 900,
-            name: "cksdv",
-            status: ProdcutStatus.ACTIVE,
-          },
-        ],
-      };
-      setProducts((prev) => [...prev, ...data.products]);
-      setPage((prev) => prev + 1);
-      console.log(products);
-      // Usually your response will tell you if there is no more data.
-      if (data.products.length < 3) {
-        setHasMore(false);
-      }
-      setLoading(false);
-    }, 800);
+      await fetch(`/api/products?pageIndex=${page}&pageLimit=20`)
+        .then(async (res) => {
+          if (res.status === 200) {
+            const resJson = await res.json();
+            const hasMore: boolean = resJson.data.hasMore;
+            const products: IProduct[] = resJson.data.products;
+            setProducts((prev) => [...prev, ...products]);
+            setPage((prev) => prev + 1);
+            setHasMore(hasMore);
+          } else {
+            console.log("Error while getting data ", res);
+          }
+        })
+        .finally(() => setLoading(false));
+    } else {
+      console.log("nothing left to load");
+    }
   };
+
   return (
     <div className="m-5">
       <div className="md:mx-12 mx-auto">

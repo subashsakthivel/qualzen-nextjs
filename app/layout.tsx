@@ -18,11 +18,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={inter.className + "   m-1 relative"}>
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <Nav />
-          <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-            <Header showBreadCrum={true} />
+          <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14 ">
+            <Header showBreadCrum={false} />
             {children}
           </div>
         </div>

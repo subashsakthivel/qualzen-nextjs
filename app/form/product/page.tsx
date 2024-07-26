@@ -31,14 +31,32 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import TagInput from "@/components/ui/taginput";
-import { PropertyType } from "@/utils/VTypes";
-import { useState } from "react";
+import { IProperty } from "@/utils/VTypes";
+import { useEffect, useState } from "react";
+import { ICategory } from "@/model/Category";
+import { ProdcutStatus } from "@/utils/Enums";
 
 export default function Dashboard() {
-  const [properties, setProperties] = useState<PropertyType[]>([]);
+  const [properties, setProperties] = useState<IProperty[]>([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+
+  useEffect(() => {
+    const fetchCategory = async () => {
+      await fetch("/api/categories")
+        .then(async (res) => {
+          if (res.status === 200) {
+            const categories = await res.json();
+            setCategories(categories);
+          } else {
+            console.log("category fetch failed");
+          }
+        })
+        .catch((err) => console.log(err));
+    };
+    fetchCategory();
+  }, []);
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
     if (imageFiles?.length === 9) {
@@ -57,11 +75,24 @@ export default function Dashboard() {
     );
   }
 
+  async function saveProduct(formData: FormData) {
+    formData.append("properties", JSON.stringify(properties));
+    if (imageFiles) {
+      imageFiles.map((imgFile) => formData.append("imageSrc", imgFile));
+    }
+
+    await fetch("/api/products", {
+      method: "POST",
+      body: formData,
+    }).then((res) => console.log("product saved ", res.json()));
+  }
+
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <form
         className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4"
         autoComplete="off"
+        action={saveProduct}
       >
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
@@ -82,22 +113,28 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-3">
-                  <div className="grid gap-3">
+                  <div className="grid gap-3 capitalize">
                     <Label htmlFor="category">Category</Label>
-                    <Select>
+                    <Select name="category">
                       <SelectTrigger id="category" aria-label="Select category">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="clothing">Clothing</SelectItem>
-                        <SelectItem value="electronics">Electronics</SelectItem>
-                        <SelectItem value="accessories">Accessories</SelectItem>
+                        {categories.map(
+                          (category, index) =>
+                            category._id &&
+                            !category.parentCategory && (
+                              <SelectItem value={category._id} key={index}>
+                                {category.name}
+                              </SelectItem>
+                            )
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="subcategory">Subcategory (optional)</Label>
-                    <Select>
+                    <Select name="subcategory">
                       <SelectTrigger
                         id="subcategory"
                         aria-label="Select subcategory"
@@ -105,9 +142,14 @@ export default function Dashboard() {
                         <SelectValue placeholder="Select subcategory" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="t-shirts">T-Shirts</SelectItem>
-                        <SelectItem value="hoodies">Hoodies</SelectItem>
-                        <SelectItem value="sweatshirts">Sweatshirts</SelectItem>
+                        {categories.map(
+                          (category, index) =>
+                            category._id && (
+                              <SelectItem value={category._id} key={index}>
+                                {category.name}
+                              </SelectItem>
+                            )
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -127,6 +169,7 @@ export default function Dashboard() {
                     <Label htmlFor="name">Name</Label>
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       className="w-full"
                       placeholder="White Mens Baggy Shirt"
@@ -135,6 +178,7 @@ export default function Dashboard() {
                   <div className="grid gap-3">
                     <Label htmlFor="description">Description</Label>
                     <Textarea
+                      name="description"
                       id="description"
                       placeholder="Description should mention product details which is user can't seen by picture of product"
                       className="min-h-32"
@@ -161,7 +205,7 @@ export default function Dashboard() {
                       <TableCell>
                         <Input
                           id="stock-1"
-                          name="margin-price"
+                          name="marginPrice"
                           type="number"
                           placeholder="Optional"
                           autoComplete="off"
@@ -174,7 +218,7 @@ export default function Dashboard() {
                         Market Price
                       </TableCell>
                       <TableCell>
-                        <Input id="stock-2" name="market-price" type="number" />
+                        <Input id="stock-2" name="marketPrice" type="number" />
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -182,11 +226,7 @@ export default function Dashboard() {
                         Selling Price
                       </TableCell>
                       <TableCell>
-                        <Input
-                          id="stock-3"
-                          name="selling-price"
-                          type="number"
-                        />
+                        <Input id="stock-3" name="sellingPrice" type="number" />
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -291,14 +331,16 @@ export default function Dashboard() {
                 <div className="grid gap-6">
                   <div className="grid gap-3">
                     <Label htmlFor="status">Status</Label>
-                    <Select>
+                    <Select name="status">
                       <SelectTrigger id="status" aria-label="Select status">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="published">Active</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
+                        {Object.values(ProdcutStatus).map((val, index) => (
+                          <SelectItem value={val} key={index}>
+                            {val}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -360,7 +402,7 @@ export default function Dashboard() {
                         <Upload className="h-4 w-4 text-muted-foreground" />
                         <input
                           type="file"
-                          name="productImages"
+                          name="ImageSrc"
                           className="hidden"
                           onChange={onImageFileChange}
                           multiple

@@ -5,31 +5,9 @@ export type BreadCrumType = {
   href: string;
 };
 
-export type PropertyType = {
+export interface IProperty {
   name: string;
-  value: string | string[];
-};
-
-export interface ProductType {
-  _id: string;
-  name: string;
-  imageUrls: string[];
-  description: string;
-  category: CategoryType;
-  marketPrice: number;
-  sellingPrice: number;
-  status: ProdcutStatus;
-}
-
-export interface ProductDetailsType {
-  _id: string;
-  product: ProductType;
-  createdAt: number;
-  expiryDate?: number;
-  marginPrice?: number;
-  soldCount: number | 0;
-  replacedCount: number | 0;
-  likedCount: number | 0;
+  value: string[] | string;
 }
 
 export interface CategoryType {
@@ -37,5 +15,5 @@ export interface CategoryType {
   name: string;
   parentCategory?: CategoryType;
   parentCategoryID?: string;
-  properties: PropertyType[];
+  properties: IProperty[];
 }

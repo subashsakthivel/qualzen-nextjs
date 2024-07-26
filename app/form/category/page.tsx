@@ -31,28 +31,31 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { PropertyType } from "@/utils/VTypes";
+import { CategoryType, IProperty } from "@/utils/VTypes";
 import TagInput from "@/components/ui/taginput";
 
 export default function Dashboard() {
-  const [properties, setProperties] = useState<PropertyType[]>([]);
-  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
+  const [properties, setProperties] = useState<IProperty[]>([]);
+  const [imageSrc, setImageSrc] = useState<File | undefined>(undefined);
 
-  function onImageFileChange(ev: React.FormEvent<EventTarget>) {
+  function onImageSrcChange(ev: React.FormEvent<EventTarget>) {
     const { files } = ev.target as HTMLInputElement & {
       files: FileList;
     };
     console.log(typeof files[0]);
-    setImageFile(files[0]);
+    setImageSrc(files[0]);
   }
 
-  function saveCategory(formData: FormData) {
-    console.log(
-      formData.get("name"),
-      formData.get("description"),
-      formData.get("parentCategory"),
-      formData.get("categoryImage")
-    );
+  async function saveCategory(formData: FormData) {
+    formData.append("properties", JSON.stringify(properties));
+    if (imageSrc) {
+      formData.append("imageSrc", imageSrc);
+    }
+
+    await fetch("/api/categories", {
+      method: "POST",
+      body: formData,
+    }).then((res) => console.log("category saved ", res.json()));
   }
 
   return (
@@ -221,14 +224,14 @@ export default function Dashboard() {
                 <div className="flex justify-center relative">
                   <label
                     className={`w-full min-h-80  text-center flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                      imageFile
+                      imageSrc
                         ? "relative shadow-lg"
                         : "border border-dashed shadow-sm"
                     }`}
                   >
-                    {imageFile ? (
+                    {imageSrc ? (
                       <Image
-                        src={URL.createObjectURL(imageFile)}
+                        src={URL.createObjectURL(imageSrc)}
                         alt="category image"
                         className="rounded-sm border shadow-sm"
                         fill
@@ -241,7 +244,7 @@ export default function Dashboard() {
                       type="file"
                       className="hidden"
                       name="categoryImage"
-                      onChange={onImageFileChange}
+                      onChange={onImageSrcChange}
                       accept="image/png, image/gif, image/jpeg"
                     />
                   </label>

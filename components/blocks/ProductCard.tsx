@@ -1,21 +1,21 @@
 "use client";
-import { ProductType } from "@/utils/VTypes";
 import Image from "next/image";
 import React, { useState } from "react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
+import { IProduct } from "@/model/Product";
 
 const priceFromater = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "INR",
 });
 
-const ProductCard = ({ product }: { product: ProductType }) => {
+const ProductCard = ({ product }: { product: IProduct }) => {
   const [imageIndex, setImageIndex] = useState(0);
   return (
-    <div className="group relative  mt-10">
+    <div className="group relative mt-10  ">
       <div
-        className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none lg:h-96"
+        className="aspect-h-1 aspect-w-1  overflow-hidden lg:aspect-none"
         onMouseEnter={() => setImageIndex(1)}
         onMouseLeave={() => setImageIndex(0)}
       >
@@ -23,11 +23,12 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           alt="Product Image"
           width={"196"}
           height={"150"}
-          className="h-full w-full object-cover object-center lg:h-full lg:w-full rounded-md  hover:scale-105 duration-1000"
-          src={product.imageUrls[imageIndex]}
+          className="h-full w-full  lg:h-full lg:w-full rounded-t-lg  hover:scale-105 duration-1000 object-contain"
+          src={product.imageSrc[imageIndex]}
+          objectFit="contain"
         />
       </div>
-      <div className="mt-4 flex justify-between">
+      <div className="mx-2 mt-1 flex justify-between ">
         <div>
           <h3 className="text-xl font-semibold">
             <Link href={`/product/${product._id}`}>
