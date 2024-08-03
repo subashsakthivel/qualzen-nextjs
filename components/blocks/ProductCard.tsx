@@ -23,7 +23,7 @@ const ProductCard = ({ product }: { product: IProduct }) => {
           alt="Product Image"
           width={"196"}
           height={"150"}
-          className="h-full w-full  lg:h-full lg:w-full rounded-t-lg  hover:scale-105 duration-1000 object-contain"
+          className="h-full w-full  lg:h-full lg:w-full rounded-t-lg   duration-1000 object-contain"
           src={product.imageSrc[imageIndex]}
           objectFit="contain"
         />

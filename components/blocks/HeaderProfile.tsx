@@ -17,7 +17,7 @@ const HeaderProfile = () => {
         <Button
           variant="outline"
           size="icon"
-          className="overflow-hidden rounded-full"
+          className="overflow-hidden rounded-full mx-5"
         >
           <Image
             src="/placeholder-user.jpg"

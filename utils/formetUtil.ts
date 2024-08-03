@@ -6,3 +6,8 @@ export function getCurrencyFormet(price: number) {
 
   return formatted;
 }
+
+export function getDateFormet(date: number) {
+  const d = new Date(date);
+  return d.toLocaleDateString();
+}
