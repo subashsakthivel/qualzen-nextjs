@@ -1,10 +1,82 @@
+import CoverFeatureSlides from "@/components/blocks/CoverFeatureSlides";
 import ProductCard from "@/components/blocks/ProductCard";
+import SocialConnect from "@/components/blocks/SocialConnect";
+import { IFeatureProduct } from "@/model/FeatureProduct";
 import { IProduct } from "@/model/Product";
 import { ProdcutStatus } from "@/utils/Enums";
 import { getDateFormet } from "@/utils/formetUtil";
 import { BadgePercent, BadgePercentIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
+const data: IFeatureProduct[] = [
+  {
+    product: {
+      category: {
+        description: "vkds",
+        imageSrc: "vfdlv",
+        name: "vkdfv",
+        properties: [],
+        _id: "vdsv",
+      },
+      description: "dsf",
+      imageSrc: [],
+      marketPrice: 432,
+      name: "cdsfksg",
+      properties: [],
+      sellingPrice: 90332,
+      status: ProdcutStatus.ACTIVE,
+    },
+    banner_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+    cover_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+  },
+  {
+    product: {
+      category: {
+        description: "vkds",
+        imageSrc: "vfdlv",
+        name: "vkdfv",
+        properties: [],
+        _id: "vdsv",
+      },
+      description: "dsf",
+      imageSrc: [],
+      marketPrice: 432,
+      name: "cdsfksg",
+      properties: [],
+      sellingPrice: 90332,
+      status: ProdcutStatus.ACTIVE,
+    },
+    banner_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+    cover_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+  },
+  {
+    product: {
+      category: {
+        description: "vkds",
+        imageSrc: "vfdlv",
+        name: "vkdfv",
+        properties: [],
+        _id: "vdsv",
+      },
+      description: "dsf",
+      imageSrc: [],
+      marketPrice: 432,
+      name: "cdsfksg",
+      properties: [],
+      sellingPrice: 90332,
+      status: ProdcutStatus.ACTIVE,
+    },
+    banner_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+    cover_imgSrc:
+      "https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg",
+  },
+];
 
 const products: IProduct[] = [
   {
@@ -87,7 +159,8 @@ const Store = () => {
     return Math.ceil(offer);
   }
   return (
-    <div className="space-y-10">
+    <div className="">
+      <CoverFeatureSlides features={data} />
       <div className="grid gap-3 grid-cols-2 place-items-center items-center justify-center  ">
         <div className="lg:text-4xl  min-w-full text-2xl text-wrap  relative col-span-2 text-center bg-gradient-to-r from-slate-300 to-slate-500">
           Trend with QualZen
@@ -100,7 +173,7 @@ const Store = () => {
             width={180}
             height={180}
             alt="ckd"
-            className=" lg:w-[400px] w-[160px] md:w-[300px] rounded-md shadow-2xl border-2 border-primary "
+            className=" lg:w-[400px] w-[160px] md:w-[300px] rounded-md shadow-2xl border-2 border-primary border-r-8 border-b-8 "
           />
         </div>
 
@@ -130,9 +203,9 @@ const Store = () => {
           </span>
         </div>
       </div>
-      <div className="min-h-20 md:min-h-40 border shadow-lg text-start rounded-md">
+      <div className="min-h-20 md:min-h-40 border shadow-lg text-start rounded-md m-5">
         <div className="text-2xl md:text-4xl m-10 underline">
-          Story of QualZen
+          Journey of QualZen
         </div>
         <p className=" m-5 ">
           Lorem ipsum dolor, sit amet consectetur adipisicing elit. Voluptate
@@ -141,7 +214,7 @@ const Store = () => {
           placeat maiores.
         </p>
       </div>
-      <div>
+      <div className="m-5">
         <div className="text-2xl font-bold underline uppercase my-5">
           FAST SELLING PRODUCTS
         </div>
@@ -171,17 +244,6 @@ const Store = () => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-      <div className="border-t-2">
-        <div className="text-2xl md:text-4xl">Contacts</div>
-        <div className="flex gap-5 overflow-auto">
-          <div className="border p-5">Instagram</div>
-          <div className="border p-5">FaceBook</div>
-          <div className="border p-5">Whatsapp</div>
-          <div className="border p-5">X</div>
-          <div className="border p-5">Email</div>
-          <div className="border p-5">Address</div>
         </div>
       </div>
     </div>

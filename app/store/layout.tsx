@@ -1,7 +1,9 @@
 "use client";
 import CoverFeatureSlides from "@/components/blocks/CoverFeatureSlides";
+import SocialConnect from "@/components/blocks/SocialConnect";
 import { IFeatureProduct } from "@/model/FeatureProduct";
 import { ProdcutStatus } from "@/utils/Enums";
+import Link from "next/link";
 import React, { ReactNode } from "react";
 
 const data: IFeatureProduct[] = [
@@ -75,11 +77,9 @@ const data: IFeatureProduct[] = [
 
 const StoreLayout = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="m-5 p-0 rounded-lg">
+    <div className="relative flex flex-col  justify-between">
       <p className="sr-only">Feature Banner </p>
-      <CoverFeatureSlides features={data} />
-      {/* <div className="m-0 p-0 rounded-lg h-[600px] border shadow-bottom bg-cover bg-no-repeat bg-center bg-[url(https://qualzen-store.s3.ap-south-1.amazonaws.com/1716401287152.jpg)]"></div> */}
-      <div>{children}</div>
+      <div className="mx-y">{children}</div>
     </div>
   );
 };

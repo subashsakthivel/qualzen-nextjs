@@ -43,11 +43,11 @@ const CoverFeatureSlides = ({ features }: { features: IFeatureProduct[] }) => {
       >
         <CarouselContent className="">
           {features.map((feature, index) => (
-            <CarouselItem key={index} className="flex">
+            <CarouselItem key={index} className="flex h-svh w-svw">
               <div
-                className={`m-0 p-0 flex items-end  rounded-lg h-[600px] w-screen border shadow-bottom bg-cover bg-no-repeat bg-center bg-[url(${feature.banner_imgSrc.toString()})]`}
+                className={`m-0 p-0 flex items-end  rounded-lg h-full w-full max-h-screen max-w-screen border shadow-bottom bg-cover bg-no-repeat bg-center bg-[url(${feature.banner_imgSrc.toString()})]`}
               >
-                <div className=" m-5 space-x-5">
+                <div className=" m-20 space-x-5">
                   <Button className="bg-secondary text-primary hover:bg-secondary/90">
                     Shop Now
                   </Button>
