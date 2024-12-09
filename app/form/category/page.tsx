@@ -15,13 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -30,12 +23,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
-import { CategoryType, IProperty } from "@/utils/VTypes";
-import TagInput from "@/components/ui/taginput";
-
+import { Suspense, useEffect, useState } from "react";
+import { IProperty } from "@/utils/VTypes";
+import axios from "axios";
+import CategoryList from "@/components/admin/categoryList";
+import QueryClientHook from "@/components/admin/queryClientHook";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export default function Dashboard() {
-  const [properties, setProperties] = useState<IProperty[]>([]);
   const [imageSrc, setImageSrc] = useState<File | undefined>(undefined);
 
   function onImageSrcChange(ev: React.FormEvent<EventTarget>) {
@@ -47,211 +47,131 @@ export default function Dashboard() {
   }
 
   async function saveCategory(formData: FormData) {
-    formData.append("properties", JSON.stringify(properties));
-    if (imageSrc) {
-      formData.append("imageSrc", imageSrc);
-    }
+    try {
+      const categoryData = {
+        name: formData.get("name"),
+        description: formData.get("description"),
+        parentCategory: formData.get("parentCategory"),
+        isActive: true,
+      };
 
-    await fetch("/api/categories", {
-      method: "POST",
-      body: formData,
-    }).then((res) => console.log("category saved ", res.json()));
+      const finalFormData = new FormData();
+      finalFormData.append("categoryData", JSON.stringify(categoryData));
+      finalFormData.append("operation", "save");
+
+      if (imageSrc) {
+        finalFormData.append("image", imageSrc);
+      }
+
+      const response = await axios.post("/api/categories", finalFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data.success) {
+        console.log("Category saved successfully:", response.data);
+        return response.data;
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("API Error:", error.response?.data);
+        throw new Error(error.response?.data?.message || "Failed to save category");
+      }
+      console.error("Error saving category:", error);
+      throw error;
+    }
   }
 
   return (
-    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <form
-        className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4"
-        action={saveCategory}
-      >
+    <QueryClientHook>
+      <form className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4" action={saveCategory}>
+        {/* form heading */}
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Category Form
           </h1>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" type="button">
               Discard
             </Button>
-            <Button size="sm">Save Product</Button>
+            <Button size="sm" type="submit">
+              Save Product
+            </Button>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
-          <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-            <Card x-chunk="dashboard-07-chunk-0">
-              <CardHeader>
-                <CardTitle>Catregory Details</CardTitle>
-                <CardDescription>
-                  Enter the category name certainly to customer identify easily
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6">
-                  <div className="grid gap-3">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      className="w-full"
-                      placeholder="Shirts"
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      placeholder="Description should mention category values over relaiable"
-                      className="min-h-32"
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="subcategory">
-                      Parent Category (optional)
-                    </Label>
-                    <Select name="parentCategory">
-                      <SelectTrigger
-                        id="subcategory"
-                        aria-label="Select subcategory"
-                      >
-                        <SelectValue placeholder="Select subcategory" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="t-shirts">T-Shirts</SelectItem>
-                        <SelectItem value="hoodies">Hoodies</SelectItem>
-                        <SelectItem value="sweatshirts">Sweatshirts</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+        <div className="grid gap-4 lg:gap-8 lg:grid-cols-2">
+          {/* card details */}
+          <Card x-chunk="dashboard-07-chunk-0">
+            <CardHeader>
+              <CardTitle>Catregory Details</CardTitle>
+              <CardDescription>
+                Enter the category name certainly to customer identify easily
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6">
+                <div className="grid gap-3">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    className="w-full"
+                    placeholder="Shirts"
+                    required
+                  />
                 </div>
-              </CardContent>
-            </Card>
-            <Card x-chunk="dashboard-07-chunk-1">
-              <CardHeader>
-                <CardTitle>Properties</CardTitle>
-                <CardDescription>
-                  Enter the properties of the category that should be available
-                  for all the product under this category
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead></TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Options</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {properties.map((property, index) => (
-                      <TableRow key={index} className="">
-                        <TableCell className="m-0 p-1 align-top">
-                          <Label className="sr-only">remove Property</Label>
-                          <Trash2Icon
-                            className="h-3.5 w-3.5 m-0 my-6"
-                            onClick={() =>
-                              setProperties(
-                                properties.filter((p, i) => i !== index)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <Label className="sr-only">Name</Label>
-                          <Input
-                            id="stock-1"
-                            value={property.name}
-                            onChange={(val) =>
-                              setProperties(
-                                properties.map((p, i) => {
-                                  if (i === index) {
-                                    p.name = val.target.value;
-                                  }
-                                  return p;
-                                })
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Label className="sr-only">Options</Label>
-                          <TagInput
-                            defaulttags={
-                              typeof property.value === "string"
-                                ? []
-                                : property.value
-                            }
-                            onTagValueChange={(tags: string[]) =>
-                              setProperties(
-                                properties.map((p, i) => {
-                                  if (i === index) {
-                                    p.value = tags;
-                                  }
-                                  return p;
-                                })
-                              )
-                            }
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-              <CardFooter className="justify-center border-t p-4">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1"
-                  onClick={() =>
-                    setProperties((p) => [...p, { name: "", value: "" }])
-                  }
+                <div className="grid gap-3">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="Description should mention category values over relaiable"
+                    className="min-h-32"
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="subcategory">Parent Category (optional)</Label>
+                  <CategoryList />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {/* card image */}
+          <Card className="overflow-hidden " x-chunk="dashboard-07-chunk-4">
+            <CardHeader>
+              <CardTitle>Category Image</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-center relative">
+                <label
+                  className={`w-full min-h-96  text-center flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
+                    imageSrc ? "relative shadow-lg" : "border border-dashed shadow-sm"
+                  }`}
                 >
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  Add Variant
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-            <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
-              <CardHeader>
-                <CardTitle>Category Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-center relative">
-                  <label
-                    className={`w-full min-h-80  text-center flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                      imageSrc
-                        ? "relative shadow-lg"
-                        : "border border-dashed shadow-sm"
-                    }`}
-                  >
-                    {imageSrc ? (
-                      <Image
-                        src={URL.createObjectURL(imageSrc)}
-                        alt="category image"
-                        className="rounded-sm border shadow-sm"
-                        fill
-                        style={{ objectFit: "cover" }}
-                      />
-                    ) : (
-                      <Upload className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <input
-                      type="file"
-                      className="hidden"
-                      name="categoryImage"
-                      onChange={onImageSrcChange}
-                      accept="image/png, image/gif, image/jpeg"
+                  {imageSrc ? (
+                    <Image
+                      src={URL.createObjectURL(imageSrc)}
+                      alt="category image"
+                      className="rounded-sm border shadow-sm"
+                      fill
+                      style={{ objectFit: "cover" }}
                     />
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  ) : (
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    name="categoryImage"
+                    onChange={onImageSrcChange}
+                    accept="image/png, image/gif, image/jpeg"
+                  />
+                </label>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <div className="flex items-center justify-center gap-2 md:hidden">
           <Button variant="outline" size="sm">
@@ -260,6 +180,6 @@ export default function Dashboard() {
           <Button size="sm">Save Category</Button>
         </div>
       </form>
-    </main>
+    </QueryClientHook>
   );
 }

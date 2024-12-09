@@ -1,88 +1,73 @@
-import dbConnect from "@/lib/mongoose";
-import { Category, ICategory } from "@/model/Category";
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImage } from "../upload/route";
-import { IProperty } from "@/utils/VTypes";
+import {
+  deleteCatogory,
+  handleGetOperation,
+  handlePostOperation,
+  handlePutOperation,
+} from "./util";
+import { ErrorRequest } from "@/utils/responseUtil";
 
 export async function GET(request: NextRequest) {
-  await dbConnect();
-
-  const params = request.nextUrl.searchParams;
-
-  const pageIndex: number = parseInt(params.get("pageIndex") ?? "1");
-  const pageLimit: number = parseInt(params.get("pageLimit") ?? "10");
-
-  console.log("mage request");
   try {
-    //if (page !== undefined && pageSize !== undefined) {
-    // const categories = await Category.aggregate([
-    //   {
-    //     $facet: {
-    //       metadata: [{ $count: "totalCount" }],
-    //       data: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }],
-    //     },
-    //   },
-    // ]);
-
-    // const resData = await getPaginationData<ICategory>(
-    //   Category,
-    //   page,
-    //   pageSize
-    // );
-    return NextResponse.json({ message: "allgood", data: [] }, { status: 200 });
-    //} else {
-    //return NextResponse.json({ message: "invalid request" }, { status: 403 });
-    //}
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message });
+    const data = await handleGetOperation(
+      request.nextUrl.searchParams.get("operation"),
+      request.nextUrl.searchParams
+    );
+    return NextResponse.json({ message: "all good", data }, { status: 200 });
+  } catch (err) {
+    if (err instanceof ErrorRequest) {
+      return NextResponse.json({ message: err.message, status: err.statusCode });
+    }
+    return NextResponse.json({ error: "something went wrong", status: 500 });
   }
 }
 
 export async function POST(request: Request) {
-  await dbConnect();
-  const form = await request.formData();
   try {
-    const name = form.get("name") as string;
-    const imageSrc = form.getAll("imageSrc") as File[];
-    const description = form.get("description") as string;
-
-    const properties = JSON.parse(
-      form.get("properties") as string
-    ) as IProperty[];
-
-    const parentCategory = JSON.parse(
-      form.get("parentCategory") as string
-    ) as ICategory;
-
-    console.log("---CATEGORY POST---");
-    console.log(name, properties, imageSrc, description);
-    await uploadImage(imageSrc).then(async (imageSrc) => {
-      if (imageSrc === undefined || !imageSrc[0]) {
-        NextResponse.json({ message: "Image Upload failed" }, { status: 500 });
-        return;
-      }
-
-      const category: ICategory = {
-        name,
-        description,
-        properties,
-        imageSrc: imageSrc[0],
-        parentCategory,
-      };
-
-      await Category.create(category).then((res) => {
-        console.log("Category Created Response : ", res);
-        NextResponse.json(
-          { message: "New Category created", response: res },
-          { status: 200 }
-        );
-      });
-    });
+    const form = await request.formData();
+    await handlePostOperation(form.get("operation") as string, form);
+    return NextResponse.json({ message: "Category created successfully" }, { status: 200 });
   } catch (err) {
-    console.log("Error Occured while creating new Categgory ", err);
-    return NextResponse.json(
-      { message: "New Category Not created" },
-      { status: 400 }
-    );
+    console.error("Error creating category:", err);
+    if (err instanceof ErrorRequest) {
+      return NextResponse.json(
+        { message: err.message, STATUS_CODE: err.statusCode },
+        { status: err.statusCode }
+      );
+    }
+    return NextResponse.json({ message: "Failed to create category" }, { status: 400 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const form = await request.formData();
+    await handlePutOperation(form.get("operation") as string, form);
+    return NextResponse.json({ message: "Category updated successfully" }, { status: 200 });
+  } catch (err) {
+    console.error("Error updating category:", err);
+    if (err instanceof ErrorRequest) {
+      return NextResponse.json(
+        { message: err.message, STATUS_CODE: err.statusCode },
+        { status: err.statusCode }
+      );
+    }
+    return NextResponse.json({ message: "Failed to update category" }, { status: 400 });
+  }
+}
+
+export async function DELET(request: Request) {
+  try {
+    const { operation, id } = await request.json();
+    if (operation === "delete" && id) {
+      await deleteCatogory(id);
+      return NextResponse.json({ message: "Category deleted successfully" }, { status: 200 });
+    }
+    throw new ErrorRequest("Bad Request", 400);
+  } catch (err) {
+    if (err instanceof ErrorRequest) {
+      return NextResponse.json({ message: err.message, STATUS_CODE: err.statusCode });
+    }
+    return NextResponse.json({ message: "Failed to delete category" }, { status: 400 });
   }
 }

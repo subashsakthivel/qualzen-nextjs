@@ -1,7 +1,13 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { PlusCircle, RefreshCcwIcon, Trash2Icon, Upload } from "lucide-react";
+import {
+  PlusCircle,
+  RefreshCcwIcon,
+  Router,
+  Trash2Icon,
+  Upload,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,18 +42,20 @@ import { IProperty } from "@/utils/VTypes";
 import { useEffect, useState } from "react";
 import { ICategory } from "@/model/Category";
 import { ProdcutStatus } from "@/utils/Enums";
+import { useRouter } from "next/navigation";
 
-export default function Dashboard() {
+export default function ProductFrom() {
   const [properties, setProperties] = useState<IProperty[]>([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCategory = async () => {
       await fetch("/api/categories")
         .then(async (res) => {
           if (res.status === 200) {
-            const categories = await res.json();
+            const { data: categories } = await res.json();
             setCategories(categories);
           } else {
             console.log("category fetch failed");
@@ -120,11 +128,12 @@ export default function Dashboard() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
+                        <Link href={"/form/category"}>+ create new</Link>
                         {categories.map(
                           (category, index) =>
-                            category._id &&
+                            category.id &&
                             !category.parentCategory && (
-                              <SelectItem value={category._id} key={index}>
+                              <SelectItem value={category.id} key={index}>
                                 {category.name}
                               </SelectItem>
                             )
@@ -134,7 +143,10 @@ export default function Dashboard() {
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="subcategory">Subcategory (optional)</Label>
-                    <Select name="subcategory">
+                    <Select
+                      name="subcategory"
+                      disabled={categories.length <= 1}
+                    >
                       <SelectTrigger
                         id="subcategory"
                         aria-label="Select subcategory"
@@ -144,8 +156,8 @@ export default function Dashboard() {
                       <SelectContent>
                         {categories.map(
                           (category, index) =>
-                            category._id && (
-                              <SelectItem value={category._id} key={index}>
+                            category.id && (
+                              <SelectItem value={category.id} key={index}>
                                 {category.name}
                               </SelectItem>
                             )

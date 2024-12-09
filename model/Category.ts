@@ -1,24 +1,63 @@
-import { ProdcutStatus } from "@/utils/Enums";
+import { Timestamps } from "@/types/types";
 import { IProperty } from "@/utils/VTypes";
-import { Document } from "mongodb";
 import mongoose, { Model, Schema, model, models, mongo } from "mongoose";
 
-export interface ICategory {
-  _id?: string;
+// export interface ICategory {
+//   _id?: string;
+//   name: string;
+//   imageSrc: string;
+//   properties: IProperty[];
+//   description: string;
+//   parentCategory?: ICategory;
+// }
+
+export interface TCategory extends Document, Timestamps {
   name: string;
-  imageSrc: string;
-  properties: IProperty[];
-  description: string;
-  parentCategory?: ICategory;
+  description?: string;
+  properties: string[];
+  parentCategory?: string | TCategory;
+  image?: string;
+  isActive: boolean;
 }
 
-const CategorySchema = new Schema({
-  name: { type: String, required: true },
-  imageSrc: { type: String },
-  properties: [{ type: Object }],
-  description: { type: String },
-  parentCategory: { type: mongoose.Types.ObjectId, ref: "Category" },
-});
+export interface ICategory {
+  id: string;
+  name: string;
+  description?: string;
+  properties: string[];
+  parentCategory?: string | ICategory;
+  image?: string;
+  isActive?: boolean;
+}
+
+const CategorySchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    description: { type: String },
+    image: { type: String, required: true },
+    properties: {
+      type: [String],
+      default: [],
+    },
+    parentCategory: {
+      type: mongoose.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 export const Category: Model<ICategory> =
   models.Category || model<ICategory>("Category", CategorySchema);

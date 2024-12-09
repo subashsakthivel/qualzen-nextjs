@@ -9,14 +9,14 @@ import { Adapter } from "next-auth/adapters";
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.AUTH_GOOGLE_ID as string,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
       profile(profile: GoogleProfile) {
         console.log(profile);
         return {
           ...profile,
           role: profile.role ?? "user",
-          id: profile.id.toString(),
+          id: "dd",
           image: profile.picture,
         };
       },
@@ -57,28 +57,27 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: MongoDBAdapter(clientPromise) as Adapter,
   callbacks: {
-    async jwt({ token, account, profile, session, user }) {
-      if (user && account) {
-        console.log("token", token);
-        token.accessToken = account.access_token;
-        //token.id = profile.id;
-        token.role = user.role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session?.user) session.user.role = token.role;
-
-      // session.accessToken = token.accessToken;
-      // session.id = token.sub;
-      return session;
-    },
-    redirect({ baseUrl }) {
-      console.log("base url", baseUrl);
-      return baseUrl;
-    },
+    // async jwt({ token, account, profile, session, user }) {
+    //   if (user && account) {
+    //     console.log("token", token);
+    //     token.accessToken = account.access_token;
+    //     //token.id = profile.id;
+    //     token.role = user.role;
+    //   }
+    //   return token;
+    // },
+    // async session({ session, token }) {
+    //   if (session?.user) session.user.role = token.role;
+    //   // session.accessToken = token.accessToken;
+    //   // session.id = token.sub;
+    //   return session;
+    // },
+    // redirect({ baseUrl }) {
+    //   console.log("base url", baseUrl);
+    //   return "/login";
+    // },
   },
-  session: {
-    strategy: "jwt",
-  },
+  // session: {
+  //   strategy: "jwt",
+  // },
 };

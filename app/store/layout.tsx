@@ -1,9 +1,6 @@
 "use client";
-import CoverFeatureSlides from "@/components/blocks/CoverFeatureSlides";
-import SocialConnect from "@/components/blocks/SocialConnect";
 import { IFeatureProduct } from "@/model/FeatureProduct";
 import { ProdcutStatus } from "@/utils/Enums";
-import Link from "next/link";
 import React, { ReactNode } from "react";
 
 const data: IFeatureProduct[] = [

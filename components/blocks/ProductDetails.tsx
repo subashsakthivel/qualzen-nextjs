@@ -3,6 +3,8 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  MinusIcon,
+  PlusIcon,
 } from "lucide-react";
 import { getCurrencyFormet } from "@/utils/formetUtil";
 import Image from "next/image";
@@ -15,9 +17,9 @@ import { IProduct } from "@/model/Product";
 const size = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const ProductDetails = ({ product }: { product: IProduct }) => {
-  const [headImageIndex, setHeadImageIndex] = useState(0);
   const [currentImage, setCurrentImage] = useState(0);
   const [propIndex, setPropIndex] = useState(-1);
+  const [cartCount, setCartCount] = useState(0);
 
   function getStatusStyle(status: ProdcutStatus) {
     switch (status) {
@@ -30,6 +32,17 @@ const ProductDetails = ({ product }: { product: IProduct }) => {
       case ProdcutStatus.ARCHIVED:
         return "border-red-300 bg-rose-100";
     }
+  }
+
+  async function addOrRemoveToCart() {
+    await fetch("/api/products/", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: "sfkg",
+        product: product._id,
+        action: cartCount !== 0 ? "REMOVE" : "ADD",
+      }),
+    });
   }
 
   function getSizeDetails(availableSize: string[]) {
@@ -138,8 +151,9 @@ const ProductDetails = ({ product }: { product: IProduct }) => {
             <div>
               <button
                 className={`border bg-secondary-foreground text-secondary w-full px-4 py-2 rounded-full`}
+                onClick={addOrRemoveToCart}
               >
-                Add to cart
+                {cartCount === 0 ? "ADD TO CART" : "REMOVE FROM CART"}
               </button>
             </div>
             <div>

@@ -1,5 +1,4 @@
 "use client";
-import { ProductDetailsType, ProductType } from "@/utils/VTypes";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../../components/ui/badge";
 import Image from "next/image";
@@ -13,14 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IProduct, IProductVariation, IProductDetails } from "@/model/Product";
 
-export const columns: ColumnDef<ProductDetailsType>[] = [
+type ProductType = IProduct & IProductVariation;
+export const columns: ColumnDef<IProductDetails>[] = [
   {
     accessorKey: "product",
     header: () => <span className="sr-only">Image</span>,
     cell: ({ row }) => {
       const product: ProductType = row.getValue("product");
-      const url = product.imageUrls[0];
+      console.log(product);
+      const url = product.imageSrc[0];
 
       return (
         <Image
@@ -68,8 +70,8 @@ export const columns: ColumnDef<ProductDetailsType>[] = [
     accessorKey: "sellingPrice",
     header: () => <span className="hidden sm:block">Price</span>,
     cell: ({ row }) => {
-      const product: ProductType = row.getValue("product");
-      const sellingPrice = product.sellingPrice;
+      const product: ProductType & IProductVariation = row.getValue("product");
+      const sellingPrice = product.sellPrice;
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "INR",

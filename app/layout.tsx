@@ -17,11 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className + " min-h-screen no-scrollbar"}>
-        <div className="flex min-h-screen flex-col bg-muted/40 justify-between">
+    <html lang="en" className="h-full bg-primary">
+      <body className={inter.className + " no-scrollbar h-full"}>
+        <div className="flex min-h-screen flex-col bg-muted/40">
           <Nav />
-          <div className="">{children}</div>
+          <main className="flex-grow">{children}</main>
           <Footer />
         </div>
       </body>

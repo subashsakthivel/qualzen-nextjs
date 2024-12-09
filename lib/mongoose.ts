@@ -13,6 +13,7 @@ async function dbConnect() {
     connection.isConnected = db.connections[0].readyState;
   } catch (error) {
     console.log("DB Connection ERROR ", error);
+    throw error;
   }
 }
 

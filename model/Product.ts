@@ -1,49 +1,114 @@
 import mongoose, { Document, Schema, model, models } from "mongoose";
 import { ICategory } from "./Category";
-import { IProperty } from "@/utils/VTypes";
 import { ProdcutStatus } from "@/utils/Enums";
-
-export interface ICommonProductPerperties {
-  size?: string[];
-  details?: string;
-  careInstructions?: string;
-  color?: string[];
+export interface IAttribute {
+  key: string;
+  value: string[];
 }
 
-export interface IProduct extends ICommonProductPerperties {
-  _id?: string;
+export interface IProductVariation {
+  name: string;
+  attributes: IAttribute[];
+  marketPrice: number;
+  sellPrice: number;
+  stock: number;
+  images: string[];
+  status: string;
+}
+
+export interface IProduct {
   name: string;
   description: string;
+  category: mongoose.Schema.Types.ObjectId | ICategory | string;
+  variations: IProductVariation[];
+  isActive: boolean;
+  tags: string[];
   imageSrc: string[];
-  category: ICategory;
-  marketPrice: number;
-  sellingPrice: number;
-  status: ProdcutStatus;
-  properties: IProperty[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface IProductDetails {
-  _id?: string;
+export interface IProductDetails extends Document {
   product: IProduct;
-  createdAt: number;
-  expiryDate?: number;
-  marginPrice?: number;
+  sku: string;
+  price: number;
 }
 
-const ProductSchema = new Schema({
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  imageSrc: [{ type: String }],
-  category: { type: mongoose.Types.ObjectId, ref: "Category" },
-  marketPrice: { type: Number, required: true },
-  sellingPrice: { type: Number, required: true },
-  price: { type: Number, required: true },
-  properties: [{ type: Object }],
-  size: [{ type: String }],
-  details: { type: String },
-  careInstructions: { type: String },
-  color: [{ type: String }],
+const ProductVariationSchema = new Schema<IProductVariation>({
+  attributes: {
+    type: [
+      {
+        key: {
+          type: String,
+          require: true,
+          trim: true,
+        },
+        value: {
+          type: [String],
+          require: true,
+        },
+      },
+    ],
+    required: true,
+  },
+  marketPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  sellPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  stock: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  images: {
+    type: [String],
+    default: [],
+  },
+  status: {
+    type: String,
+    default: ProdcutStatus.ACTIVE,
+  },
 });
+
+const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+    variations: {
+      type: [ProductVariationSchema],
+      default: [],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 const ProductDetailsSchema = new Schema({
   product: { type: mongoose.Types.ObjectId, ref: "Product" },
@@ -52,8 +117,7 @@ const ProductDetailsSchema = new Schema({
   marginPrice: { type: Number },
 });
 
-export const Product =
-  models.Product<IProduct> || model<IProduct>("Product", ProductSchema);
+export const Product = models.Product<IProduct> || model<IProduct>("Product", ProductSchema);
 
 export const ProductDetails =
   models.ProductDetails<IProductDetails> ||
