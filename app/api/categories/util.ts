@@ -227,6 +227,9 @@ export async function handlePostOperation(operation: string, form: FormData) {
   if (operation === "save") {
     const categoryData = JSON.parse(form.get("categoryData") as string);
 
+    if (categoryData.parentCategory === "None" || categoryData.parentCategory === "") {
+      categoryData.parentCategory = undefined;
+    }
     const image = await S3Util.getInstance().uploadFiles(form.get("image") as File);
 
     if (Array.isArray(image)) {
@@ -236,7 +239,7 @@ export async function handlePostOperation(operation: string, form: FormData) {
     try {
       await insertCategory({ ...categoryData, image });
     } catch (err) {
-      await S3Util.getInstance().deleteFiles(image);
+      S3Util.getInstance().deleteFiles(image);
       throw err;
     }
     return;

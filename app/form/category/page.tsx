@@ -14,29 +14,16 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Suspense, useEffect, useState } from "react";
-import { IProperty } from "@/utils/VTypes";
+import { useState } from "react";
 import axios from "axios";
 import CategoryList from "@/components/admin/categoryList";
 import QueryClientHook from "@/components/admin/queryClientHook";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
 export default function Dashboard() {
   const [imageSrc, setImageSrc] = useState<File | undefined>(undefined);
+  const { toast } = useToast();
 
   function onImageSrcChange(ev: React.FormEvent<EventTarget>) {
     const { files } = ev.target as HTMLInputElement & {
@@ -70,11 +57,19 @@ export default function Dashboard() {
       });
 
       if (response.data.success) {
-        console.log("Category saved successfully:", response.data);
+        toast({
+          title: "Category saved successfully",
+        });
+        setTimeout(() => (window.location.href = "/"), 500);
+
         return response.data;
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        toast({
+          title: "Something issue",
+          variant: "destructive",
+        });
         console.error("API Error:", error.response?.data);
         throw new Error(error.response?.data?.message || "Failed to save category");
       }
@@ -87,14 +82,11 @@ export default function Dashboard() {
     <QueryClientHook>
       <form className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4" action={saveCategory}>
         {/* form heading */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 m-2">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Category Form
           </h1>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
-            <Button variant="outline" size="sm" type="button">
-              Discard
-            </Button>
             <Button size="sm" type="submit">
               Save Product
             </Button>
@@ -174,10 +166,9 @@ export default function Dashboard() {
           </Card>
         </div>
         <div className="flex items-center justify-center gap-2 md:hidden">
-          <Button variant="outline" size="sm">
-            Discard
+          <Button size="sm" type="submit">
+            Save Category
           </Button>
-          <Button size="sm">Save Category</Button>
         </div>
       </form>
     </QueryClientHook>

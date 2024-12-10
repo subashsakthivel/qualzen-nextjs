@@ -23,7 +23,7 @@ export interface TCategory extends Document, Timestamps {
 export interface ICategory {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   properties: string[];
   parentCategory?: string | ICategory;
   image?: string;

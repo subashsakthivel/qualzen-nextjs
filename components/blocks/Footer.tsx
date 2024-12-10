@@ -4,7 +4,7 @@ import Link from "next/link";
 
 const Footer = () => {
   return (
-    <div className="bg-primary text-secondary m-0   bottom-0">
+    <div className="bg-primary text-secondary m-0 mt-5   bottom-0">
       <div className="  flex flex-wrap font-light justify-around md:justify-between sm:items-center -z-20 m-3">
         <div className="text-center md:text-start font-extralight space-y-1 m-2">
           <div className="cursor-pointer ">SHOP</div>
