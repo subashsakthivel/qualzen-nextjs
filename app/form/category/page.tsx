@@ -39,7 +39,6 @@ export default function Dashboard() {
         name: formData.get("name"),
         description: formData.get("description"),
         parentCategory: formData.get("parentCategory"),
-        isActive: true,
       };
 
       const finalFormData = new FormData();
@@ -125,7 +124,7 @@ export default function Dashboard() {
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="subcategory">Parent Category (optional)</Label>
-                  <CategoryList />
+                  <CategoryList name="subcategory" type="category" />
                 </div>
               </div>
             </CardContent>

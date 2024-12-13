@@ -1,30 +1,16 @@
 import dbConnect from "@/lib/mongoose";
-import {
-  IProduct,
-  IProductDetails,
-  Product,
-  ProductDetails,
-} from "@/model/Product";
+import { IProduct, Product } from "@/model/Product";
+import { ErrorRequest } from "@/utils/responseUtil";
+import { S3Util } from "@/utils/S3Util";
 import { Types } from "mongoose";
 
 async function fetchAllProducts() {
   try {
+    await dbConnect();
     const product = await Product.find();
-    console.log("Product:", product);
     return product;
   } catch (err) {
     console.error("Error fetching product:", err);
-    throw err;
-  }
-}
-
-async function fetchAllProductsWithDetails() {
-  try {
-    const productDetails = await ProductDetails.find().populate("product");
-    console.log("ProductDetails:", productDetails);
-    return productDetails;
-  } catch (err) {
-    console.error("Error fetching product details:", err);
     throw err;
   }
 }
@@ -35,28 +21,9 @@ async function fetchProductsWithPagination(page: number, limit: number) {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    console.log("Paginated Product:", product);
     return product;
   } catch (err) {
     console.error("Error fetching paginated product:", err);
-    throw err;
-  }
-}
-
-async function fetchProductsWithDetailsAndPagination(
-  page: number,
-  limit: number
-) {
-  try {
-    const product = await ProductDetails.find()
-      .populate("product")
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    console.log("Paginated ProductDetails:", product);
-    return product;
-  } catch (err) {
-    console.error("Error fetching paginated products with details:", err);
     throw err;
   }
 }
@@ -65,10 +32,8 @@ async function fetchProductById(id: string) {
   try {
     const product = await Product.findById(id);
     if (!product) {
-      console.log("Product not found");
       return null;
     }
-    console.log("Product:", product);
     return product;
   } catch (err) {
     console.error("Error fetching product by ID:", err);
@@ -76,50 +41,17 @@ async function fetchProductById(id: string) {
   }
 }
 
-async function fetchProductWithDetailsById(id: string) {
+async function fetchProductsByFilter(filter: { name?: string; category?: string }) {
   try {
-    const product = await ProductDetails.findById(id).populate("product");
-    if (!product) {
-      console.log("Product not found");
-      return null;
-    }
-    console.log("Product:", product);
-    return product;
+    const products = await Product.find(filter);
+    return products;
   } catch (err) {
-    console.error("Error fetching product by ID:", err);
+    console.error("Error fetching filtered products:", err);
     throw err;
   }
 }
 
-async function fetchProductsByFilter(filter: {
-  name?: string;
-  variations?: [
-    {
-      attributes?: [
-        {
-          key: string;
-          value: string[];
-        }
-      ];
-      sellPrice?: number;
-      status?: string;
-    }
-  ];
-}) {
-  try {
-    const product = await Product.find(filter);
-    console.log("Filtered Product:", product);
-    return product;
-  } catch (err) {
-    console.error("Error fetching filtered product:", err);
-    throw err;
-  }
-}
-
-async function fetchProductsWithPaginationAndTotal(
-  page: number,
-  limit: number
-) {
+async function fetchProductsWithPaginationAndTotal(page: number, limit: number) {
   try {
     const skip = (page - 1) * limit;
     const aggregationPipeline = [
@@ -197,39 +129,85 @@ async function deleteProduct(id: string) {
   }
 }
 
-//network util function
-export function getProductObject(form: FormData) {
-  const name = form.get("name") as string;
-  const imageFile = form.get("imageFile") as File;
-  const description = form.get("description") as string;
-  const properties = form.getAll("properties") as string[];
-  const parentCategory = JSON.parse(
-    form.get("parentCategory") as string
-  ) as IProduct;
-  const oldImage = form.get("oldImage") as string;
-  const isActive = (form.get("isActive") || true) as boolean;
-  const id = form.get("id") as string;
-  return {
-    product: {
-      name,
-      description,
-      properties,
-      parentCategory,
-      isActive,
-    },
-    imageFile,
-    oldImage,
-    id,
-  };
+export async function handleGetOperation(operation: string | null, params: URLSearchParams) {
+  switch (operation) {
+    case "fetchAll":
+      return fetchAllProducts();
+    case "fetchByFilter": {
+      const filterparam = params.get("filter");
+      if (!filterparam) throw new ErrorRequest("Bad Request", 400);
+      return fetchProductsByFilter(JSON.parse(decodeURIComponent(filterparam)));
+    }
+    case "fetchById":
+      const id = params.get("id");
+      if (!id) throw new ErrorRequest("Bad Request", 400);
+      return fetchProductById(id);
+
+    case "fetchWithPaginationAndTotal":
+      const page = params.get("pageIndex");
+      const limit = params.get("pageLimit");
+      if (!page || !limit) throw new ErrorRequest("Page and limit not mentioned", 400);
+      return fetchProductsWithPaginationAndTotal(parseInt(page), parseInt(limit));
+    default:
+      return fetchAllProducts();
+  }
+}
+
+export async function handlePostOperation(operation: string, form: FormData) {
+  if (operation === "save") {
+    const productData = JSON.parse(form.get("productData") as string);
+
+    const imageCount = parseInt((form.get("imageCount") || "0") as string);
+    const imageList: File[] = [];
+
+    for (let i = 0; i < imageCount; i++) {
+      imageList.push(form.get("image" + i) as File);
+    }
+    const images = await S3Util.getInstance().uploadFiles(imageList);
+
+    try {
+      await insertProduct({ ...productData, images });
+    } catch (err) {
+      S3Util.getInstance().deleteFiles(images);
+      throw err;
+    }
+    return;
+  }
+  throw new ErrorRequest("Bad Request", 400);
+}
+
+export async function handlePutOperation(operation: string, form: FormData) {
+  if (operation === "edit") {
+    const data = JSON.parse(form.get("productData") as string);
+
+    if (!data._id) return;
+
+    if (data.imageSrc) {
+      await S3Util.getInstance().deleteFiles(data.oldImages);
+      const image = await S3Util.getInstance().uploadFiles(data.imageSrc);
+
+      if (Array.isArray(image)) {
+        throw new ErrorRequest("unexpected type error", 504);
+      }
+
+      try {
+        await updateProduct(data._id, { ...data.category, image });
+      } catch (err) {
+        await S3Util.getInstance().deleteFiles(image);
+        throw err;
+      }
+      return;
+    }
+
+    await updateProduct(data._id, { ...data.category });
+    return;
+  }
+  throw new ErrorRequest("Bad Request", 400);
 }
 
 export {
   fetchAllProducts,
-  fetchProductsByFilter,
   fetchProductById,
-  fetchAllProductsWithDetails,
-  fetchProductWithDetailsById,
-  fetchProductsWithDetailsAndPagination,
   fetchProductsWithPagination,
   fetchProductsWithPaginationAndTotal,
   insertProduct,

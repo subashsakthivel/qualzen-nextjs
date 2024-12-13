@@ -9,7 +9,6 @@ async function fetchAllCategories() {
   try {
     await dbConnect();
     const categories = await Category.find();
-    console.log("Categories:", categories);
     return categories;
   } catch (err) {
     console.error("Error fetching categories:", err);
@@ -34,7 +33,6 @@ async function fetchCategoriesWithPagination(page: number, limit: number) {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    console.log("Paginated Categories:", categories);
     return categories;
   } catch (err) {
     console.error("Error fetching paginated categories:", err);
@@ -46,10 +44,8 @@ async function fetchCategoryById(id: string) {
   try {
     const category = await Category.findById(id);
     if (!category) {
-      console.log("Category not found");
       return null;
     }
-    console.log("Category:", category);
     return category;
   } catch (err) {
     console.error("Error fetching category by ID:", err);
@@ -108,7 +104,6 @@ async function fetchAllCategoryNames() {
       name: category.name,
       _id: category._id,
     }));
-    console.log("All category names:", categoryData);
     return categoryData;
   } catch (err) {
     console.error("Error fetching category names:", err);
@@ -167,35 +162,6 @@ async function deleteCatogory(id: string) {
   }
 }
 
-//network util function
-export function getCategoryObject(form: FormData) {
-  const name = form.get("name") as string;
-  const imageSrc = form.get("imageSrc") as File;
-  const description = form.get("description") as string;
-  const properties = form.getAll("properties") as string[];
-  const parentCategory = form.get("parentCategory")
-    ? (JSON.parse(form.get("parentCategory") as string) as ICategory)
-    : undefined;
-  const oldImage = form.get("oldImage") as string;
-  const isActive = form.get("isActive") ? true : false;
-  const id = (form.get("id") ?? randomUUID()) as string;
-  const _id = form.get("_id") as string | undefined | null;
-
-  return {
-    category: {
-      name,
-      description,
-      properties,
-      parentCategory,
-      isActive,
-      id,
-    },
-    imageSrc,
-    oldImage,
-    _id,
-  };
-}
-
 export async function handleGetOperation(operation: string | null, params: URLSearchParams) {
   switch (operation) {
     case "fetchAll":
@@ -232,10 +198,6 @@ export async function handlePostOperation(operation: string, form: FormData) {
     }
     const image = await S3Util.getInstance().uploadFiles(form.get("image") as File);
 
-    if (Array.isArray(image)) {
-      throw new ErrorRequest("unexpected type error", 504);
-    }
-
     try {
       await insertCategory({ ...categoryData, image });
     } catch (err) {
@@ -249,7 +211,7 @@ export async function handlePostOperation(operation: string, form: FormData) {
 
 export async function handlePutOperation(operation: string, form: FormData) {
   if (operation === "edit") {
-    const data = getCategoryObject(form);
+    const data = JSON.parse(form.get("categoryData") as string);
     if (!data._id) return;
 
     if (data.imageSrc) {

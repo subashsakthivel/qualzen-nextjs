@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
 
-function CategoryList() {
+function CategoryList({ name, type = "category" }: { name: string; type: "product" | "category" }) {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -20,11 +20,16 @@ function CategoryList() {
   });
 
   return (
-    <Select name="parentCategory">
+    <Select name={name}>
       <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
         <SelectValue placeholder="Select subcategory" />
       </SelectTrigger>
       <SelectContent>
+        {type === "category" && (
+          <SelectItem key={980} value={"None"}>
+            {"None"}
+          </SelectItem>
+        )}
         <SelectItem key={980} value={"None"}>
           {"None"}
         </SelectItem>
