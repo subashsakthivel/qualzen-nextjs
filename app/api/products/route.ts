@@ -21,15 +21,15 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData();
     await handlePostOperation(form.get("operation") as string, form);
-    return NextResponse.json({ message: "Category created successfully" }, { status: 200 });
+    return NextResponse.json({ message: "Product created successfully" }, { status: 200 });
   } catch (err) {
-    console.error("Error creating category:", err);
+    console.error("Error creating Product:", err);
     if (err instanceof ErrorRequest) {
       return NextResponse.json(
         { message: err.message, STATUS_CODE: err.statusCode },
         { status: err.statusCode }
       );
     }
-    return NextResponse.json({ message: "Failed to create category" }, { status: 400 });
+    return NextResponse.json({ message: "Failed to create Product" }, { status: 400 });
   }
 }

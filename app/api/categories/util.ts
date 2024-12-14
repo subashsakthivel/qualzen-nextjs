@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongoose";
-import { Category, ICategory } from "@/model/Category";
+import { Category, categorySchema, ICategory } from "@/model/Category";
 import { ErrorRequest } from "@/utils/responseUtil";
 import { S3Util } from "@/utils/S3Util";
 import { randomUUID } from "crypto";
@@ -191,15 +191,15 @@ export async function handleGetOperation(operation: string | null, params: URLSe
 
 export async function handlePostOperation(operation: string, form: FormData) {
   if (operation === "save") {
-    const categoryData = JSON.parse(form.get("categoryData") as string);
+    const categoryData = categorySchema.parse(form.get("categoryData"));
 
     if (categoryData.parentCategory === "None" || categoryData.parentCategory === "") {
       categoryData.parentCategory = undefined;
     }
     const image = await S3Util.getInstance().uploadFiles(form.get("image") as File);
-
+    const imageString = Array.isArray(image) ? image[0] : image;
     try {
-      await insertCategory({ ...categoryData, image });
+      await insertCategory({ ...categoryData, image: imageString });
     } catch (err) {
       S3Util.getInstance().deleteFiles(image);
       throw err;

@@ -21,6 +21,8 @@ import CategoryList from "@/components/admin/categoryList";
 import QueryClientHook from "@/components/admin/queryClientHook";
 import { useToast } from "@/hooks/use-toast";
 
+//https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+//refer this above for server form component
 export default function Dashboard() {
   const [imageSrc, setImageSrc] = useState<File | undefined>(undefined);
   const { toast } = useToast();

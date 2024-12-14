@@ -1,13 +1,18 @@
 import mongoose, { Schema, model, models } from "mongoose";
-import { ICategory } from "./Category";
+import { categorySchema, ICategory } from "./Category";
 import { ProdcutStatus } from "@/utils/Enums";
-import { IProperty } from "@/utils/VTypes";
+import { z } from "zod";
 
+export interface IProperty {
+  name: string;
+  value: string[];
+}
 export interface IProduct {
   name: string;
   description: string;
   category: mongoose.Schema.Types.ObjectId | ICategory | string;
   properties: IProperty[];
+  marginPrice: number;
   marketPrice: number;
   sellPrice: number;
   stock: number;
@@ -18,7 +23,23 @@ export interface IProduct {
   updatedAt: Date;
 }
 
-const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
+export const productSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  category: z.union([z.string(), categorySchema]),
+  properties: z.array(z.object({ name: z.string(), value: z.array(z.string()) })),
+  marginPrice: z.number(),
+  marketPrice: z.number(),
+  sellPrice: z.number(),
+  stock: z.number(),
+  images: z.array(z.string()),
+  status: z.string(),
+  tags: z.array(z.string()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+const ProductDBSchema: Schema<IProduct> = new Schema<IProduct>(
   {
     name: {
       type: String,
@@ -40,7 +61,6 @@ const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
           key: {
             type: String,
             require: true,
-            trim: true,
           },
           value: {
             type: [String],
@@ -49,6 +69,11 @@ const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
         },
       ],
       required: true,
+    },
+    marginPrice: {
+      type: Number,
+      required: true,
+      min: 0,
     },
     marketPrice: {
       type: Number,
@@ -83,4 +108,4 @@ const ProductSchema: Schema<IProduct> = new Schema<IProduct>(
   }
 );
 
-export const Product = models.Product<IProduct> || model<IProduct>("Product", ProductSchema);
+export const Product = models.Product<IProduct> || model<IProduct>("Product", ProductDBSchema);

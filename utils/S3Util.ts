@@ -64,9 +64,7 @@ export class S3Util {
   async uploadFiles(files: File | File[]) {
     try {
       if (Array.isArray(files)) {
-        const paths = await Promise.all(
-          files.map(async (file) => this.uploadFile(file))
-        );
+        const paths = await Promise.all(files.map(async (file) => this.uploadFile(file)));
         return paths;
       }
 
@@ -81,9 +79,7 @@ export class S3Util {
   async deleteFiles(urls: string | string[]) {
     try {
       if (Array.isArray(urls)) {
-        const paths = await Promise.all(
-          urls.map(async (url) => this.deleteFile(url))
-        );
+        const paths = await Promise.all(urls.map(async (url) => this.deleteFile(url)));
         return paths;
       }
 

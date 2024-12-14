@@ -1,37 +1,30 @@
-import { Timestamps } from "@/types/types";
-import { IProperty } from "@/utils/VTypes";
 import mongoose, { Model, Schema, model, models, mongo } from "mongoose";
-
-// export interface ICategory {
-//   _id?: string;
-//   name: string;
-//   imageSrc: string;
-//   properties: IProperty[];
-//   description: string;
-//   parentCategory?: ICategory;
-// }
-
-export interface TCategory extends Document, Timestamps {
-  name: string;
-  description?: string;
-  properties: string[];
-  parentCategory?: string | TCategory;
-  image?: string;
-  isActive: boolean;
-}
+import { z } from "zod";
 
 export interface ICategory {
-  id: string;
+  uid: string;
   name: string;
   description: string;
-  properties: string[];
   parentCategory?: string | ICategory;
   image?: string;
-  isActive?: boolean;
 }
 
-const CategorySchema = new Schema(
+export const categorySchema: z.ZodType<ICategory> = z.object({
+  uid: z.string(),
+  name: z.string(),
+  description: z.string(),
+  parentCategory: z.union([z.string(), z.lazy(() => categorySchema)]).optional(),
+  image: z.string().optional(),
+});
+
+const CategoryDBSchema = new Schema(
   {
+    uid: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
     name: {
       type: String,
       required: true,
@@ -40,18 +33,10 @@ const CategorySchema = new Schema(
     },
     description: { type: String },
     image: { type: String, required: true },
-    properties: {
-      type: [String],
-      default: [],
-    },
     parentCategory: {
       type: mongoose.Types.ObjectId,
       ref: "Category",
       default: null,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
     },
   },
   {
@@ -60,4 +45,4 @@ const CategorySchema = new Schema(
 );
 
 export const Category: Model<ICategory> =
-  models.Category || model<ICategory>("Category", CategorySchema);
+  models.Category || model<ICategory>("Category", CategoryDBSchema);

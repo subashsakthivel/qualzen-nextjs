@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongoose";
-import { IProduct, Product } from "@/model/Product";
+import { IProduct, Product, productSchema } from "@/model/Product";
 import { ErrorRequest } from "@/utils/responseUtil";
 import { S3Util } from "@/utils/S3Util";
 import { Types } from "mongoose";
@@ -155,18 +155,19 @@ export async function handleGetOperation(operation: string | null, params: URLSe
 
 export async function handlePostOperation(operation: string, form: FormData) {
   if (operation === "save") {
-    const productData = JSON.parse(form.get("productData") as string);
+    const productData = productSchema.parse(form.get("productData") as string);
 
     const imageCount = parseInt((form.get("imageCount") || "0") as string);
     const imageList: File[] = [];
 
     for (let i = 0; i < imageCount; i++) {
-      imageList.push(form.get("image" + i) as File);
+      imageList.push(form.get(`image[${i}]`) as File);
     }
     const images = await S3Util.getInstance().uploadFiles(imageList);
 
     try {
-      await insertProduct({ ...productData, images });
+      const imageList = Array.isArray(images) ? images : [images];
+      await insertProduct({ ...productData, images: imageList });
     } catch (err) {
       S3Util.getInstance().deleteFiles(images);
       throw err;

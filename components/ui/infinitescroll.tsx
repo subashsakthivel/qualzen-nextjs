@@ -1,7 +1,7 @@
 import * as React from "react";
 
 interface InfiniteScrollProps {
-  isLoading: boolean;
+  isLoading?: boolean;
   hasMore: boolean;
   next: () => unknown;
   threshold?: number;
@@ -12,7 +12,6 @@ interface InfiniteScrollProps {
 }
 
 export default function InfiniteScroll({
-  isLoading,
   hasMore,
   next,
   threshold = 1,
@@ -26,6 +25,7 @@ export default function InfiniteScroll({
   // or when the callback function changes.
   const observerRef = React.useCallback(
     (element: HTMLElement | null) => {
+      console.log("called");
       let safeThreshold = threshold;
       if (threshold < 0 || threshold > 1) {
         console.warn(
@@ -37,7 +37,7 @@ export default function InfiniteScroll({
       // When isLoading is true, this callback will do nothing.
       // It means that the next function will never be called.
       // It is safe because the intersection observer has disconnected the previous element.
-      if (isLoading) return;
+      //if (isLoading) return;
 
       if (observer.current) observer.current.disconnect();
       if (!element) return;
@@ -54,13 +54,10 @@ export default function InfiniteScroll({
       );
       observer.current.observe(element);
     },
-    [hasMore, isLoading, next, threshold, root, rootMargin]
+    [hasMore, threshold, root, rootMargin]
   );
 
-  const flattenChildren = React.useMemo(
-    () => React.Children.toArray(children),
-    [children]
-  );
+  const flattenChildren = React.useMemo(() => React.Children.toArray(children), [children]);
 
   return (
     <>
@@ -71,9 +68,7 @@ export default function InfiniteScroll({
           return child;
         }
 
-        const isObserveTarget = reverse
-          ? index === 0
-          : index === flattenChildren.length - 1;
+        const isObserveTarget = reverse ? index === 0 : index === flattenChildren.length - 1;
         const ref = isObserveTarget ? observerRef : null;
         // @ts-ignore ignore ref type
         return React.cloneElement(child, { ref });

@@ -31,16 +31,19 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import TagInput from "@/components/ui/taginput";
-import { IProperty } from "@/utils/VTypes";
 import { useEffect, useState } from "react";
-import { ICategory } from "@/model/Category";
 import { ProdcutStatus } from "@/utils/Enums";
 import CategoryList from "@/components/admin/categoryList";
 import QueryClientHook from "@/components/admin/queryClientHook";
-import { IProduct } from "@/model/Product";
+import axios from "axios";
+import { IProperty } from "@/model/Product";
+
+interface IPropertyForm extends Pick<IProperty, "name"> {
+  value: string | string[];
+}
 
 export default function ProductForm() {
-  const [properties, setProperties] = useState<IProperty[]>([]);
+  const [properties, setProperties] = useState<IPropertyForm[]>([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
 
@@ -81,8 +84,19 @@ export default function ProductForm() {
         });
       }
 
-      console.log(productData);
-    } catch (err) {}
+      requestFormData.append("operation", "save");
+      const response = await axios.post("/api/products", requestFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data.success) {
+        return response.data;
+      }
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
@@ -165,7 +179,7 @@ export default function ProductForm() {
                     </div>
                     <div className="grid gap-3">
                       <Label htmlFor="stock">Stock</Label>
-                      <Input id="stock" name="Stock" type="number" className="w-full" />
+                      <Input id="stock" name="stock" type="number" className="w-full" />
                     </div>
                   </div>
                 </CardContent>
