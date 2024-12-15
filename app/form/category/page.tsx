@@ -20,6 +20,7 @@ import axios from "axios";
 import CategoryList from "@/components/admin/categoryList";
 import QueryClientHook from "@/components/admin/queryClientHook";
 import { useToast } from "@/hooks/use-toast";
+import { redirect } from "next/navigation";
 
 //https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
 //refer this above for server form component
@@ -31,7 +32,6 @@ export default function Dashboard() {
     const { files } = ev.target as HTMLInputElement & {
       files: FileList;
     };
-    console.log(typeof files[0]);
     setImageSrc(files[0]);
   }
 
@@ -57,13 +57,11 @@ export default function Dashboard() {
         },
       });
 
-      if (response.data.success) {
+      if (response.status === 200) {
         toast({
           title: "Category saved successfully",
         });
-        setTimeout(() => (window.location.href = "/"), 500);
-
-        return response.data;
+        redirect("/categories");
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -74,8 +72,7 @@ export default function Dashboard() {
         console.error("API Error:", error.response?.data);
         throw new Error(error.response?.data?.message || "Failed to save category");
       }
-      console.error("Error saving category:", error);
-      throw error;
+      console.error("Failed to save :", error);
     }
   }
 
@@ -89,7 +86,7 @@ export default function Dashboard() {
           </h1>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
             <Button size="sm" type="submit">
-              Save Product
+              Save Category
             </Button>
           </div>
         </div>
@@ -149,7 +146,7 @@ export default function Dashboard() {
                       alt="category image"
                       className="rounded-sm border shadow-sm"
                       fill
-                      style={{ objectFit: "cover" }}
+                      style={{ objectFit: "contain" }}
                     />
                   ) : (
                     <Upload className="h-4 w-4 text-muted-foreground" />

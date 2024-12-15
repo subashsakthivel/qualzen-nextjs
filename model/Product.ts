@@ -7,7 +7,9 @@ export interface IProperty {
   name: string;
   value: string[];
 }
+
 export interface IProduct {
+  uid: string;
   name: string;
   description: string;
   category: mongoose.Schema.Types.ObjectId | ICategory | string;
@@ -17,30 +19,36 @@ export interface IProduct {
   sellPrice: number;
   stock: number;
   images: string[];
-  status: string;
+  status: ProdcutStatus;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const productSchema = z.object({
+export const productSchema: z.ZodType<IProduct> = z.object({
+  uid: z.string(),
   name: z.string(),
   description: z.string(),
   category: z.union([z.string(), categorySchema]),
-  properties: z.array(z.object({ name: z.string(), value: z.array(z.string()) })),
+  properties: z.array(z.object({ name: z.string(), value: z.array(z.string()) })).max(4),
   marginPrice: z.number(),
   marketPrice: z.number(),
   sellPrice: z.number(),
   stock: z.number(),
-  images: z.array(z.string()),
-  status: z.string(),
-  tags: z.array(z.string()),
+  images: z.array(z.string()).min(3).max(8),
+  status: z.nativeEnum(ProdcutStatus),
+  tags: z.array(z.string()).max(4),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 
 const ProductDBSchema: Schema<IProduct> = new Schema<IProduct>(
   {
+    uid: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     name: {
       type: String,
       required: true,

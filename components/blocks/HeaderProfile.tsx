@@ -14,13 +14,9 @@ const HeaderProfile = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="overflow-hidden rounded-full mx-5"
-        >
+        <Button variant="outline" size="icon" className="overflow-hidden rounded-full mx-5">
           <Image
-            src="/placeholder-user.jpg"
+            src="/profile.png"
             width={36}
             height={36}
             alt="Avatar"

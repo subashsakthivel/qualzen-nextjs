@@ -3,11 +3,8 @@ import dbConnect from "@/lib/mongoose";
 import { IProduct, Product } from "@/model/Product";
 
 export interface IProductRes
-  extends Omit<IProduct, "marketPrice" | "category" | "createdAt" | "updatedAt" | "properties"> {
-  name: string;
-  images: string[];
-  marketPrice: number;
-}
+  extends Omit<IProduct, "marginPrice" | "category" | "createdAt" | "updatedAt"> {}
+
 export async function getProducts(offset: number, limit: number): Promise<IProductRes[]> {
   try {
     await dbConnect();
@@ -17,20 +14,27 @@ export async function getProducts(offset: number, limit: number): Promise<IProdu
       .select(
         "-marginPrice -_id -__v -category -createdAt -updatedAt -properties"
       )) as IProductRes[];
-    console.log("getting products");
-    const res = products.map((p) => {
-      return {
-        name: p.name,
-        images: p.images,
-        marketPrice: p.marketPrice,
-      };
-    });
-    console.log(products);
-    return products;
+    console.log("getting products : ", products);
+    return JSON.parse(JSON.stringify(products));
   } catch (err) {
     console.log(err);
   }
   return [];
+}
+
+export async function getProduct(uid: string, name?: string): Promise<IProductRes> {
+  try {
+    await dbConnect();
+    const product = (await Product.findOne({ uid })
+      .select("-marginPrice -_id -__v -createdAt -updatedAt -properties")
+      .populate("category")
+      .select("-_id -parentCategory")) as IProductRes;
+    console.log("getting product :" + product);
+    return JSON.parse(JSON.stringify(product));
+  } catch (err) {
+    console.log(err);
+    throw new Error("Can't Find Product");
+  }
 }
 
 export async function getData() {

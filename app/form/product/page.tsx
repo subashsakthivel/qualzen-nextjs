@@ -37,6 +37,7 @@ import CategoryList from "@/components/admin/categoryList";
 import QueryClientHook from "@/components/admin/queryClientHook";
 import axios from "axios";
 import { IProperty } from "@/model/Product";
+import { redirect } from "next/navigation";
 
 interface IPropertyForm extends Pick<IProperty, "name"> {
   value: string | string[];
@@ -69,10 +70,11 @@ export default function ProductForm() {
         description: formData.get("description") as string,
         category: formData.get("category") as string,
         properties: properties,
+        marginPrice: parseFloat(formData.get("marginPrice") as string),
         marketPrice: parseFloat(formData.get("marketPrice") as string),
         sellPrice: parseFloat(formData.get("sellPrice") as string),
         stock: parseInt(formData.get("stock") as string),
-        status: formData.get("status") as string,
+        status: formData.get("status") as ProdcutStatus,
         tags: tags,
       };
       const requestFormData = new FormData();
@@ -91,8 +93,9 @@ export default function ProductForm() {
         },
       });
 
-      if (response.data.success) {
-        return response.data;
+      console.log(response.status);
+      if (response.status === 200) {
+        redirect("/product-gallery");
       }
     } catch (err) {
       console.log(err);

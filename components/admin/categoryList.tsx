@@ -26,13 +26,10 @@ function CategoryList({ name, type = "category" }: { name: string; type: "produc
       </SelectTrigger>
       <SelectContent>
         {type === "category" && (
-          <SelectItem key={980} value={"None"}>
+          <SelectItem key={"none"} value={"None"}>
             {"None"}
           </SelectItem>
         )}
-        <SelectItem key={980} value={"None"}>
-          {"None"}
-        </SelectItem>
         {categories.map((category: { name: string; _id: string }, i: number) => (
           <SelectItem key={i} value={category._id}>
             {category.name}

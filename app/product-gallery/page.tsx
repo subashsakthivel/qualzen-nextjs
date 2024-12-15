@@ -1,17 +1,34 @@
-import ClientComponent from "@/components/ClientComponent";
+"use client";
 import ProductList from "@/components/productList";
-import { IProduct } from "@/model/Product";
-import { getData, getProducts } from "@/utils/fetchData";
-import React from "react";
+import InfiniteScroll from "@/components/ui/infinitescroll";
+import { getProducts, IProductRes } from "@/utils/fetchData";
+import { Loader2 } from "lucide-react";
+import React, { useState } from "react";
 
-async function ProductGallery() {
-  const products = await getProducts(0, 10);
+const LIMIT = 10;
 
-  const data = await getData();
+function ProductGallery() {
+  const [offset, setOffset] = useState(0);
+  const [products, setProducts] = useState<IProductRes[]>([]);
+  const [hasMoreData, setHasMoreData] = useState(true);
+
+  const loadMoreProducts = async () => {
+    if (hasMoreData) {
+      const productsList = await getProducts(offset, LIMIT);
+      console.log(productsList);
+      setHasMoreData(productsList.length !== 0);
+      setProducts((prevProducts) => [...prevProducts, ...productsList]);
+      setOffset((prevOffset) => prevOffset + LIMIT);
+    }
+  };
+
   return (
-    <>
+    <div className="m-5">
       <ProductList initialProducts={products} />
-    </>
+      <InfiniteScroll hasMore={hasMoreData} next={loadMoreProducts} threshold={1}>
+        {hasMoreData && <Loader2 className="my-4 h-8 w-8 animate-spin" />}
+      </InfiniteScroll>
+    </div>
   );
 }
 

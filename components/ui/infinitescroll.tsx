@@ -45,6 +45,7 @@ export default function InfiniteScroll({
       // Create a new IntersectionObserver instance because hasMore or next may be changed.
       observer.current = new IntersectionObserver(
         (entries) => {
+          console.log(entries);
           console.log(entries[0].isIntersecting);
           if (entries[0].isIntersecting && hasMore) {
             next();
@@ -54,7 +55,7 @@ export default function InfiniteScroll({
       );
       observer.current.observe(element);
     },
-    [hasMore, threshold, root, rootMargin]
+    [hasMore, threshold, next, root, rootMargin]
   );
 
   const flattenChildren = React.useMemo(() => React.Children.toArray(children), [children]);

@@ -1,41 +1,20 @@
-"use client";
-import { IProduct } from "@/model/Product";
-import React, { useState } from "react";
+import React from "react";
 import SimpleCard from "./simple-card";
-import { getProducts, IProductRes } from "@/utils/fetchData";
+import { IProductRes } from "@/utils/fetchData";
 
-const LIMIT = 10;
 const ProductList = ({ initialProducts }: { initialProducts: IProductRes[] }) => {
-  const [offset, setOffset] = useState(LIMIT);
-  const [products, setProducts] = useState<IProductRes[]>(initialProducts);
-  const [hasMoreData, setHasMoreData] = useState(true);
-  const loadMoreProducts = async () => {
-    if (hasMoreData) {
-      const productsList = await getProducts(0, LIMIT);
-      console.log(productsList);
-      if (productsList.length == 0) {
-        setHasMoreData(false);
-      }
-
-      setProducts((prevProducts) => [...prevProducts, ...productsList]);
-      setOffset((prevOffset) => prevOffset + LIMIT);
-    }
-  };
   return (
     <>
-      <div>
-        {products.map((product) => (
-          <SimpleCard {...product} key={product.name} redirectLink="/" />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-10 w-full xl:grid-cols-4">
+        {initialProducts.map((product) => (
+          <SimpleCard
+            {...product}
+            image={product.images}
+            key={product.name}
+            redirectLink="/"
+            className="w-full sm:h-[25vh] md:h-[50vh] h-[30vh]"
+          />
         ))}
-      </div>
-      <div className="...">
-        {hasMoreData ? (
-          <button className="..." onClick={loadMoreProducts}>
-            Load More Products
-          </button>
-        ) : (
-          <p className="...">No more products to load</p>
-        )}
       </div>
     </>
   );

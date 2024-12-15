@@ -3,27 +3,21 @@ import React from "react";
 import InfiniteScroll from "@/components/ui/infinitescroll";
 import { Loader2 } from "lucide-react";
 import { IProduct } from "@/model/Product";
-import { getProducts } from "@/utils/fetchData";
+import { getProducts, IProductRes } from "@/utils/fetchData";
 import ProductList from "@/components/productList";
 
 const InfiniteScrollDemo = () => {
   const [page, setPage] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
   const [hasMore, setHasMore] = React.useState(true);
-  const [products, setProducts] = React.useState<IProduct[]>([]);
+  const [products, setProducts] = React.useState<IProductRes[]>([]);
 
   const next = async () => {
     if (hasMore) {
-      console.log("data");
-      const productsList = await fetch("http://localhost:3000/api/products").then((res) =>
-        res.json()
-      );
+      const productsList = await getProducts(page, 10);
       console.log(productsList);
-      setHasMore(false);
-      setProducts(productsList.data);
-      setPage((prev) => prev + 1);
-    } else {
-      console.log("nothing left to load");
+      setHasMore(productsList.length !== 0);
+      setProducts(productsList);
+      setPage((prev) => prev + 10);
     }
   };
 
@@ -36,7 +30,7 @@ const InfiniteScrollDemo = () => {
         </div>
       </div>
       <InfiniteScroll hasMore={hasMore} next={next} threshold={1}>
-        {<Loader2 className="my-4 h-8 w-8 animate-spin" />}
+        {hasMore && <Loader2 className="my-4 h-8 w-8 animate-spin" />}
       </InfiniteScroll>
     </div>
   );

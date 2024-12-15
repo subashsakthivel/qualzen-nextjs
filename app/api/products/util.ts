@@ -3,6 +3,7 @@ import { IProduct, Product, productSchema } from "@/model/Product";
 import { ErrorRequest } from "@/utils/responseUtil";
 import { S3Util } from "@/utils/S3Util";
 import { Types } from "mongoose";
+import { v4 as uuid } from "uuid";
 
 async function fetchAllProducts() {
   try {
@@ -155,8 +156,11 @@ export async function handleGetOperation(operation: string | null, params: URLSe
 
 export async function handlePostOperation(operation: string, form: FormData) {
   if (operation === "save") {
-    const productData = productSchema.parse(form.get("productData") as string);
+    const formObject = JSON.parse(form.get("productData") as string);
 
+    formObject.uid = uuid() as string;
+    formObject.createdAt = new Date();
+    formObject.updatedAt = new Date();
     const imageCount = parseInt((form.get("imageCount") || "0") as string);
     const imageList: File[] = [];
 
@@ -165,9 +169,10 @@ export async function handlePostOperation(operation: string, form: FormData) {
     }
     const images = await S3Util.getInstance().uploadFiles(imageList);
 
+    console.log(formObject);
     try {
-      const imageList = Array.isArray(images) ? images : [images];
-      await insertProduct({ ...productData, images: imageList });
+      formObject.images = images;
+      await insertProduct(productSchema.parse(formObject));
     } catch (err) {
       S3Util.getInstance().deleteFiles(images);
       throw err;

@@ -3,6 +3,7 @@ import { Category, categorySchema, ICategory } from "@/model/Category";
 import { ErrorRequest } from "@/utils/responseUtil";
 import { S3Util } from "@/utils/S3Util";
 import { randomUUID } from "crypto";
+import { v4 as uuid } from "uuid";
 import { Types } from "mongoose";
 
 async function fetchAllCategories() {
@@ -191,7 +192,10 @@ export async function handleGetOperation(operation: string | null, params: URLSe
 
 export async function handlePostOperation(operation: string, form: FormData) {
   if (operation === "save") {
-    const categoryData = categorySchema.parse(form.get("categoryData"));
+    const formObject = JSON.parse(form.get("categoryData") as string);
+    formObject.uid = uuid() as string;
+
+    const categoryData = categorySchema.parse(formObject);
 
     if (categoryData.parentCategory === "None" || categoryData.parentCategory === "") {
       categoryData.parentCategory = undefined;
