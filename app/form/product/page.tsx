@@ -64,6 +64,7 @@ export default function ProductForm() {
   }
 
   async function saveProduct(formData: FormData) {
+    let redirectPath = undefined;
     try {
       const productData = {
         name: formData.get("name") as string,
@@ -95,10 +96,14 @@ export default function ProductForm() {
 
       console.log(response.status);
       if (response.status === 200) {
-        redirect("/product-gallery");
+        redirectPath = "/product-gallery";
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      if (redirectPath) {
+        redirect(redirectPath);
+      }
     }
   }
 

@@ -11,7 +11,7 @@ const ProductList = ({ initialProducts }: { initialProducts: IProductRes[] }) =>
             {...product}
             image={product.images}
             key={product.name}
-            redirectLink="/"
+            redirectLink={`/${product.uid}/${product.name.replaceAll(" ", "-")}`}
             className="w-full sm:h-[25vh] md:h-[50vh] h-[30vh]"
           />
         ))}

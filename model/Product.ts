@@ -30,7 +30,7 @@ export const productSchema: z.ZodType<IProduct> = z.object({
   name: z.string(),
   description: z.string(),
   category: z.union([z.string(), categorySchema]),
-  properties: z.array(z.object({ name: z.string(), value: z.array(z.string()) })).max(4),
+  properties: z.array(z.object({ name: z.string(), value: z.array(z.string()) })).max(6),
   marginPrice: z.number(),
   marketPrice: z.number(),
   sellPrice: z.number(),
@@ -66,7 +66,7 @@ const ProductDBSchema: Schema<IProduct> = new Schema<IProduct>(
     properties: {
       type: [
         {
-          key: {
+          name: {
             type: String,
             require: true,
           },
