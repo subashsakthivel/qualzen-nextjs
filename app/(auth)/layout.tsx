@@ -1,8 +1,10 @@
-import SessionProviderClientComponent from "@/components/SessionProviderClientComponent";
+import SessionProviderClientComponent from "@/app/(auth)/SessionProviderClientComponent";
 import { authOptions } from "@/lib/authOptions";
+import { Inter } from "next/font/google";
+import "../globals.css";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
-import { SessionProvider } from "next-auth/react";
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Login",
@@ -16,8 +18,12 @@ export default async function RootLayout({
 }>) {
   const session = await getServerSession(authOptions);
   return (
-    <SessionProviderClientComponent session={session}>
-      {children}
-    </SessionProviderClientComponent>
+    <html lang="en" className="h-full">
+      <body>
+        <SessionProviderClientComponent session={session}>
+          {children}
+        </SessionProviderClientComponent>
+      </body>
+    </html>
   );
 }

@@ -1,0 +1,95 @@
+import { z } from "zod";
+import mongoose from "mongoose";
+
+// Zod schema for UserInfo
+export const userInfoObject = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+  image: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  zipCode: z.string().optional(),
+  isEMailVerified: z.boolean().default(false),
+  isPhoneVerified: z.boolean().default(false),
+  role: z.enum(["user", "admin"]).default("user"),
+  token: z.string().min(10, "Token must be at least 10 characters long"),
+  createdAt: z.date().optional(), // Optional for validation, as it's auto-generated
+  updatedAt: z.date().optional(), // Optional for validation, as it's auto-generated
+});
+
+// Mongoose schema for UserInfo
+export const userInfoDbSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    image: {
+      type: String,
+      trim: true,
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
+    state: {
+      type: String,
+      trim: true,
+    },
+    country: {
+      type: String,
+      trim: true,
+    },
+    zipCode: {
+      type: String,
+      trim: true,
+    },
+    isEMailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    token: {
+      type: String,
+      required: true,
+      unique: true, // Ensure token is unique
+    },
+  },
+  { timestamps: true }
+);
+
+export type UserInfo = z.infer<typeof userInfoObject>;
+export const UserInfoModel =
+  mongoose.models.UserInfo || mongoose.model("UserInfo", userInfoDbSchema);

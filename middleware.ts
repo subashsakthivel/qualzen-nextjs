@@ -1,27 +1,24 @@
 // import { withA as middleware } from "@/auth";
 // //import {} from "next-auth/middleware";
 import { withAuth } from "next-auth/middleware";
-import { pages } from "next/dist/build/templates/app-page";
 import { NextRequest, NextResponse } from "next/server";
+import { authOptions } from "./lib/authOptions";
 // import { withAuth as middleware } from "next-auth/middleware";
 export default withAuth(
   // `withAuth` augments your `Request` with the user's token.
-  function middleware(req) {
-    console.log("middleware page");
 
-    console.log(req.nextauth);
-    console.log(req.nextauth.token);
+  function middleware(req) {
+    // console.log(req.nextauth.token);
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
-        console.log("authorized ", token);
-        return token?.role === "admin";
-      },
+      authorized: ({ token }) => token?.role === "admin",
     },
     pages: {
       signIn: "/login",
+      error: "/login",
     },
+    jwt: { decode: authOptions.jwt?.decode },
   }
 );
 // middleware((req) => {
@@ -36,12 +33,9 @@ export default withAuth(
 //     return Response.redirect(newUrl);
 //   }
 // });
-export function middleware(request: NextRequest) {
-  console.log("middleware function");
-  // Redirect to login page if not authenticated
-  return NextResponse.next();
-}
+
 const protectedPages = ["/"];
-export const config = { matcher: ["/jdi"] };
+
+export const config = { matcher: ["/admin"] };
 
 //export default middleware;
