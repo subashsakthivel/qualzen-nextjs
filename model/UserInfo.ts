@@ -4,9 +4,11 @@ import mongoose from "mongoose";
 // Zod schema for UserInfo
 export const userInfoObject = z.object({
   name: z.string().min(1, "Name is required"),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-  image: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters long").optional(),
+  picture: z.string().optional(),
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -29,6 +31,14 @@ export const userInfoDbSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    first_name: {
+      type: String,
+      trim: true,
+    },
+    last_name: {
+      type: String,
+      trim: true,
+    },
     email: {
       type: String,
       required: true,
@@ -37,10 +47,9 @@ export const userInfoDbSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
       trim: true,
     },
-    image: {
+    picture: {
       type: String,
       trim: true,
     },
