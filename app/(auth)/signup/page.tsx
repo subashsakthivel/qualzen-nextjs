@@ -5,8 +5,16 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import AuthProviders from "@/components/auth/providers";
+import { use } from "react";
+import { Alert } from "@/components/ui/alert";
+import { AUTH_ERRORS } from "@/constants/erros";
 
-export default function NewsletterSignup() {
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function Signup({ searchParams }: Props) {
+  const { error } = use<{ error?: string }>(searchParams);
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 p-4">
       <Card className="w-full max-w-md shadow-lg">
@@ -29,6 +37,13 @@ export default function NewsletterSignup() {
               />
             </svg>
           </div> */}
+          {error && (
+            <Alert variant="destructive">
+              {typeof error === "string" && error in AUTH_ERRORS
+                ? AUTH_ERRORS[error as keyof typeof AUTH_ERRORS].message
+                : AUTH_ERRORS.UNKNOWN_ERROR.message}
+            </Alert>
+          )}
           <h2 className="text-center text-2xl font-bold">Create an Account</h2>
           <p className="text-center text-sm text-muted-foreground">
             Sign up to access exclusive deals, new arrivals, and special offers tailored just for
@@ -37,7 +52,6 @@ export default function NewsletterSignup() {
         </CardHeader>
         <CardContent className="space-y-6">
           <AuthProviders />
-
           <div className="relative flex items-center">
             <Separator className="flex-1" />
             <span className="mx-2 text-xs text-muted-foreground">OR</span>

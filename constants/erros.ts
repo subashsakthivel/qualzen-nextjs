@@ -12,8 +12,12 @@ export const AUTH_ERRORS = {
     code: "USER_ALREADY_EXISTS",
   },
   OAuthAccountNotLinked: {
-    message: "OAuth account is not linked",
+    message: "Please Try to login with  different account",
     code: "OAuthAccountNotLinked",
+  },
+  UNKNOWN_ERROR: {
+    message: "Unknown error occurred",
+    code: "UNKNOWN_ERROR",
   },
 };
 

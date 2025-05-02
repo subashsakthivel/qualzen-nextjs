@@ -8,8 +8,24 @@ import { AppleProfile } from "next-auth/providers/apple";
 import clientPromise from "./mongodb";
 import { Adapter } from "next-auth/adapters";
 import jwt from "jsonwebtoken";
-import { checkAndAddUser, getUserByEmail, verifyEmailAndPassword } from "@/utils/dbUtil";
-import { userInfoObject } from "@/model/UserInfo";
+import { getUserByEmail, verifyEmailAndPassword } from "@/util/dbUtil";
+import { UserInfoModel, UserInfoType, UserInfoZO } from "@/model/UserInfo";
+import { CommonUtil } from "@/util/util";
+import dbConnect from "./mongoose";
+
+async function checkAndAddUser(user: UserInfoType) {
+  await dbConnect();
+  const existingUser = await UserInfoModel.findOne({
+    where: { email: user.email },
+  });
+
+  if (!existingUser) {
+    await UserInfoModel.create(user);
+    console.log("User added to the database:", user);
+  } else {
+    console.log("User already exists in the database:", existingUser);
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -73,15 +89,17 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: MongoDBAdapter(clientPromise) as Adapter,
   callbacks: {
-    async jwt({ token, account, profile, session, user }) {
+    async jwt({ token, account, profile, session, user, trigger }) {
       //persist user data in token
-      try {
-        const userInfo = userInfoObject.parse({ ...user, token, ...profile, ...account });
-        checkAndAddUser(userInfo);
-      } catch (error) {
-        console.error("Zod validation error:", error);
-        throw error; // Rethrow the error to the parent
+      if (trigger === "signUp") {
+        CommonUtil.filterObjectByType(
+          { ...token, ...account, ...profile, ...session, ...user },
+          Object.keys(UserInfoZO.shape)
+        );
+        const userInfo = CommonUtil.getValidatedObj(user, UserInfoZO);
+        checkAndAddUser(userInfo as UserInfoType);
       }
+
       console.log("jwt", token, account, profile, session, user);
       if (user && account) {
         token.accessToken = account.access_token;

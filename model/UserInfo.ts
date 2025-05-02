@@ -2,7 +2,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 
 // Zod schema for UserInfo
-export const userInfoObject = z.object({
+export const UserInfoZO = z.object({
   name: z.string().min(1, "Name is required"),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -99,6 +99,6 @@ export const userInfoDbSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export type UserInfo = z.infer<typeof userInfoObject>;
+export type UserInfoType = z.infer<typeof UserInfoZO>;
 export const UserInfoModel =
   mongoose.models.UserInfo || mongoose.model("UserInfo", userInfoDbSchema);
