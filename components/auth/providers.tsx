@@ -9,6 +9,7 @@ const AuthProviders = () => {
   return (
     <div className="flex flex-col space-y-3">
       <Button
+        type="button"
         variant="outline"
         className="flex items-center justify-center gap-2"
         onClick={() => signIn("google")}
@@ -17,6 +18,7 @@ const AuthProviders = () => {
         <span>Continue with Google</span>
       </Button>
       <Button
+        type="button"
         variant="outline"
         className="flex items-center justify-center gap-2"
         onClick={() => signIn("apple")}
