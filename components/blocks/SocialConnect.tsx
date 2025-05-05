@@ -1,19 +1,13 @@
 import React from "react";
 
-import { cn } from "@/utils/utils";
+import { cn } from "@/lib/utils";
 import { VariantProps } from "class-variance-authority";
 
-export interface SocialConnectProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+export interface SocialConnectProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const SocialConnect = ({ className }: SocialConnectProps) => {
   return (
-    <div
-      className={cn(
-        "w-full h-auto flex items-center justify-center flex-wrap",
-        className
-      )}
-    >
+    <div className={cn("w-full h-auto flex items-center justify-center flex-wrap", className)}>
       <button className="group transition-all duration-500 hover:-translate-y-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -21,13 +15,7 @@ const SocialConnect = ({ className }: SocialConnectProps) => {
           fill="none"
           className="w-8 h-8 md:w-10 md:h-10"
         >
-          <rect
-            x="1.13867"
-            width="91.5618"
-            height="91.5618"
-            rx="15"
-            fill="#337FFF"
-          />
+          <rect x="1.13867" width="91.5618" height="91.5618" rx="15" fill="#337FFF" />
           <path
             d="M57.4233 48.6403L58.7279 40.3588H50.6917V34.9759C50.6917 32.7114 51.8137 30.4987 55.4013 30.4987H59.1063V23.4465C56.9486 23.1028 54.7685 22.9168 52.5834 22.8901C45.9692 22.8901 41.651 26.8626 41.651 34.0442V40.3588H34.3193V48.6403H41.651V68.671H50.6917V48.6403H57.4233Z"
             fill="white"
@@ -78,13 +66,7 @@ const SocialConnect = ({ className }: SocialConnectProps) => {
           fill="none"
           className="w-8 h-8 md:w-10 md:h-10"
         >
-          <rect
-            x="0.138672"
-            width="91.5618"
-            height="91.5618"
-            rx="15"
-            fill="black"
-          />
+          <rect x="0.138672" width="91.5618" height="91.5618" rx="15" fill="black" />
           <path
             d="M50.7568 42.1716L69.3704 21H64.9596L48.7974 39.383L35.8887 21H21L40.5205 48.7983L21 71H25.4111L42.4788 51.5869L56.1113 71H71L50.7557 42.1716H50.7568ZM44.7152 49.0433L42.7374 46.2752L27.0005 24.2492H33.7756L46.4755 42.0249L48.4533 44.7929L64.9617 67.8986H58.1865L44.7152 49.0443V49.0433Z"
             fill="white"
@@ -98,13 +80,7 @@ const SocialConnect = ({ className }: SocialConnectProps) => {
           fill="none"
           className="w-8 h-8 md:w-10 md:h-10"
         >
-          <rect
-            x="1.13867"
-            width="91.5618"
-            height="91.5618"
-            rx="15"
-            fill="#00D95F"
-          />
+          <rect x="1.13867" width="91.5618" height="91.5618" rx="15" fill="#00D95F" />
           <path
             d="M23.5068 66.8405L26.7915 54.6381C24.1425 49.8847 23.3009 44.3378 24.4211 39.0154C25.5413 33.693 28.5482 28.952 32.89 25.6624C37.2319 22.3729 42.6173 20.7554 48.0583 21.1068C53.4992 21.4582 58.6306 23.755 62.5108 27.5756C66.3911 31.3962 68.7599 36.4844 69.1826 41.9065C69.6053 47.3286 68.0535 52.7208 64.812 57.0938C61.5705 61.4668 56.8568 64.5271 51.5357 65.7133C46.2146 66.8994 40.6432 66.1318 35.8438 63.5513L23.5068 66.8405ZM36.4386 58.985L37.2016 59.4365C40.6779 61.4918 44.7382 62.3423 48.7498 61.8555C52.7613 61.3687 56.4987 59.5719 59.3796 56.7452C62.2605 53.9185 64.123 50.2206 64.6769 46.2279C65.2308 42.2351 64.445 38.1717 62.4419 34.6709C60.4388 31.1701 57.331 28.4285 53.6027 26.8734C49.8745 25.3184 45.7352 25.0372 41.8299 26.0736C37.9247 27.11 34.4729 29.4059 32.0124 32.6035C29.5519 35.801 28.2209 39.7206 28.2269 43.7514C28.2237 47.0937 29.1503 50.3712 30.9038 53.2192L31.3823 54.0061L29.546 60.8167L36.4386 58.985Z"
             fill="white"
@@ -124,14 +100,7 @@ const SocialConnect = ({ className }: SocialConnectProps) => {
           fill="none"
           className="w-8 h-8 md:w-10 md:h-10"
         >
-          <rect
-            x="1.13867"
-            y="1"
-            width="91.5618"
-            height="91.5618"
-            rx="15"
-            fill="#FF0000"
-          />
+          <rect x="1.13867" y="1" width="91.5618" height="91.5618" rx="15" fill="#FF0000" />
           <path
             fillRule="evenodd"
             clipRule="evenodd"
