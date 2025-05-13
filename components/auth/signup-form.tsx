@@ -2,10 +2,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import AuthProviders from "./providers";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
 import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
 

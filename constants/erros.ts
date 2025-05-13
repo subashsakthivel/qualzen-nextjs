@@ -1,3 +1,5 @@
+import { ZodError, ZodIssue } from "zod";
+
 export const AUTH_ERRORS = {
   INVALID_CREDENTIALS: {
     message: "Invalid credentials",
@@ -20,6 +22,13 @@ export const AUTH_ERRORS = {
     code: "UNKNOWN_ERROR",
   },
 };
+
+export class InvalidInputError extends Error {
+  constructor(error: ZodError) {
+    super(error.message);
+    this.name = "InvalidInputError";
+  }
+}
 
 export const INPUT_ERRORS = {
   INVALID_INPUT: {

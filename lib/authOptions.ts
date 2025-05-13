@@ -7,37 +7,33 @@ import { GoogleProfile } from "next-auth/providers/google";
 import { AppleProfile } from "next-auth/providers/apple";
 import clientPromise from "./mongodb";
 import { Adapter } from "next-auth/adapters";
-import jwt from "jsonwebtoken";
 import { getUserByEmail, verifyEmailAndPassword } from "@/util/dbUtil";
-import { UserInfoModel, UserInfoType, UserInfoZO } from "@/model/UserInfo";
+import { UserInfoModel, UserInfoSchema, UserInfoType } from "@/model/UserInfo";
 import { CommonUtil } from "@/util/util";
 import dbConnect from "./mongoose";
+import { InvalidInputError } from "@/constants/erros";
 
 async function checkAndAddUser(user: UserInfoType) {
   await dbConnect();
-  const existingUser = await UserInfoModel.findOne({
-    where: { email: user.email },
-  });
-
-  if (!existingUser) {
+  const existingUser = await UserInfoModel.findOne({ email: user.email });
+  if (existingUser) {
+    console.log("User already exists in the database:", existingUser);
+  } else {
     await UserInfoModel.create(user);
     console.log("User added to the database:", user);
-  } else {
-    console.log("User already exists in the database:", existingUser);
   }
 }
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID as string,
       clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
+      allowDangerousEmailAccountLinking: true,
       profile(profile: GoogleProfile) {
-        console.log(profile);
         return {
           ...profile,
-          role: profile.role ?? "user",
-          id: "dd",
+          id: profile.sub,
+          role: "user",
           image: profile.picture,
         };
       },
@@ -91,46 +87,37 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, profile, session, user, trigger }) {
       //persist user data in token
-      if (trigger === "signUp") {
-        CommonUtil.filterObjectByType(
-          { ...token, ...account, ...profile, ...session, ...user },
-          Object.keys(UserInfoZO.shape)
-        );
-        const userInfo = CommonUtil.getValidatedObj(user, UserInfoZO);
-        checkAndAddUser(userInfo as UserInfoType);
-      }
+      console.log("trigger", trigger);
 
-      console.log("jwt", token, account, profile, session, user);
+      if (trigger === "signUp" || trigger === "update" || trigger === "signIn") {
+        console.warn("jwt token", token, account, profile, session, user, trigger);
+        const userObj = CommonUtil.filterObjectByType(
+          { ...token, ...account, ...profile, ...session, ...user },
+          Object.keys(UserInfoSchema.shape)
+        );
+        console.log("userObj", userObj);
+        const { data, error, success } = UserInfoSchema.safeParse(userObj);
+        if (error) {
+          console.error("Zod validation error:", error);
+          throw new InvalidInputError(error);
+        } else {
+          console.log("User data is valid:", data);
+          checkAndAddUser(data as UserInfoType);
+        }
+      }
       if (user && account) {
         token.accessToken = account.access_token;
-        //token.id = profile.id;
         token.role = user.role;
       }
+
       return token;
     },
     async session({ session, token }) {
       if (session?.user) session.user.role = token.role;
-      // session.accessToken = token.accessToken;
-      // session.id = token.sub;
       return session;
     },
-    // redirect({ baseUrl }) {
-    //   console.log("base url", baseUrl);
-    //   return "/login";
-    // },
-  },
-  jwt: {
-    async encode({ secret, token }) {
-      if (!token) throw new Error("Token is undefined");
-      return jwt.sign(token as object, secret);
-    },
-    async decode({ secret, token }) {
-      if (!token) throw new Error("Token is undefined");
-      const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
-      return {
-        ...decoded,
-        role: decoded.role || "user",
-      };
+    redirect({ baseUrl }) {
+      return baseUrl + "/private";
     },
   },
   session: {

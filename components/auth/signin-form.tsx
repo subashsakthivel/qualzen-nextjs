@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthProviders from "./providers";
-import { signIn } from "next-auth/react";
 import { AUTH_URLS } from "@/constants/url-mapper";
-import { EyeOffIcon, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 
 export function SignInForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
   return (
