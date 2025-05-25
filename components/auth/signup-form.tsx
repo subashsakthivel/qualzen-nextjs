@@ -5,10 +5,22 @@ import { Input } from "@/components/ui/input";
 import AuthProviders from "./providers";
 import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
+import { signIn } from "next-auth/react";
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
+  async function handleSubmit(formdata: FormData) {
+    const response = await signIn("credentials", {
+      username: formdata.get("username"),
+      email: formdata.get("email"),
+      password: formdata.get("password"),
+    });
+    if (response?.error) {
+      console.error("Error signing up:", response.error); // Handle error
+    }
+  }
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form className={cn("flex flex-col gap-6", className)} {...props} action={handleSubmit}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Create your account</h1>
       </div>

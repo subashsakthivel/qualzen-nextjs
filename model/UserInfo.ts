@@ -93,6 +93,6 @@ const userInfoDbSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export type UserInfoType = z.infer<typeof UserInfoSchema>;
+export type UserInfo = z.infer<typeof UserInfoSchema>;
 export const UserInfoModel =
-  mongoose.models.UserInfo || mongoose.model("UserInfo", userInfoDbSchema);
+  mongoose.models?.UserInfo || mongoose.model("UserInfo", userInfoDbSchema);

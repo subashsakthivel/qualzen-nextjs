@@ -1,23 +1,31 @@
 import mime from "mime-types";
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   ObjectCannedACL,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { s3Config } from "@/config/s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ErrorRequest } from "./responseUtil";
+import crypto from "crypto";
+
+const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
+const BUCKET_REGION = process.env.S3_BUCKET_REGION!;
+const ACCESS_KEY = process.env.S3_ACCESS_KEY!;
+const SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY!;
+const DEFAULT_FILES_ACL = ObjectCannedACL.public_read;
 
 export class S3Util {
   private static instance: S3Util;
   private client: S3Client;
 
-  constructor() {
+  private constructor() {
     this.client = new S3Client({
-      region: s3Config.defaultRegion,
+      region: BUCKET_REGION,
       credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY || "",
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+        accessKeyId: ACCESS_KEY,
+        secretAccessKey: SECRET_ACCESS_KEY,
       },
     });
   }
@@ -29,61 +37,69 @@ export class S3Util {
     return S3Util.instance;
   }
 
-  private generateFileKey(file: File, timestamp: number): string {
-    console.log(file);
-    return `${file.name}-${timestamp}.${file.name.split(".").pop()}`;
+  private generateFileKey(): string {
+    return crypto.randomBytes(32).toString("hex");
   }
 
-  async uploadFile(file: File, ACL?: ObjectCannedACL) {
-    const filekey = this.generateFileKey(file, Date.now());
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    const command = new PutObjectCommand({
-      Bucket: s3Config.bucketName,
-      Key: filekey,
-      Body: buffer,
-      ContentType: mime.lookup(file.name) || "image/jpeg",
-      ACL: ACL || s3Config.defaultFilesACL,
+  public async getObjectUrl(fileKey: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
     });
-
-    await this.client.send(command);
-    const url = `https://${s3Config.bucketName}.s3.amazonaws.com/${filekey}`;
-    console.log(`${file.name} uploaded ${url}`);
+    const url = await getSignedUrl(this.client, command, { expiresIn: 3600 });
     return url;
   }
 
-  async deleteFile(url: string) {
-    const command = new DeleteObjectCommand({
-      Bucket: s3Config.bucketName,
-      Key: url.split("s3.amazonaws.com/").pop(),
+  public async uploadFile(file: File, ACL?: ObjectCannedACL, mimeType?: string): Promise<string> {
+    const fileKey = this.generateFileKey();
+    const buffer = Buffer.from(await file.arrayBuffer());
+    // use sharp to reize the image if needed
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+      Body: buffer,
+      ContentType: mimeType || mime.lookup(file.name) || "image/jpeg",
+      ACL: ACL || DEFAULT_FILES_ACL,
     });
-    console.log(`${url} deleted`);
+
+    await this.client.send(command);
+    const url = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileKey}`;
+    console.log(`${file.name} uploaded ${url}`);
+    return fileKey;
+  }
+
+  async deleteFile(fileKey: string) {
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+    });
+    console.log(`${fileKey} deleted`);
     await this.client.send(command);
   }
 
-  async uploadFiles(files: File | File[]) {
+  async uploadFiles(files: File | File[]): Promise<string[] | string> {
     try {
       if (Array.isArray(files)) {
-        const paths = await Promise.all(files.map(async (file) => this.uploadFile(file)));
-        return paths;
+        const fileKeys = await Promise.all(files.map(async (file) => this.uploadFile(file)));
+        return fileKeys;
       }
 
-      const path = await this.uploadFile(files);
-      return path;
+      const fileKey = await this.uploadFile(files);
+      return fileKey;
     } catch (err) {
       console.error(err);
       throw new ErrorRequest("Cannot delete the files", 543);
     }
   }
 
-  async deleteFiles(urls: string | string[]) {
+  async deleteFiles(fileKeys: string | string[]) {
     try {
-      if (Array.isArray(urls)) {
-        const paths = await Promise.all(urls.map(async (url) => this.deleteFile(url)));
+      if (Array.isArray(fileKeys)) {
+        const paths = await Promise.all(fileKeys.map(async (fileKey) => this.deleteFile(fileKey)));
         return paths;
       }
 
-      const path = await this.deleteFile(urls);
+      const path = await this.deleteFile(fileKeys);
       return path;
     } catch (err) {
       console.error(err);

@@ -1,48 +1,37 @@
-import mongoose, { Model, Schema, model, models, mongo } from "mongoose";
-import { z } from "zod";
+import { TCategory } from "@/schema/Category";
+import mongoose from "mongoose";
+import mongoosepPaginate from "mongoose-paginate-v2";
 
-export interface ICategory {
-  uid: string;
-  name: string;
-  description: string;
-  parentCategory?: string | ICategory | null;
-  image?: string;
-}
-
-export const categorySchema: z.ZodType<ICategory> = z.object({
-  uid: z.string(),
-  name: z.string(),
-  description: z.string(),
-  parentCategory: z.union([z.string(), z.lazy(() => categorySchema), z.null()]).optional(),
-  image: z.string().optional(),
+const CategoryDbSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  description: { type: String, required: false },
+  parent_category: {
+    type: mongoose.Types.ObjectId,
+    ref: "Category",
+    default: null,
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
+  updated_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-const CategoryDBSchema = new Schema(
-  {
-    uid: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    description: { type: String },
-    image: { type: String, required: true },
-    parentCategory: {
-      type: mongoose.Types.ObjectId,
-      ref: "Category",
-      default: null,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+CategoryDbSchema.plugin(mongoosepPaginate);
 
-export const Category: Model<ICategory> =
-  models.Category || model<ICategory>("Category", CategoryDBSchema);
+export const CategoryModel =
+  (mongoose.models?.Category as mongoose.PaginateModel<TCategory>) ||
+  mongoose.model<TCategory, mongoose.PaginateModel<TCategory>>("Category", CategoryDbSchema);

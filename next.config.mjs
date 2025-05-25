@@ -1,5 +1,7 @@
 /* @type {import('next').NextConfig} */
 
+import { hostname } from "os";
+
 const nextConfig = {
   reactStrictMode: false,
   images: {
@@ -19,6 +21,18 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "qualzen-store.s3.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "hebbkx1anhila5yf.public.blob.vercel-storage.com", // todo:  remove
+      },
+      {
+        protocol: "https",
+        hostname: "static.cdn-luma.com", // todo:  remove
+      },
+      {
+        protocol: "https",
+        hostname: "lumalabs.ai", // todo:  remove
       },
     ],
   },

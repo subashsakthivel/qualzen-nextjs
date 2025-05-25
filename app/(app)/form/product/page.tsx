@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { PlusCircle, RefreshCcwIcon, Router, Trash2Icon, Upload } from "lucide-react";
+import { PlusCircle, RefreshCcwIcon, Router, Skull, Trash2Icon, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,21 +32,30 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import TagInput from "@/components/ui/taginput";
 import { useEffect, useState } from "react";
-import { ProdcutStatus } from "@/utils/Enums";
 import CategoryList from "@/components/admin/categoryList";
-import QueryClientHook from "@/components/admin/queryClientHook";
+import QueryClientHook from "@/components/queryClientHook";
 import axios from "axios";
-import { IProperty } from "@/model/Product";
 import { redirect } from "next/navigation";
-
-interface IPropertyForm extends Pick<IProperty, "name"> {
-  value: string | string[];
-}
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getDataFromServer, postDataToServer } from "@/util/dataAPI";
+import { TCategory } from "@/schema/Category";
+import { DataSourceMap } from "@/model/DataSourceMap";
+import { TProduct } from "@/schema/Product";
 
 export default function ProductForm() {
-  const [properties, setProperties] = useState<IPropertyForm[]>([]);
+  const [attributes, setAttributes] = useState([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
+
+  const { data: categoryList, status } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => getDataFromServer<TCategory>(DataSourceMap.category, {}),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data) => postDataToServer(DataSourceMap.product, data),
+    onSuccess: () => redirect("/"),
+  });
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
     if (imageFiles?.length === 9) {
@@ -69,17 +78,18 @@ export default function ProductForm() {
       const productData = {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
+        sku: formData.get("sku") as string,
+        price: parseFloat(formData.get("price") as string),
+        discounted_price: parseFloat(formData.get("discountedPrice") as string),
+        stock_quantity: parseInt(formData.get("stock") as string),
         category: formData.get("category") as string,
-        properties: properties,
-        marginPrice: parseFloat(formData.get("marginPrice") as string),
-        marketPrice: parseFloat(formData.get("marketPrice") as string),
-        sellPrice: parseFloat(formData.get("sellPrice") as string),
-        stock: parseInt(formData.get("stock") as string),
-        status: formData.get("status") as ProdcutStatus,
-        tags: tags,
+        brand: formData.get("brand") as string,
+        attributes: attributes,
+        variants: [],
+        is_active: formData.get("status") === "active",
       };
       const requestFormData = new FormData();
-      requestFormData.append("productData", JSON.stringify(productData));
+      requestFormData.append("data", JSON.stringify(productData));
       requestFormData.append("imageCount", imageFiles?.length.toString() || "0");
       if (imageFiles) {
         imageFiles.forEach((file, index) => {
@@ -87,14 +97,11 @@ export default function ProductForm() {
         });
       }
 
-      requestFormData.append("operation", "save");
-      const response = await axios.post("/api/products", requestFormData, {
+      const response = await axios.post("/api/dataAPI/product", requestFormData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      console.log(response.status);
       if (response.status === 200) {
         redirectPath = "/product-gallery";
       }
@@ -124,6 +131,7 @@ export default function ProductForm() {
           autoComplete="off"
           action={saveProduct}
           onKeyDown={handleKeyDown}
+          encType="multipart/form-data"
         >
           <div className="flex items-center gap-4">
             <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
@@ -312,30 +320,6 @@ export default function ProductForm() {
               </Card>
             </div>
             <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-              <Card x-chunk="dashboard-07-chunk-3">
-                <CardHeader>
-                  <CardTitle>Product Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6">
-                    <div className="grid gap-3">
-                      <Label htmlFor="status">Status</Label>
-                      <Select name="status">
-                        <SelectTrigger id="status" aria-label="Select status">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.values(ProdcutStatus).map((val, index) => (
-                            <SelectItem value={val} key={index}>
-                              {val}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
               <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
                 <CardHeader className="felx flex-row items-center justify-around">
                   <CardTitle>Product Images</CardTitle>
@@ -385,7 +369,7 @@ export default function ProductForm() {
                           <Upload className="h-4 w-4 text-muted-foreground" />
                           <input
                             type="file"
-                            name="ImageSrc"
+                            name="image"
                             className="hidden"
                             onChange={onImageFileChange}
                             multiple
