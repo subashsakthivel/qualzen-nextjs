@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { UserInfoSchema } from "./UserInfo";
 
-const AddressSchema = z.object({
+export const AddressSchema: z.ZodType = z.object({
   uid: z.string().uuid(),
-  user: z.string().uuid(),
+  user: z.union([z.string().uuid(), UserInfoSchema]),
   contact_name: z.string().min(1),
   contact_number: z.string().min(10),
   company_name: z.string().optional(),
@@ -17,4 +18,4 @@ const AddressSchema = z.object({
   updated_at: z.date().default(new Date()),
 });
 
-export type Address = z.infer<typeof AddressSchema>;
+export type TAddress = z.infer<typeof AddressSchema>;

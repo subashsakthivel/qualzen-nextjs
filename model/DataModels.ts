@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { CategoryModel } from "./Category";
 import mongoose from "mongoose";
-import { UserInfoModel, UserInfoSchema } from "./UserInfo";
-import { CategorySchema } from "./schema/DataSchema";
+import { UserInfoModel } from "./UserInfo";
+import { CategorySchema } from "@/schema/Category";
+import { UserInfoSchema } from "@/schema/UserInfo";
 export interface DataModelInterface {
   schema: z.ZodType;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;

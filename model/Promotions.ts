@@ -1,6 +1,7 @@
+import { TPromotions } from "@/schema/Promotions";
 import mongoose from "mongoose";
 
-const PromotionsDBSchema = new mongoose.Schema({
+const PromotionsDBSchema = new mongoose.Schema<TPromotions>({
   uid: {
     type: String,
     required: true,

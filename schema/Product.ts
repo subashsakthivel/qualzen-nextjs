@@ -11,7 +11,7 @@ export const ProductSchema = z.object({
   stock_quantity: z.number().min(0).default(0),
   category: z.union([z.string(), CategorySchema]),
   brand: z.string().optional(),
-  image_urls: z.array(z.string()).min(1).max(10),
+  image_names: z.array(z.string()).min(1).max(10),
   attributes: z
     .array(
       z.object({

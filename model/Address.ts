@@ -1,6 +1,7 @@
+import { TAddress } from "@/schema/Address";
 import mongoose from "mongoose";
 
-const AddressDBSchema = new mongoose.Schema({
+const AddressDBSchema = new mongoose.Schema<TAddress>({
   uid: {
     type: String,
     required: true,

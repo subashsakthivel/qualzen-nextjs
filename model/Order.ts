@@ -1,6 +1,7 @@
+import { TOrder } from "@/schema/Order";
 import mongoose from "mongoose";
 
-const OrderSchema = new mongoose.Schema({
+const OrderSchema = new mongoose.Schema<TOrder>({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -78,3 +79,5 @@ const OrderSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+export const OrderModel = mongoose.model("Order", OrderSchema);

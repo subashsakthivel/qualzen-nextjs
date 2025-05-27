@@ -29,7 +29,7 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     min: 0,
   },
-  image_urls: {
+  image_names: {
     type: [String],
     default: [],
     minlength: 1,

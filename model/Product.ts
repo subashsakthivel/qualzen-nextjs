@@ -40,7 +40,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: String,
     required: false,
   },
-  image_urls: {
+  image_names: {
     type: [String],
     default: [],
   },
