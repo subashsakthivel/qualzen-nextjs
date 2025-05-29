@@ -7,7 +7,7 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
     required: true,
     trim: true,
   },
-  key_word: {
+  keyWord: {
     type: String,
     required: true,
   },
@@ -15,11 +15,11 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
     type: String,
     required: true,
   },
-  image_name: {
+  imageName: {
     type: String,
     required: false,
   },
-  on_click_url: {
+  onClickUrl: {
     type: String,
     required: false,
     validate: {
@@ -29,11 +29,11 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
       message: "Invalid URL format",
     },
   },
-  background_image_name: {
+  backgroundImageName: {
     type: String,
     required: false,
   },
-  file_name: {
+  fileName: {
     type: String,
     required: false,
   },
@@ -42,11 +42,11 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
     enum: ["banner", "article", "video", "image", "html"],
     required: true,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

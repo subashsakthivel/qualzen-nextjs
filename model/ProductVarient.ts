@@ -1,6 +1,4 @@
 import { TProductVariant } from "@/schema/ProductVarient";
-import { min } from "date-fns";
-import { create } from "domain";
 import mongoose from "mongoose";
 
 const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
@@ -14,22 +12,22 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     trim: true,
   },
-  price_modifier: {
+  priceodifier: {
     type: Number,
     required: true,
     min: 0,
   },
-  variant_specific_price: {
+  variantSpecificPrice: {
     type: Number,
     required: true,
     min: 0,
   },
-  stock_quantity: {
+  stockQuantity: {
     type: Number,
     required: true,
     min: 0,
   },
-  image_names: {
+  imageNames: {
     type: [String],
     default: [],
     minlength: 1,
@@ -51,7 +49,7 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
   },
 
-  is_active: {
+  isActive: {
     type: Boolean,
     required: true,
     default: true,
@@ -66,11 +64,11 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     min: 0,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

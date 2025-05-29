@@ -7,11 +7,11 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
     required: true,
     trim: true,
   },
-  first_name: {
+  firstName: {
     type: String,
     trim: true,
   },
-  last_name: {
+  lastName: {
     type: String,
     trim: true,
   },
@@ -33,18 +33,18 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
     type: String,
     trim: true,
   },
-  primary_address: {
+  primaryAddress: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Address",
     required: false,
   },
-  other_addresses: [
+  otherAddresses: [
     {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "Address",
     },
   ],
-  isEMailVerified: {
+  isEmailVerified: {
     type: Boolean,
     default: false,
   },

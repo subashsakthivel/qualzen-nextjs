@@ -20,12 +20,12 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     required: true,
     min: 0,
   },
-  discounted_price: {
+  discountedPrice: {
     type: Number,
     required: false,
     min: 0,
   },
-  stock_quantity: {
+  stockQuantity: {
     type: Number,
     required: true,
     min: 0,
@@ -40,7 +40,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: String,
     required: false,
   },
-  image_names: {
+  imageNames: {
     type: [String],
     default: [],
   },
@@ -62,15 +62,19 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     ref: "ProductVariant",
     default: [],
   },
-  is_active: {
+  tags: {
+    type: [String],
+    default: [],
+  },
+  isActive: {
     type: Boolean,
     default: true,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

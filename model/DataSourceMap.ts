@@ -15,7 +15,7 @@ export const DataSourceMap: {
   category: {
     url: "/api/dataAPI/category",
     schema: CategorySchema,
-    columns: ["name", "parentCategory"],
+    columns: ["name", "parentCategory", "description", "updatedAt"],
   },
   product: {
     url: "/api/dataAPI/product",

@@ -13,6 +13,7 @@ export interface FetchDataParams extends PaginateOptions {
 }
 
 type LogicalOperator = "AND" | "OR";
+export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
 
 export interface FilterRule {
   field: string;
@@ -29,7 +30,8 @@ export interface FilterState {
 
 export async function getData<T>(
   datamodel: DataModelInterface,
-  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, fields = "", page = 1 }: FetchDataParams
+  operation: string = "GET_DATA",
+  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, select = "-__v", page = 1 }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   await dbConnect();
   //transform
@@ -41,12 +43,13 @@ export async function getData<T>(
   const options: PaginateOptions = {
     limit,
     sort,
-    select: fields ? fields : undefined,
+    select,
     page,
   };
   // todo : add validation
   // todo : add filter validation
   // todo : add group-by
+  //todo : operation invalid error
   try {
     const { schema, dbModel } = datamodel;
     // const validationResult = schema.safeParse(filter);
@@ -54,6 +57,10 @@ export async function getData<T>(
     //   throw new Error(`Validation failed: ${validationResult.error}`);
     // }
     const queryFilter = parseFilter(filter!);
+    if (operation === "GET_TABLE_DATA" && datamodel.getTableData) {
+      return await datamodel.getTableData(queryFilter, options);
+    }
+
     const data = await (dbModel as PaginateModel<any>).paginate(queryFilter, options);
     // console.log("data", data);
     return data;
@@ -109,9 +116,11 @@ export async function postFormData<T>(
 
 export async function getDataFromServer<T>(
   dataSource: IDataSourceMap,
+  operation: string = "GET_DATA",
   { filter, limit = 1000, sort = { ["timestamp"]: -1 }, fields = "", page = 1 }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   const params = {
+    operation,
     page,
     limit,
     sort,
@@ -147,11 +156,15 @@ export async function postDataToServer<T>(dataSource: IDataSourceMap, data: any)
   try {
     const { data: safeData, error, success } = dataSource.schema.safeParse(data);
     if (!success) {
+      console.error("Validation failed:", error);
       throw error;
     }
     const responseData = await fetch(dataSource.url, {
       method: "POST",
-      body: JSON.stringify(safeData),
+      body: JSON.stringify({ data: safeData }),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
     const resJson = await responseData.json();
     console.log(resJson);

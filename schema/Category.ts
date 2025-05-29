@@ -1,12 +1,14 @@
 import { z } from "zod";
+import { categorySpecificAttributesSchema } from "./CategorySpecificAttributes";
 
 export const CategorySchema: z.ZodType = z.object({
   name: z.string(),
   slug: z.string().optional(),
   description: z.string().optional(),
-  parent_category: z.union([z.string(), z.lazy(() => CategorySchema), z.null()]).optional(),
-  created_at: z.date().default(new Date()),
-  updated_at: z.date().default(new Date()),
+  parentCategory: z.union([z.string(), z.lazy(() => CategorySchema), z.null()]).optional(),
+  attributes: z.array(categorySpecificAttributesSchema).optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export type TCategory = z.infer<typeof CategorySchema>;

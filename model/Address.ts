@@ -8,30 +8,24 @@ const AddressDBSchema = new mongoose.Schema<TAddress>({
     unique: true,
     trim: true,
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    trim: true,
-  },
-  contact_name: {
+  contactName: {
     type: String,
     required: true,
   },
-  contact_number: {
+  contactNumber: {
     type: String,
     required: true,
     trim: true,
   },
-  company_name: {
+  companyName: {
     type: String,
     required: false,
   },
-  address_line_1: {
+  addressLine1: {
     type: String,
     required: true,
   },
-  address_line_2: {
+  addressLine2: {
     type: String,
     required: false,
   },
@@ -51,15 +45,15 @@ const AddressDBSchema = new mongoose.Schema<TAddress>({
     type: String,
     required: true,
   },
-  is_default: {
+  isDefault: {
     type: Boolean,
     default: false,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

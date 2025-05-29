@@ -7,7 +7,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     ref: "User",
     required: true,
   },
-  order_date: {
+  orderDate: {
     type: Date,
     default: Date.now,
   },
@@ -16,38 +16,38 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     enum: ["pending", "shipped", "delivered", "cancelled"],
     default: "pending",
   },
-  total_amount: {
+  totalAmount: {
     type: Number,
     required: true,
     min: 0,
   },
-  shipping_address: {
+  shippingAddress: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Address",
     required: true,
   },
-  billing_address: {
+  billingAddress: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Address",
     required: true,
   },
-  shipping_method: {
+  shippingMethod: {
     type: String,
     enum: ["standard", "express"],
     default: "standard",
   },
-  shipping_cost: {
+  shippingCost: {
     type: Number,
     required: true,
     min: 0,
     default: 0,
   },
-  tracking_number: {
+  trackingNumber: {
     type: String,
     required: false,
     unique: true,
   },
-  payment_method: {
+  paymentMethod: {
     type: String,
     enum: ["credit_card", "paypal", "bank_transfer"],
     default: "credit_card",
@@ -70,11 +70,11 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     type: String,
     required: false,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

@@ -32,7 +32,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     }
 
     return (
-      <div className="flex flex-wrap max-w-52  rounded-md border p-10  bg-background px-3 py-2 text-sm  file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+      <div className="flex flex-wrap max-w-full  rounded-md border p-10  bg-background px-3 py-2 text-sm  file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
         {tags.map((tag, index) => (
           <div
             key={index}

@@ -112,7 +112,7 @@ export default function DynamicTable({
       filter: activeFilters.rules.length > 0 ? activeFilters : undefined,
       select: DataSourceMap[model]?.columns,
     };
-    const tableData = await getDataFromServer(DataSourceMap[model], options);
+    const tableData = await getDataFromServer(DataSourceMap[model], "GET_TABLE_DATA", options);
     console.log("Fetched tableData:", tableData);
     return tableData.docs as Record<string, any>[];
   }

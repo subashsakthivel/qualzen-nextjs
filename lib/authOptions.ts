@@ -8,12 +8,13 @@ import { AppleProfile } from "next-auth/providers/apple";
 import clientPromise from "./mongodb";
 import { Adapter } from "next-auth/adapters";
 import { getUserByEmail, verifyEmailAndPassword } from "@/util/dbUtil";
-import { UserInfoModel, UserInfoSchema, UserInfo } from "@/model/UserInfo";
+import { UserInfoModel } from "@/model/UserInfo";
 import { CommonUtil } from "@/util/util";
 import dbConnect from "./mongoose";
 import { InvalidInputError } from "@/constants/erros";
+import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
 
-async function checkAndAddUser(user: UserInfo) {
+async function checkAndAddUser(user: TUserInfo) {
   await dbConnect();
   const existingUser = await UserInfoModel.findOne({ email: user.email });
   if (existingUser) {
@@ -102,7 +103,7 @@ export const authOptions: NextAuthOptions = {
           throw new InvalidInputError(error);
         } else {
           console.log("User data is valid:", data);
-          checkAndAddUser(data as UserInfo);
+          checkAndAddUser(data as TUserInfo);
         }
       }
       if (user && account) {

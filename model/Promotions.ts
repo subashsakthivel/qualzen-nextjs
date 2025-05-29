@@ -23,46 +23,46 @@ const PromotionsDBSchema = new mongoose.Schema<TPromotions>({
     required: false,
     default: [],
   },
-  discount_type: {
+  discountType: {
     type: String,
     required: true,
     enum: ["percentage", "fixed"],
   },
-  discount_value: {
+  discountValue: {
     type: Number,
     required: true,
     min: 0,
   },
-  start_date: {
+  startDate: {
     type: Date,
 
     required: false,
   },
-  end_date: {
+  endDate: {
     type: Date,
     required: false,
   },
-  minimum_order_amount: {
+  minimumOrderAmount: {
     type: Number,
     required: true,
     min: 0,
     default: 0,
   },
-  usage_limit_per_user: {
+  usageLimitPerUser: {
     type: Number,
     required: true,
     min: 0,
     default: 0,
   },
-  is_active: {
+  isActive: {
     type: Boolean,
     default: true,
   },
-  created_at: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  updated_at: {
+  updatedAt: {
     type: Date,
     default: Date.now,
   },
