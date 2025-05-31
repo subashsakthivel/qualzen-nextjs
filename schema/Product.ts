@@ -16,7 +16,7 @@ export const ProductSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        value: z.array(z.string()).min(1),
+        value: z.union([z.string(), z.array(z.string()).min(1)]),
       })
     )
     .max(6),

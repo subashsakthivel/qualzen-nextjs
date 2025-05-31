@@ -38,5 +38,5 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
 CategoryDbSchema.plugin(mongoosepPaginate); //todo: need to remove paginate later
 
 export const CategoryModel =
-  (mongoose.models?.Category as mongoose.PaginateModel<TCategory>) ||
+  (mongoose.models?.Category as unknown as mongoose.PaginateModel<TCategory>) ||
   mongoose.model<TCategory, mongoose.PaginateModel<TCategory>>("Category", CategoryDbSchema);

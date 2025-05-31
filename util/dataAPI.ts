@@ -4,6 +4,8 @@ import { IDataSourceMap } from "@/model/DataSourceMap";
 import { PaginateModel, PaginateOptions, PaginateResult } from "mongoose";
 import { buildEncodedUrl } from "./requestUtil";
 import { S3Util } from "./S3Util";
+import { categorySpecificAttributesSchema } from "@/schema/CategorySpecificAttributes";
+import { CategorySchema } from "@/schema/Category";
 
 export interface FetchDataParams extends PaginateOptions {
   filter?: FilterState;
@@ -31,7 +33,14 @@ export interface FilterState {
 export async function getData<T>(
   datamodel: DataModelInterface,
   operation: string = "GET_DATA",
-  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, select = "-__v", page = 1 }: FetchDataParams
+  {
+    filter,
+    limit = 1000,
+    sort = { ["timestamp"]: -1 },
+    select = "-__v",
+    page = 1,
+    ...otherOptions
+  }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   await dbConnect();
   //transform
@@ -45,11 +54,12 @@ export async function getData<T>(
     sort,
     select,
     page,
+    ...otherOptions,
   };
   // todo : add validation
   // todo : add filter validation
   // todo : add group-by
-  //todo : operation invalid error
+  // todo : operation invalid error
   try {
     const { schema, dbModel } = datamodel;
     // const validationResult = schema.safeParse(filter);
@@ -57,9 +67,9 @@ export async function getData<T>(
     //   throw new Error(`Validation failed: ${validationResult.error}`);
     // }
     const queryFilter = parseFilter(filter!);
-    if (operation === "GET_TABLE_DATA" && datamodel.getTableData) {
-      return await datamodel.getTableData(queryFilter, options);
-    }
+    // if (operation === "GET_TABLE_DATA" && datamodel.getTableData) {
+    //   return await datamodel.getTableData(queryFilter, options);
+    // }
 
     const data = await (dbModel as PaginateModel<any>).paginate(queryFilter, options);
     // console.log("data", data);
@@ -77,6 +87,10 @@ export async function postData<T>(datamodel: DataModelInterface, data: any): Pro
     const { data: safeData, error, success } = datamodel.schema.safeParse(data);
     if (!success) {
       throw error;
+    }
+    if (datamodel.postData) {
+      const responseData = await datamodel.postData(safeData);
+      return responseData;
     }
     const responseData = await datamodel.dbModel.create(data);
     return responseData;
@@ -117,7 +131,14 @@ export async function postFormData<T>(
 export async function getDataFromServer<T>(
   dataSource: IDataSourceMap,
   operation: string = "GET_DATA",
-  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, fields = "", page = 1 }: FetchDataParams
+  {
+    filter,
+    limit = 1000,
+    sort = { ["timestamp"]: -1 },
+    fields = "",
+    page = 1,
+    ...otherOptions
+  }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   const params = {
     operation,
@@ -126,6 +147,7 @@ export async function getDataFromServer<T>(
     sort,
     select: fields ? fields : undefined,
     filter,
+    ...otherOptions,
   };
 
   try {
@@ -154,11 +176,13 @@ export async function getDataFromServer<T>(
 
 export async function postDataToServer<T>(dataSource: IDataSourceMap, data: any): Promise<T> {
   try {
-    const { data: safeData, error, success } = dataSource.schema.safeParse(data);
+    const { data: postData } = data;
+    const { data: safeData, error, success } = dataSource.schema.safeParse(postData);
     if (!success) {
       console.error("Validation failed:", error);
       throw error;
     }
+    console.log(safeData);
     const responseData = await fetch(dataSource.url, {
       method: "POST",
       body: JSON.stringify({ data: safeData }),
@@ -166,6 +190,7 @@ export async function postDataToServer<T>(dataSource: IDataSourceMap, data: any)
         "Content-Type": "application/json",
       },
     });
+
     const resJson = await responseData.json();
     console.log(resJson);
     return resJson;

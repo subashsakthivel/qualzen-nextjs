@@ -2,14 +2,17 @@ import { z } from "zod";
 import { CategoryModel } from "./Category";
 import mongoose, { PaginateOptions } from "mongoose";
 import { UserInfoModel } from "./UserInfo";
-import { CategorySchema } from "@/schema/Category";
+import { CategorySchema, TCategory } from "@/schema/Category";
 import { UserInfoSchema } from "@/schema/UserInfo";
+import { categorySpecificAttributesSchema } from "@/schema/CategorySpecificAttributes";
+import { CategorySpecificAttributesModel } from "./CategorySpecificAttributes";
 export interface DataModelInterface {
   schema: z.ZodType;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   url: string;
   viewColumns: string[];
   getTableData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
+  postData?: (data: any) => Promise<any>;
   authorized: () => boolean;
 }
 
@@ -41,6 +44,16 @@ export const DataModel: {
       });
       console.log("data", JSON.stringify(data));
       return data;
+    },
+    postData: async (data: TCategory) => {
+      const categorySpecificAttributes = await CategorySpecificAttributesModel.insertMany(
+        data.attributes
+      );
+      const category = await CategoryModel.insertOne({
+        ...data,
+        attributes: categorySpecificAttributes,
+      });
+      return category;
     },
     authorized: () => true,
   },

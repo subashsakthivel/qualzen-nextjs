@@ -44,3 +44,10 @@ const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecific
     default: Date.now,
   },
 });
+
+export const CategorySpecificAttributesModel =
+  (mongoose.models?.CategorySpecificAttributes as mongoose.Model<TCategorySpecificAttributes>) ||
+  mongoose.model<TCategorySpecificAttributes, mongoose.Model<TCategorySpecificAttributes>>(
+    "CategorySpecificAttributes",
+    CategorySpecificAttributesDbSchema
+  );

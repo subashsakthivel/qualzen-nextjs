@@ -22,6 +22,7 @@ export async function GET(
       sort: JSON.parse(searchParams.get("sort") || "{}"),
       page: parseInt(searchParams.get("page") || "1"),
       filter: searchParams.get("filter") ? JSON.parse(searchParams.get("filter")!) : undefined,
+      populate: JSON.parse(JSON.stringify(searchParams.get("populate") || [])),
       select: dataModel.viewColumns.join(" "),
     });
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
@@ -45,7 +46,7 @@ export async function POST(
     if (!dataModel) {
       throw new Error("Invalid request");
     }
-    console.log("Received request for model:", request.headers.get("Content-Type"));
+
     if (request.headers.get("Content-Type")?.includes("application/json")) {
       const { data } = await request.json();
       const responseData = await postData(dataModel, data);

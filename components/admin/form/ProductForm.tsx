@@ -37,26 +37,43 @@ import QueryClientHook from "@/components/queryClientHook";
 import axios from "axios";
 import { redirect } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getDataFromServer, postDataToServer } from "@/util/dataAPI";
+import { FetchDataParams, getDataFromServer, postDataToServer } from "@/util/dataAPI";
 import { TCategory } from "@/schema/Category";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct } from "@/schema/Product";
+import { string } from "zod";
 
 type TProductFormData = Omit<TProduct, "imageNames" | "createdAt" | "updatedAt">;
 
-export default function ProductForm({
-  categorySelectComponent,
-}: {
-  categorySelectComponent: Readonly<React.ReactNode>;
-}) {
+export default function ProductForm() {
+  const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>([]);
   const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
+  const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<
+    TCategory["attributes"]
+  >([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
+  const [categoryList, setCategoryList] = useState<TCategory[]>([]);
+  const { status } = useQuery({
+    queryKey: ["category"],
+    queryFn: () => fetchData(),
+  });
 
   const mutation = useMutation({
     mutationFn: (data) => postDataToServer(DataSourceMap.product, data),
     onSuccess: () => redirect("/"),
   });
+
+  async function fetchData() {
+    const options: FetchDataParams = {
+      select: DataSourceMap["category"]?.columns,
+      populate: [{ path: "attributes" }],
+    };
+    const categoryData = await getDataFromServer(DataSourceMap["category"], "GET_DATA", options);
+    const categories: TCategory[] = categoryData.docs as TCategory[];
+
+    setCategoryList(categories);
+  }
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
     if (imageFiles?.length === 9) {
@@ -152,7 +169,35 @@ export default function ProductForm({
                   <div className="grid gap-6 grid-cols-3">
                     <div className="grid gap-1 capitalize col-span-1">
                       <Label htmlFor="category">Category</Label>
-                      {categorySelectComponent}
+                      <Select
+                        name="category"
+                        onValueChange={(value) => {
+                          const attributes = categoryList.find(
+                            (category) => category._id === value
+                          )!.attributes;
+                          const predefinedAttr: TProduct["attributes"] = attributes
+                            .filter((attr) => typeof attr !== "string")
+                            .map((attribute) => {
+                              return {
+                                name: attribute.attributeName,
+                                value: attribute.allowedValues[0],
+                              };
+                            });
+                          setPredefinedAttributes(predefinedAttr);
+                          setCategorySpecificAttributes(attributes);
+                        }}
+                      >
+                        <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoryList.map((category: TCategory, i: number) => (
+                            <SelectItem key={i} value={category._id!}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="grid capitalize col-span-2">
                       <Label className="">Search Tags</Label>
@@ -233,6 +278,60 @@ export default function ProductForm({
                           <Input id="stock-2" name="discountedPrice" type="number" />
                         </TableCell>
                       </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              <Card x-chunk="dashboard-07-chunk-1">
+                <CardHeader>
+                  <CardTitle>Predefined Attributes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Options</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categorySpecificAttributes
+                        .filter((attribute) => typeof attribute !== "string")
+                        .map((attribute, index) => (
+                          <TableRow key={index} className="">
+                            <TableCell className="align-top">
+                              <Label>{attribute.attributeName}</Label>
+                            </TableCell>
+                            <TableCell>
+                              <Label className="sr-only">Options</Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  const attrObj = predefinedAttributes.find(
+                                    (attr) => attr.name === attribute.attributeName
+                                  );
+                                  if (attrObj) {
+                                    attrObj.value = value;
+                                    setPredefinedAttributes([...predefinedAttributes]);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger
+                                  aria-label="Select subcategory"
+                                  className={"w-[180px]"}
+                                >
+                                  <SelectValue placeholder="Select subcategory" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {attribute.allowedValues.map((value, i: number) => (
+                                    <SelectItem key={i} value={value}>
+                                      {value}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </CardContent>
