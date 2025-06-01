@@ -41,11 +41,11 @@ import { FetchDataParams, getDataFromServer, postDataToServer } from "@/util/dat
 import { TCategory } from "@/schema/Category";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct } from "@/schema/Product";
-import { string } from "zod";
+import { TProductVariant } from "@/schema/ProductVarient";
 
 type TProductFormData = Omit<TProduct, "imageNames" | "createdAt" | "updatedAt">;
 
-export default function ProductForm() {
+export default function ProductForm({ categoryList }: { categoryList: TCategory[] }) {
   const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>([]);
   const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
   const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<
@@ -53,27 +53,13 @@ export default function ProductForm() {
   >([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [tags, setTags] = useState<string[]>([]);
-  const [categoryList, setCategoryList] = useState<TCategory[]>([]);
-  const { status } = useQuery({
-    queryKey: ["category"],
-    queryFn: () => fetchData(),
-  });
+  const [varients, setVarients] = useState<{ name: string; value: any }[]>([]);
+  const [curVerient, setCurentVarient] = useState<number>(0);
 
   const mutation = useMutation({
     mutationFn: (data) => postDataToServer(DataSourceMap.product, data),
     onSuccess: () => redirect("/"),
   });
-
-  async function fetchData() {
-    const options: FetchDataParams = {
-      select: DataSourceMap["category"]?.columns,
-      populate: [{ path: "attributes" }],
-    };
-    const categoryData = await getDataFromServer(DataSourceMap["category"], "GET_DATA", options);
-    const categories: TCategory[] = categoryData.docs as TCategory[];
-
-    setCategoryList(categories);
-  }
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
     if (imageFiles?.length === 9) {
@@ -131,6 +117,14 @@ export default function ProductForm() {
     }
   }
 
+  function addNewVarient() {
+    const newVarient = { name: "", value: {} };
+    setCurentVarient(varients.length);
+
+    varients.push(newVarient);
+    setVarients([...varients]);
+  }
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
     if (event.key === "Enter" && event.target instanceof HTMLElement) {
       const targetTag = event.target.tagName.toLowerCase();
@@ -154,349 +148,371 @@ export default function ProductForm() {
               Product Form
             </h1>
             <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <Button size="sm" type="button" onClick={addNewVarient}>
+                Add Varient
+              </Button>
+            </div>
+            {varients.map((varient, idx) => (
+              <div className="hidden items-center gap-2 md:ml-auto md:flex" key={idx}>
+                <Button size="sm" type="button" onClick={() => setCurentVarient(idx)}>
+                  Varient {idx}
+                </Button>
+              </div>
+            ))}
+            <div className="hidden items-center gap-2 md:ml-auto md:flex">
               <Button size="sm" type="submit">
                 Save Product
               </Button>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
-            <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-              <Card x-chunk="dashboard-07-chunk-2">
-                <CardHeader>
-                  <CardTitle>Product Category</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6 grid-cols-3">
-                    <div className="grid gap-1 capitalize col-span-1">
-                      <Label htmlFor="category">Category</Label>
-                      <Select
-                        name="category"
-                        onValueChange={(value) => {
-                          const attributes = categoryList.find(
-                            (category) => category._id === value
-                          )!.attributes;
-                          const predefinedAttr: TProduct["attributes"] = attributes
-                            .filter((attr) => typeof attr !== "string")
-                            .map((attribute) => {
-                              return {
-                                name: attribute.attributeName,
-                                value: attribute.allowedValues[0],
-                              };
-                            });
-                          setPredefinedAttributes(predefinedAttr);
-                          setCategorySpecificAttributes(attributes);
-                        }}
-                      >
-                        <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
-                          <SelectValue placeholder="Select subcategory" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categoryList.map((category: TCategory, i: number) => (
-                            <SelectItem key={i} value={category._id!}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+          {varients.map((varient, idx) => (
+            <div
+              className={`grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8 ${
+                idx !== curVerient ? "hidden" : ""
+              }`}
+              key={idx}
+            >
+              <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+                <Card x-chunk="dashboard-07-chunk-2">
+                  <CardHeader>
+                    <CardTitle>Product Category</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6 grid-cols-3">
+                      <div className="grid gap-1 capitalize col-span-1">
+                        <Label htmlFor="category">Category</Label>
+                        <Select
+                          name="category"
+                          onValueChange={(value) => {
+                            const attributes = categoryList.find(
+                              (category) => category._id === value
+                            )!.attributes;
+                            const predefinedAttr: TProduct["attributes"] = attributes
+                              .filter((attr) => typeof attr !== "string")
+                              .map((attribute) => {
+                                return {
+                                  name: attribute.attributeName,
+                                  value: attribute.allowedValues[0],
+                                };
+                              });
+                            setPredefinedAttributes(predefinedAttr);
+                            setCategorySpecificAttributes(attributes);
+                          }}
+                        >
+                          <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
+                            <SelectValue placeholder="Select subcategory" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categoryList.map((category: TCategory, i: number) => (
+                              <SelectItem key={i} value={category._id!}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid capitalize col-span-2">
+                        <Label className="">Search Tags</Label>
+                        <TagInput
+                          defaulttags={tags}
+                          onTagValueChange={(keyTags: string[]) => setTags(keyTags)}
+                        />
+                      </div>
                     </div>
-                    <div className="grid capitalize col-span-2">
-                      <Label className="">Search Tags</Label>
-                      <TagInput
-                        defaulttags={tags}
-                        onTagValueChange={(keyTags: string[]) => setTags(keyTags)}
-                      />
+                  </CardContent>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-0">
+                  <CardHeader>
+                    <CardTitle>Product Details</CardTitle>
+                    <CardDescription>
+                      Enter the product name certainly to customer identify easily
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6">
+                      <div className="grid gap-3">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          type="text"
+                          className="w-full"
+                          placeholder="White Mens Baggy Shirt"
+                        />
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          name="description"
+                          id="description"
+                          placeholder="Description should mention product details which is user can't seen by picture of product"
+                          className="min-h-32"
+                        />
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="stockQuantity">Stock</Label>
+                        <Input
+                          id="stockQuantity"
+                          name="stockuantity"
+                          type="number"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="brand">Brand</Label>
+                        <Input id="brand" name="brand" type="text" className="w-full" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card x-chunk="dashboard-07-chunk-0">
-                <CardHeader>
-                  <CardTitle>Product Details</CardTitle>
-                  <CardDescription>
-                    Enter the product name certainly to customer identify easily
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6">
-                    <div className="grid gap-3">
-                      <Label htmlFor="name">Name</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        className="w-full"
-                        placeholder="White Mens Baggy Shirt"
-                      />
-                    </div>
-                    <div className="grid gap-3">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        name="description"
-                        id="description"
-                        placeholder="Description should mention product details which is user can't seen by picture of product"
-                        className="min-h-32"
-                      />
-                    </div>
-                    <div className="grid gap-3">
-                      <Label htmlFor="stockQuantity">Stock</Label>
-                      <Input
-                        id="stockQuantity"
-                        name="stockuantity"
-                        type="number"
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="grid gap-3">
-                      <Label htmlFor="brand">Brand</Label>
-                      <Input id="brand" name="brand" type="text" className="w-full" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card x-chunk="dashboard-07-chunk-1">
-                <CardHeader>
-                  <CardTitle>Price</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-semibold">Price</TableCell>
-                        <TableCell>
-                          <Input
-                            id="stock-1"
-                            name="price"
-                            type="number"
-                            autoComplete="off"
-                            resource="off"
-                          />
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-semibold">Discount Price</TableCell>
-                        <TableCell>
-                          <Input id="stock-2" name="discountedPrice" type="number" />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-              <Card x-chunk="dashboard-07-chunk-1">
-                <CardHeader>
-                  <CardTitle>Predefined Attributes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Options</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categorySpecificAttributes
-                        .filter((attribute) => typeof attribute !== "string")
-                        .map((attribute, index) => (
-                          <TableRow key={index} className="">
-                            <TableCell className="align-top">
-                              <Label>{attribute.attributeName}</Label>
-                            </TableCell>
-                            <TableCell>
-                              <Label className="sr-only">Options</Label>
-                              <Select
-                                onValueChange={(value) => {
-                                  const attrObj = predefinedAttributes.find(
-                                    (attr) => attr.name === attribute.attributeName
-                                  );
-                                  if (attrObj) {
-                                    attrObj.value = value;
-                                    setPredefinedAttributes([...predefinedAttributes]);
-                                  }
-                                }}
-                              >
-                                <SelectTrigger
-                                  aria-label="Select subcategory"
-                                  className={"w-[180px]"}
-                                >
-                                  <SelectValue placeholder="Select subcategory" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {attribute.allowedValues.map((value, i: number) => (
-                                    <SelectItem key={i} value={value}>
-                                      {value}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-              <Card x-chunk="dashboard-07-chunk-1">
-                <CardHeader>
-                  <CardTitle>Properties</CardTitle>
-                  <CardDescription>
-                    Enter the properties of the category that should be available for all the
-                    product under this category
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead></TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Options</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {attributes.map((property, index) => (
-                        <TableRow key={index} className="">
-                          <TableCell className="m-0 p-1 align-top">
-                            <Label className="sr-only">remove Property</Label>
-                            <Trash2Icon
-                              className="h-3.5 w-3.5 m-0 my-6"
-                              onClick={() =>
-                                setAttributes(attributes.filter((p, i) => i !== index))
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="align-top">
-                            <Label className="sr-only">Name</Label>
+                  </CardContent>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-1">
+                  <CardHeader>
+                    <CardTitle>Price</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-semibold">Price</TableCell>
+                          <TableCell>
                             <Input
                               id="stock-1"
-                              value={property.name}
-                              onChange={(val) =>
-                                setAttributes(
-                                  attributes.map((p, i) => {
-                                    if (i === index) {
-                                      p.name = val.target.value;
-                                    }
-                                    return p;
-                                  })
-                                )
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Label className="sr-only">Options</Label>
-                            <TagInput
-                              defaulttags={typeof property.value === "string" ? [] : property.value}
-                              onTagValueChange={(tags: string[]) =>
-                                setAttributes(
-                                  attributes.map((p, i) => {
-                                    if (i === index) {
-                                      p.value = tags;
-                                    }
-                                    return p;
-                                  })
-                                )
-                              }
+                              name="price"
+                              type="number"
+                              autoComplete="off"
+                              resource="off"
                             />
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-                <CardFooter className="justify-center border-t p-4">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1"
-                    onClick={() => setAttributes((p) => [...p, { name: "", value: [] }])}
-                  >
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Add Attribute
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-            <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-              <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
-                <CardHeader className="felx flex-row items-center justify-around">
-                  <CardTitle>Product Images</CardTitle>
-                  <RefreshCcwIcon
-                    className="size-5 cursor-pointer"
-                    onClick={() => setImageFiles([])}
-                  />
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-2">
-                    {imageFiles && imageFiles.length >= 1 && (
-                      <div className="grid gap-2">
-                        <Image
-                          alt="Product image"
-                          className="aspect-square w-full rounded-md object-cover"
-                          height="300"
-                          width="300"
-                          src={URL.createObjectURL(imageFiles[0])}
-                        />
-                      </div>
-                    )}
-
-                    <div className={`grid grid-flow-* gap-2 ${imageFiles ? "grid-cols-2" : ""}`}>
-                      {imageFiles &&
-                        imageFiles.slice(1).map((imageFile, index) => (
-                          <div key={index} className="relative">
-                            <span className="absolute rounded-full border bg-background m-1 size-5 text-center">
-                              {index + 2}
-                            </span>
-                            <Image
-                              alt="Product image"
-                              className="aspect-square rounded-md object-cover"
-                              height="84"
-                              width="84"
-                              src={URL.createObjectURL(imageFile)}
-                              key={index}
-                            />
-                          </div>
+                        <TableRow>
+                          <TableCell className="font-semibold">Discount Price</TableCell>
+                          <TableCell>
+                            <Input id="stock-2" name="discountedPrice" type="number" />
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-1">
+                  <CardHeader>
+                    <CardTitle>Predefined Attributes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Options</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categorySpecificAttributes
+                          .filter((attribute) => typeof attribute !== "string")
+                          .map((attribute, index) => (
+                            <TableRow key={index} className="">
+                              <TableCell className="align-top">
+                                <Label>{attribute.attributeName}</Label>
+                              </TableCell>
+                              <TableCell>
+                                <Label className="sr-only">Options</Label>
+                                <Select
+                                  onValueChange={(value) => {
+                                    const attrObj = predefinedAttributes.find(
+                                      (attr) => attr.name === attribute.attributeName
+                                    );
+                                    if (attrObj) {
+                                      attrObj.value = value;
+                                      setPredefinedAttributes([...predefinedAttributes]);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger
+                                    aria-label="Select subcategory"
+                                    className={"w-[180px]"}
+                                  >
+                                    <SelectValue placeholder="Select subcategory" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {attribute.allowedValues.map((value, i: number) => (
+                                      <SelectItem key={i} value={value}>
+                                        {value}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-1">
+                  <CardHeader>
+                    <CardTitle>Properties</CardTitle>
+                    <CardDescription>
+                      Enter the properties of the category that should be available for all the
+                      product under this category
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead></TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Options</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {attributes.map((property, index) => (
+                          <TableRow key={index} className="">
+                            <TableCell className="m-0 p-1 align-top">
+                              <Label className="sr-only">remove Property</Label>
+                              <Trash2Icon
+                                className="h-3.5 w-3.5 m-0 my-6"
+                                onClick={() =>
+                                  setAttributes(attributes.filter((p, i) => i !== index))
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <Label className="sr-only">Name</Label>
+                              <Input
+                                id="stock-1"
+                                value={property.name}
+                                onChange={(val) =>
+                                  setAttributes(
+                                    attributes.map((p, i) => {
+                                      if (i === index) {
+                                        p.name = val.target.value;
+                                      }
+                                      return p;
+                                    })
+                                  )
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Label className="sr-only">Options</Label>
+                              <TagInput
+                                defaulttags={
+                                  typeof property.value === "string" ? [] : property.value
+                                }
+                                onTagValueChange={(tags: string[]) =>
+                                  setAttributes(
+                                    attributes.map((p, i) => {
+                                      if (i === index) {
+                                        p.value = tags;
+                                      }
+                                      return p;
+                                    })
+                                  )
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
                         ))}
-
-                      <div className="flex justify-center relative ">
-                        <label
-                          className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                            imageFiles ? "relative shadow-lg min-w-20" : "shadow-sm min-h-80"
-                          }`}
-                        >
-                          <Upload className="h-4 w-4 text-muted-foreground" />
-                          <input
-                            type="file"
-                            name="image"
-                            className="hidden"
-                            onChange={onImageFileChange}
-                            multiple
-                            accept="image/png, image/gif, image/jpeg"
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                  <CardFooter className="justify-center border-t p-4">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1"
+                      onClick={() => setAttributes((p) => [...p, { name: "", value: [] }])}
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Add Attribute
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+              <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+                <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
+                  <CardHeader className="felx flex-row items-center justify-around">
+                    <CardTitle>Product Images</CardTitle>
+                    <RefreshCcwIcon
+                      className="size-5 cursor-pointer"
+                      onClick={() => setImageFiles([])}
+                    />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2">
+                      {imageFiles && imageFiles.length >= 1 && (
+                        <div className="grid gap-2">
+                          <Image
+                            alt="Product image"
+                            className="aspect-square w-full rounded-md object-cover"
+                            height="300"
+                            width="300"
+                            src={URL.createObjectURL(imageFiles[0])}
                           />
-                        </label>
+                        </div>
+                      )}
+
+                      <div className={`grid grid-flow-* gap-2 ${imageFiles ? "grid-cols-2" : ""}`}>
+                        {imageFiles &&
+                          imageFiles.slice(1).map((imageFile, index) => (
+                            <div key={index} className="relative">
+                              <span className="absolute rounded-full border bg-background m-1 size-5 text-center">
+                                {index + 2}
+                              </span>
+                              <Image
+                                alt="Product image"
+                                className="aspect-square rounded-md object-cover"
+                                height="84"
+                                width="84"
+                                src={URL.createObjectURL(imageFile)}
+                                key={index}
+                              />
+                            </div>
+                          ))}
+
+                        <div className="flex justify-center relative ">
+                          <label
+                            className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
+                              imageFiles ? "relative shadow-lg min-w-20" : "shadow-sm min-h-80"
+                            }`}
+                          >
+                            <Upload className="h-4 w-4 text-muted-foreground" />
+                            <input
+                              type="file"
+                              name="image"
+                              className="hidden"
+                              onChange={onImageFileChange}
+                              multiple
+                              accept="image/png, image/gif, image/jpeg"
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card x-chunk="dashboard-07-chunk-5">
-                <CardHeader>
-                  <CardTitle>Product Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Select name="isActive" value="true">
-                    <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
-                      <SelectValue placeholder="Select subcategory" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Active</SelectItem>
-                      <SelectItem value="false">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+                <Card x-chunk="dashboard-07-chunk-5">
+                  <CardHeader>
+                    <CardTitle>Product Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Select name="isActive" value="true">
+                      <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
+                        <SelectValue placeholder="Select subcategory" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Active</SelectItem>
+                        <SelectItem value="false">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </div>
+          ))}
+
           <div className="flex items-center justify-center gap-2 md:hidden">
             <Button size="sm" type="submit" disabled={mutation.isPending}>
               Save Product

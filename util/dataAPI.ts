@@ -33,14 +33,7 @@ export interface FilterState {
 export async function getData<T>(
   datamodel: DataModelInterface,
   operation: string = "GET_DATA",
-  {
-    filter,
-    limit = 1000,
-    sort = { ["timestamp"]: -1 },
-    select = "-__v",
-    page = 1,
-    ...otherOptions
-  }: FetchDataParams
+  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, page = 1, ...otherOptions }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   await dbConnect();
   //transform
@@ -52,7 +45,6 @@ export async function getData<T>(
   const options: PaginateOptions = {
     limit,
     sort,
-    select,
     page,
     ...otherOptions,
   };
@@ -70,8 +62,10 @@ export async function getData<T>(
     // if (operation === "GET_TABLE_DATA" && datamodel.getTableData) {
     //   return await datamodel.getTableData(queryFilter, options);
     // }
-
-    const data = await (dbModel as PaginateModel<any>).paginate(queryFilter, options);
+    console.log(options);
+    const data = await (dbModel as PaginateModel<any>).paginate(queryFilter, {
+      ...options,
+    });
     // console.log("data", data);
     return data;
   } catch (err) {
@@ -141,11 +135,9 @@ export async function getDataFromServer<T>(
   }: FetchDataParams
 ): Promise<PaginateResult<T>> {
   const params = {
-    operation,
     page,
     limit,
     sort,
-    select: fields ? fields : undefined,
     filter,
     ...otherOptions,
   };
@@ -156,7 +148,7 @@ export async function getDataFromServer<T>(
     // if (!validationResult.success) {
     //   throw new Error(`Validation failed: ${validationResult.error}`);
     // }
-    const encodedUrl = buildEncodedUrl(url, params);
+    const encodedUrl = buildEncodedUrl(url, { operation, request: params });
 
     const response = await fetch(encodedUrl);
 

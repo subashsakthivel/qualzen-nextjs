@@ -16,15 +16,17 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
   },
   description: { type: String, required: false },
   parentCategory: {
-    type: mongoose.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
     default: null,
   },
-  attributes: {
-    type: [mongoose.Types.ObjectId],
-    ref: "CategorySpecificAttributes",
-    default: [],
-  },
+  attributes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CategorySpecificAttributes",
+      default: null,
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

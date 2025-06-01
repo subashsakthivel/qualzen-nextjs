@@ -10,7 +10,6 @@ export interface DataModelInterface {
   schema: z.ZodType;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   url: string;
-  viewColumns: string[];
   getTableData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
   postData?: (data: any) => Promise<any>;
   authorized: () => boolean;
@@ -23,11 +22,10 @@ export const DataModel: {
     schema: CategorySchema,
     dbModel: CategoryModel,
     url: "/api/dataAPI/Category",
-    viewColumns: ["name", "parentCategory", "description", "updatedAt"],
     getTableData: async (queryFilter: Record<string, any>, options: PaginateOptions) => {
       const data = await CategoryModel.paginate(queryFilter, {
         ...options,
-        populate: { path: "parentCategory" },
+        populate: [{ path: "parentCategory" }, { path: "attributes" }],
       }).then((result) => {
         console.log("result", JSON.stringify(result));
         const resultData = JSON.parse(JSON.stringify(result));
@@ -59,7 +57,6 @@ export const DataModel: {
   },
   userInfo: {
     schema: UserInfoSchema,
-    viewColumns: ["name", "email", "role", "createdAt", "updatedAt"],
     dbModel: UserInfoModel,
     url: "/api/dataAPI/UserInfo",
     authorized: () => true,

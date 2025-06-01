@@ -17,14 +17,9 @@ export async function GET(
     if (!operation) {
       return NextResponse.json({ message: "Invalid operation" }, { status: 400 });
     }
-    const responseData = await getData(dataModel, operation, {
-      limit: parseInt(searchParams.get("limit") || "1000"),
-      sort: JSON.parse(searchParams.get("sort") || "{}"),
-      page: parseInt(searchParams.get("page") || "1"),
-      filter: searchParams.get("filter") ? JSON.parse(searchParams.get("filter")!) : undefined,
-      populate: JSON.parse(JSON.stringify(searchParams.get("populate") || [])),
-      select: dataModel.viewColumns.join(" "),
-    });
+    const requestObj = JSON.parse(searchParams.get("request") || "{}");
+    const responseData = await getData(dataModel, operation, requestObj);
+    console.log(JSON.stringify(responseData, null, 2));
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {
     console.log(err);
