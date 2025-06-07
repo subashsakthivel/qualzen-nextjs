@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const AddressSchema: z.ZodType = z.object({
+export const AddressSchema = z.object({
   uid: z.string().uuid(),
   user: z.string().uuid(),
   contactName: z.string().min(1),
