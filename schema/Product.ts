@@ -16,7 +16,8 @@ export const ProductSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        value: z.union([z.string(), z.array(z.string()).min(1)]),
+        value: z.string(),
+        sortOrder: z.number().default(100),
       })
     )
     .max(6),
@@ -28,3 +29,5 @@ export const ProductSchema = z.object({
 });
 
 export type TProduct = z.infer<typeof ProductSchema>;
+
+export type TProductRes = TProduct & { imageSrc: string[]; _id: string }; // todo: need zod for this

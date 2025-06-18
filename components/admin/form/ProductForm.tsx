@@ -13,14 +13,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,10 +45,11 @@ import { TCategory } from "@/schema/Category";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
+import { v4 as uuidv4 } from "uuid";
 
-type TProductFormData = Omit<TProduct, "imageNames" | "createdAt" | "updatedAt">;
+type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
 type TVariant = TProductVariant & {
-  predefinedAttributes: { name: string; value: string }[];
+  predefinedAttributes: TProductVariant["attributes"];
   imageFiles: File[];
 };
 export default function ProductForm({ categoryList }: { categoryList: TCategory[] }) {
@@ -113,34 +107,75 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
       if (imageFiles && imageFiles.length > 9) {
         throw new Error("You can only upload a maximum of 9 images.");
       }
+      const productForm = new FormData();
+      if (varients.length == 0) {
+        const imageNames: string[] = [];
+        imageFiles.forEach((imageFile) => {
+          const name = uuidv4();
+          imageNames.push(name);
+          productForm.append(name, imageFile);
+        });
+        const product: TProductFormData = {
+          name: formData.get("name") as string,
+          category: formData.get("category") as string,
+          description: formData.get("description") as string,
+          brand: formData.get("brand") as string,
+          tags: tags,
+          sku: formData.get("sku") as string,
+          price: Number.parseFloat(formData.get("price") as string),
+          discountedPrice: Number.parseFloat(formData.get("discountedPrice") as string),
+          stockQuantity: Number.parseInt(formData.get("stockQuantity") as string),
+          attributes: [...attributes, ...predefinedAttributes],
+          variants: [],
+          imageNames,
+          isActive: formData.get("status") === "active",
+        };
 
-      const productData: TProductFormData = {
-        name: formData.get("name") as string,
-        description: formData.get("description") as string,
-        sku: formData.get("sku") as string,
-        price: parseFloat(formData.get("price") as string),
-        discountedPrice: parseFloat(formData.get("discountedPrice") as string),
-        stockQuantity: parseInt(formData.get("stock") as string),
-        category: formData.get("category") as string,
-        brand: formData.get("brand") as string,
-        variants: [],
-        tags: tags,
-        isActive: formData.get("status") === "active",
-        attributes,
-      };
-      const requestFormData = new FormData();
-      requestFormData.append("data", JSON.stringify(productData));
+        productForm.append("data", JSON.stringify(product));
+        debugger;
+      } else {
+        const imageNames: string[] = [];
 
-      imageFiles.forEach((file) => {
-        requestFormData.append(`image`, file);
+        imageFiles.forEach((imageFile) => {
+          const name = uuidv4();
+          imageNames.push(name);
+          productForm.append(name, imageFile);
+        });
+        varients.map((variant) => {
+          variant.imageFiles.forEach((imageFile) => {
+            const name = uuidv4();
+            variant.imageNames.push(name);
+            productForm.append(name, imageFile);
+          });
+        });
+        const product: TProductFormData = {
+          name: formData.get("name") as string,
+          category: formData.get("category") as string,
+          description: formData.get("description") as string,
+          brand: formData.get("brand") as string,
+          tags: tags,
+          sku: formData.get("sku") as string,
+          price: Number.parseFloat(formData.get("price") as string),
+          discountedPrice: Number.parseFloat(formData.get("discountedPrice") as string),
+          stockQuantity: Number.parseInt(formData.get("stockQuantity") as string),
+          attributes: [...attributes],
+          variants: varients.map((variant) => ({
+            ...variant,
+            attributes: [...variant.attributes, ...variant.predefinedAttributes],
+          })),
+          imageNames,
+          isActive: formData.get("status") === "active",
+        };
+
+        productForm.append("data", JSON.stringify(product));
+        debugger;
+      }
+
+      const response = await fetch("/api/dataAPI/product", {
+        body: productForm,
+        method: "POST",
       });
-
-      const response = await axios.post("/api/dataAPI/product", requestFormData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log("Response: ", response.data);
+      console.log(await response.json());
     } catch (err) {
       console.log(err);
     }
@@ -149,7 +184,11 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
   function addNewVarient() {
     const predefinedAttributes = categorySpecificAttributes
       .filter((attr) => typeof attr !== "string")
-      .map((attr) => ({ name: attr.attributeName, value: attr.allowedValues[0] }));
+      .map((attr) => ({
+        name: attr.attributeName,
+        value: attr.allowedValues[0],
+        sortOrder: attr.sortOrder,
+      }));
     const newVarient: TVariant = {
       attributes: [],
       imageNames: [],
@@ -169,12 +208,13 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
 
   function onCategoryChange(categoryId: string) {
     const attributes = categoryList.find((category) => category._id === categoryId)!.attributes;
-    const predefinedAttr: { name: string; value: string }[] = attributes
+    const predefinedAttr: TProduct["attributes"] = attributes
       .filter((attr) => typeof attr !== "string")
       .map((attribute) => {
         return {
           name: attribute.attributeName,
           value: typeof attribute.allowedValues[0] === "string" ? attribute.allowedValues[0] : "",
+          sortOrder: attribute.sortOrder,
         };
       });
     setVarients(varients.map((varient) => ({ ...varient, predefinedAttributes: predefinedAttr })));
@@ -282,6 +322,10 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     />
                   </div>
                   <div className="grid gap-3">
+                    <Label htmlFor="name">Product Name</Label>
+                    <Input id="name" name="name" type="text" className="w-full" />
+                  </div>
+                  <div className="grid gap-3">
                     <Label htmlFor="description">Description</Label>
                     <Textarea
                       name="description"
@@ -294,7 +338,7 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     <Label htmlFor="brand">Brand</Label>
                     <Input id="brand" name="brand" type="text" className="w-full" />
                   </div>
-                  <div className="grid gap-3">
+                  {/* <div className="grid gap-3">
                     <Label htmlFor="stockQuantity">Stock</Label>
                     <Input
                       id="stockQuantity"
@@ -302,7 +346,7 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                       type="number"
                       className="w-full"
                     />
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
 
@@ -315,32 +359,31 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     <Label htmlFor="stockQuantity">Stock</Label>
                     <Input
                       id="stockQuantity"
-                      name="stockuantity"
+                      name="stockQuantity"
                       type="number"
                       className="w-full"
                     />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">Price</Label>
-                    <Input
-                      id="stockQuantity"
-                      name="stockuantity"
-                      type="number"
-                      className="w-full"
-                    />
+                    <Label htmlFor="stockQuantity">SKU</Label>
+                    <Input id="sku" name="sku" type="text" className="w-full" />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">Discount Price</Label>
+                    <Label htmlFor="price">Price</Label>
+                    <Input id="price" name="price" type="number" className="w-full" />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="discountedPrice">Discount Price</Label>
                     <Input
-                      id="stockQuantity"
-                      name="stockuantity"
+                      id="discountedPrice"
+                      name="discountedPrice"
                       type="number"
                       className="w-full"
                     />
                   </div>
                 </CardContent>
               </Card>
-              <Card x-chunk="dashboard-07-chunk-1">
+              <Card x-chunk="dashboard-07-chunk-1" className={varients.length > 0 ? "hidden" : ""}>
                 <CardHeader>
                   <CardTitle>Predefined Attributes</CardTitle>
                 </CardHeader>
@@ -439,13 +482,14 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                           </TableCell>
                           <TableCell>
                             <Label className="sr-only">Options</Label>
-                            <TagInput
-                              defaulttags={typeof property.value === "string" ? [] : property.value}
-                              onTagValueChange={(tags: string[]) =>
+                            <Input
+                              id="stock-1"
+                              value={property.value}
+                              onChange={(val) =>
                                 setAttributes(
                                   attributes.map((p, i) => {
                                     if (i === index) {
-                                      p.value = tags;
+                                      p.value = val.target.value;
                                     }
                                     return p;
                                   })
@@ -464,7 +508,9 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     size="sm"
                     variant="ghost"
                     className="gap-1"
-                    onClick={() => setAttributes((p) => [...p, { name: "", value: [] }])}
+                    onClick={() =>
+                      setAttributes((p) => [...p, { name: "", value: "", sortOrder: 100 }])
+                    }
                   >
                     <PlusCircle className="h-3.5 w-3.5" />
                     Add Attribute
@@ -684,14 +730,13 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                             </TableCell>
                             <TableCell>
                               <Label className="sr-only">Options</Label>
-                              <TagInput
-                                defaulttags={
-                                  typeof property.value === "string" ? [] : property.value
-                                }
-                                onTagValueChange={(tags: string[]) => {
+                              <Input
+                                id="stock-1"
+                                value={property.value}
+                                onChange={(val) => {
                                   varient.attributes = varient.attributes.map((p, i) => {
                                     if (i === index) {
-                                      p.value = tags;
+                                      p.value = val.target.value;
                                     }
                                     return p;
                                   });
@@ -711,7 +756,10 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                       variant="ghost"
                       className="gap-1"
                       onClick={() => {
-                        varient.attributes = [...varient.attributes, { name: "", value: [] }];
+                        varient.attributes = [
+                          ...varient.attributes,
+                          { name: "", value: "", sortOrder: 100 },
+                        ];
                         setVarients([...varients]);
                       }}
                     >

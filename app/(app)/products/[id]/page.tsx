@@ -105,7 +105,7 @@ const products = [
   },
 ];
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductView({ params }: { params: { id: string } }) {
   const productId = Number.parseInt(params.id);
   const product = products.find((p) => p.id === productId);
 

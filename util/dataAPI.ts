@@ -4,8 +4,6 @@ import { IDataSourceMap } from "@/model/DataSourceMap";
 import { PaginateModel, PaginateOptions, PaginateResult } from "mongoose";
 import { buildEncodedUrl } from "./requestUtil";
 import { S3Util } from "./S3Util";
-import { categorySpecificAttributesSchema } from "@/schema/CategorySpecificAttributes";
-import { CategorySchema } from "@/schema/Category";
 
 export interface FetchDataParams extends PaginateOptions {
   filter?: FilterState;
@@ -100,16 +98,21 @@ export async function postFormData<T>(
 ): Promise<T> {
   try {
     await dbConnect();
+    if (datamodel.postData) {
+      return await datamodel.postData(formData);
+    }
+    const data = JSON.parse(formData.get("data") as string);
 
+    if (data.imageNames) {
+    }
     const images = formData.getAll("images") as File[];
 
     const imageUploads = await Promise.all(
       images.map(async (image) => {
-        return await S3Util.getInstance().uploadFile(image, "bucket-owner-read", image.type);
+        return await S3Util.getInstance().uploadFile(image, "public-read", image.type);
       })
     );
 
-    const data = { ...JSON.parse(JSON.stringify(formData.get("data"))), imageNames: imageUploads };
     const { data: safeData, error, success } = datamodel.schema.safeParse(data);
     if (!success) {
       throw error;
@@ -117,7 +120,7 @@ export async function postFormData<T>(
     const responseData = await datamodel.dbModel.create(safeData);
     return responseData;
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error posting form data:", error);
     throw error;
   }
 }

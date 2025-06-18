@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { TProduct } from "@/schema/Product";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const ProductDBSchema = new mongoose.Schema<TProduct>({
   name: {
@@ -57,11 +58,13 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
       },
     },
   ],
-  variants: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "ProductVariant",
-    default: [],
-  },
+  variants: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProductVariant",
+      default: [],
+    },
+  ],
   tags: {
     type: [String],
     default: [],
@@ -80,5 +83,8 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
   },
 });
 
-export const Product =
-  mongoose.models.Product<TProduct> || mongoose.model<TProduct>("Product", ProductDBSchema);
+ProductDBSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
+
+export const ProductModel =
+  (mongoose.models?.Product as unknown as mongoose.PaginateModel<TProduct>) ||
+  mongoose.model<TProduct, mongoose.PaginateModel<TProduct>>("Product", ProductDBSchema);

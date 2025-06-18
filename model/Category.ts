@@ -1,6 +1,6 @@
 import { TCategory } from "@/schema/Category";
 import mongoose from "mongoose";
-import mongoosepPaginate from "mongoose-paginate-v2";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const CategoryDbSchema = new mongoose.Schema<TCategory>({
   name: {
@@ -37,7 +37,7 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
   },
 });
 
-CategoryDbSchema.plugin(mongoosepPaginate); //todo: need to remove paginate later
+CategoryDbSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
 
 export const CategoryModel =
   (mongoose.models?.Category as unknown as mongoose.PaginateModel<TCategory>) ||

@@ -1,5 +1,5 @@
 import { DataModel } from "@/model/DataModels";
-import { getData, postData } from "@/util/dataAPI";
+import { getData, postData, postFormData } from "@/util/dataAPI";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -48,11 +48,11 @@ export async function POST(
       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
     } else if (request.headers.get("Content-Type")?.includes("multipart/form-data")) {
       const formData = await request.formData();
-      const data = Object.fromEntries(formData);
-      const responseData = await postData(dataModel, data);
+      const responseData = await postFormData(dataModel, formData);
       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
     }
   } catch (err) {
+    console.log(err);
     return NextResponse.json({ error: "something went wrong", status: 500 }, { status: 500 });
   }
 }

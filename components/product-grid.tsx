@@ -7,44 +7,35 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
+import { TProduct, TProductRes } from "@/schema/Product";
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  isNew: boolean;
-};
-
-export function ProductGrid({ products }: { products: Product[] }) {
+export function ProductGrid({ products }: { products: TProductRes[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product._id} product={product} />
       ))}
     </div>
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product }: { product: TProductRes }) {
   const { addToCart } = useCart();
 
   return (
     <Card className="overflow-hidden group">
-      <Link href={`/products/${product.id}`}>
+      <Link href={`/products/${product._id}`}>
         <div className="relative aspect-square overflow-hidden">
           <Image
-            src={product.image || "/placeholder.svg"}
+            src={product.imageSrc[0] || "/placeholder.svg"}
             alt={product.name}
             fill
             className="object-cover transition-transform group-hover:scale-105"
           />
-          {product.isNew && <Badge className="absolute top-2 right-2">New</Badge>}
         </div>
       </Link>
       <CardContent className="p-4">
-        <Link href={`/products/${product.id}`} className="hover:underline">
+        <Link href={`/products/${product._id}`} className="hover:underline">
           <h3 className="font-medium">{product.name}</h3>
         </Link>
         <p className="font-bold mt-1">${product.price.toFixed(2)}</p>

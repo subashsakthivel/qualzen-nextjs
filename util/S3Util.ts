@@ -14,7 +14,7 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 const BUCKET_REGION = process.env.S3_BUCKET_REGION!;
 const ACCESS_KEY = process.env.S3_ACCESS_KEY!;
 const SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY!;
-const DEFAULT_FILES_ACL = ObjectCannedACL.public_read;
+const DEFAULT_FILES_ACL = ObjectCannedACL.bucket_owner_full_control;
 
 export class S3Util {
   private static instance: S3Util;
@@ -61,7 +61,7 @@ export class S3Util {
       ContentType: mimeType || mime.lookup(file.name) || "image/jpeg",
       ACL: ACL || DEFAULT_FILES_ACL,
     });
-
+    console.log("Going to upload a image ", fileKey);
     await this.client.send(command);
     const url = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileKey}`;
     console.log(`${file.name} uploaded ${url}`);

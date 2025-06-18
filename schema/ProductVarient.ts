@@ -10,7 +10,8 @@ export const ProductVariantSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        value: z.array(z.string()).min(1),
+        value: z.string(),
+        sortOrder: z.number().default(100),
       })
     )
     .max(6),
