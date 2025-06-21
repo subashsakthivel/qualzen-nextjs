@@ -52,9 +52,12 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
         required: true,
       },
       value: {
-        type: [String],
+        type: String,
         required: true,
-        minlength: 1,
+      },
+      sortOrder: {
+        type: Number,
+        default: 100,
       },
     },
   ],
@@ -62,7 +65,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProductVariant",
-      default: [],
+      default: null,
     },
   ],
   tags: {

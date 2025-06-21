@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import { TUserInfo } from "@/schema/UserInfo";
+import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
   name: {
@@ -21,16 +22,12 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
     unique: true,
     trim: true,
   },
-  password: {
-    type: String,
-    trim: true,
-  },
   picture: {
     type: String,
     trim: true,
   },
   phoneNumber: {
-    type: String,
+    type: Number,
     trim: true,
   },
   primaryAddress: {
@@ -38,12 +35,6 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
     ref: "Address",
     required: false,
   },
-  otherAddresses: [
-    {
-      type: [mongoose.Schema.Types.ObjectId],
-      ref: "Address",
-    },
-  ],
   isEmailVerified: {
     type: Boolean,
     default: false,
@@ -58,6 +49,8 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>({
     default: "user",
   },
 });
+
+userInfoDbSchema.plugin(mongoosePaginate);
 
 export const UserInfoModel =
   mongoose.models?.UserInfo || mongoose.model("UserInfo", userInfoDbSchema);

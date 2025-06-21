@@ -148,6 +148,10 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
             productForm.append(name, imageFile);
           });
         });
+        const stockQuantity =
+          varients.length > 0
+            ? varients.reduce((acc, variant) => acc + variant.stockQuantity, 0)
+            : Number.parseInt(formData.get("stockQuantity") as string);
         const product: TProductFormData = {
           name: formData.get("name") as string,
           category: formData.get("category") as string,
@@ -157,7 +161,7 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
           sku: formData.get("sku") as string,
           price: Number.parseFloat(formData.get("price") as string),
           discountedPrice: Number.parseFloat(formData.get("discountedPrice") as string),
-          stockQuantity: Number.parseInt(formData.get("stockQuantity") as string),
+          stockQuantity: stockQuantity,
           attributes: [...attributes],
           variants: varients.map((variant) => ({
             ...variant,
@@ -196,7 +200,6 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
       sku: "",
       stockQuantity: 0,
       variantSpecificPrice: 0,
-      productId: "",
       predefinedAttributes,
       imageFiles: [],
     };
@@ -338,6 +341,23 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     <Label htmlFor="brand">Brand</Label>
                     <Input id="brand" name="brand" type="text" className="w-full" />
                   </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="price">Price</Label>
+                    <Input id="price" name="price" type="number" className="w-full" />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="discountedPrice">Discount Price</Label>
+                    <Input
+                      id="discountedPrice"
+                      name="discountedPrice"
+                      type="number"
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="stockQuantity">SKU</Label>
+                    <Input id="sku" name="sku" type="text" className="w-full" />
+                  </div>
                   {/* <div className="grid gap-3">
                     <Label htmlFor="stockQuantity">Stock</Label>
                     <Input
@@ -360,23 +380,6 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                     <Input
                       id="stockQuantity"
                       name="stockQuantity"
-                      type="number"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">SKU</Label>
-                    <Input id="sku" name="sku" type="text" className="w-full" />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="price">Price</Label>
-                    <Input id="price" name="price" type="number" className="w-full" />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="discountedPrice">Discount Price</Label>
-                    <Input
-                      id="discountedPrice"
-                      name="discountedPrice"
                       type="number"
                       className="w-full"
                     />
@@ -621,6 +624,21 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                               onChange={(e) => {
                                 varient.variantSpecificPrice = Number.parseInt(e.target.value);
                                 setVarients([...varients]);
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-semibold">SKU</TableCell>
+                          <TableCell>
+                            <Input
+                              id="sku"
+                              name="sku"
+                              type="text"
+                              className="w-full"
+                              value={varient.sku}
+                              onChange={(e) => {
+                                (varient.sku = e.target.value), setVarients([...varients]);
                               }}
                             />
                           </TableCell>

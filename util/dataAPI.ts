@@ -61,6 +61,14 @@ export async function getData<T>(
     //   return await datamodel.getTableData(queryFilter, options);
     // }
     console.log(options);
+    if (datamodel.getData) {
+      return await datamodel.getData(queryFilter, options);
+    }
+
+    if (typeof (dbModel as PaginateModel<any>).paginate !== "function") {
+      console.log("Using paginate method");
+      return {} as PaginateResult<T>;
+    }
     const data = await (dbModel as PaginateModel<any>).paginate(queryFilter, {
       ...options,
     });
@@ -78,7 +86,9 @@ export async function postData<T>(datamodel: DataModelInterface, data: any): Pro
 
     const { data: safeData, error, success } = datamodel.schema.safeParse(data);
     if (!success) {
-      throw error;
+      console.error("Validation failed:", JSON.stringify(data, null, 2));
+      console.error("Error details:", error);
+      throw new Error("Please check the input data format and try again.");
     }
     if (datamodel.postData) {
       const responseData = await datamodel.postData(safeData);
@@ -255,4 +265,78 @@ export function parseFilter(filterState: FilterState): Record<string, any> {
   return {
     [mongoLogical]: conditions,
   };
+}
+
+export async function updateData<T>(
+  datamodel: DataModelInterface,
+  id: string,
+  data: any
+): Promise<T> {
+  try {
+    await dbConnect();
+    const schema = datamodel.schema.partial();
+    const { data: safeData, error, success } = schema.safeParse(data);
+    if (!success) {
+      console.error("Validation failed:", JSON.stringify(data, null, 2));
+      console.error("Error details:", error);
+      throw new Error("Please check the input data format and try again.");
+    }
+    if (datamodel.updateData) {
+      return await datamodel.updateData(id, safeData);
+    }
+    console.log("safeData", safeData);
+    const responseData = await datamodel.dbModel.findByIdAndUpdate(id, safeData, {
+      new: true,
+      runValidators: true,
+    });
+    return responseData;
+  } catch (error) {
+    console.error("Error updating data:", error);
+    throw error;
+  }
+}
+
+export async function updateFormData<T>(
+  datamodel: DataModelInterface,
+  id: string,
+  data: FormData
+): Promise<T> {
+  try {
+    await dbConnect();
+    if (datamodel.updateData) {
+      return await datamodel.updateData(id, data);
+    }
+    const schema = datamodel.schema.partial();
+    const {
+      data: safeData,
+      error,
+      success,
+    } = schema.safeParse(JSON.parse(data.get("data") as string));
+    if (!success) {
+      console.error("Validation failed:", JSON.stringify(data, null, 2));
+      console.error("Error details:", error);
+      throw new Error("Please check the input data format and try again.");
+    }
+    console.log("safeData", safeData);
+    const responseData = await datamodel.dbModel.findByIdAndUpdate(id, safeData, {
+      new: true,
+      runValidators: true,
+    });
+    return responseData;
+  } catch (error) {
+    console.error("Error updating data:", error);
+    throw error;
+  }
+}
+
+export async function deleteData<T>(datamodel: DataModelInterface, id: string): Promise<T> {
+  try {
+    await dbConnect();
+
+    const responseData = await datamodel.dbModel.findByIdAndDelete(id);
+    return responseData;
+  } catch (error) {
+    console.error("Error deleting data:", error);
+    throw error;
+  }
 }

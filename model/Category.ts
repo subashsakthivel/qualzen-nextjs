@@ -9,11 +9,7 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
     unique: true,
     trim: true,
   },
-  slug: {
-    type: String,
-    required: true,
-    unique: true,
-  },
+  displayName: { type: String, required: false },
   description: { type: String, required: false },
   parentCategory: {
     type: mongoose.Schema.Types.ObjectId,

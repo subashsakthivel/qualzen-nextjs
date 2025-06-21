@@ -8,6 +8,12 @@ const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecific
     minlength: 2,
     maxlength: 100,
   },
+  displayName: {
+    type: String,
+    required: true,
+    minlength: 2,
+    maxlength: 100,
+  },
   isMandatoryForVariant: {
     type: Boolean,
     default: false,

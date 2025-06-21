@@ -4,12 +4,12 @@ import { categorySpecificAttributesSchema } from "./CategorySpecificAttributes";
 export const CategorySchema = z.object({
   _id: z.string().optional(),
   name: z.string(),
+  displayName: z.string().optional(),
   description: z.string().optional(),
-  slug: z.string(),
   parentCategory: z
     .union([z.string(), z.lazy((): z.ZodTypeAny => CategorySchema), z.null()])
     .optional(),
-  attributes: z.union([z.array(z.string().uuid()), z.array(categorySpecificAttributesSchema)]),
+  attributes: z.array(z.union([z.string(), categorySpecificAttributesSchema])),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });

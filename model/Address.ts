@@ -1,12 +1,12 @@
 import { TAddress } from "@/schema/Address";
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const AddressDBSchema = new mongoose.Schema<TAddress>({
-  uid: {
-    type: String,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserInfo",
     required: true,
-    unique: true,
-    trim: true,
   },
   contactName: {
     type: String,
@@ -16,10 +16,6 @@ const AddressDBSchema = new mongoose.Schema<TAddress>({
     type: String,
     required: true,
     trim: true,
-  },
-  companyName: {
-    type: String,
-    required: false,
   },
   addressLine1: {
     type: String,
@@ -37,17 +33,13 @@ const AddressDBSchema = new mongoose.Schema<TAddress>({
     type: String,
     required: true,
   },
-  postal_code: {
+  postalCode: {
     type: String,
     required: true,
   },
   country: {
     type: String,
     required: true,
-  },
-  isDefault: {
-    type: Boolean,
-    default: false,
   },
   createdAt: {
     type: Date,
@@ -59,5 +51,6 @@ const AddressDBSchema = new mongoose.Schema<TAddress>({
   },
 });
 
+AddressDBSchema.plugin(mongoosePaginate);
 export const AddressModel =
   (mongoose.models.Address as mongoose.Model<any>) || mongoose.model("Address", AddressDBSchema);
