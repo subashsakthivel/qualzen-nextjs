@@ -1,5 +1,6 @@
 import { TOrder } from "@/schema/Order";
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const OrderSchema = new mongoose.Schema<TOrder>({
   user: {
@@ -10,6 +11,11 @@ const OrderSchema = new mongoose.Schema<TOrder>({
   orderDate: {
     type: Date,
     default: Date.now,
+  },
+  transactionId: {
+    type: String,
+    required: true,
+    unique: true,
   },
   status: {
     type: String,
@@ -49,7 +55,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
   },
   paymentMethod: {
     type: String,
-    enum: ["credit_card", "paypal", "bank_transfer"],
+    enum: ["credit_card", "paypal", "bank_transfer", "UPI"],
     default: "credit_card",
   },
   products: [
@@ -58,6 +64,11 @@ const OrderSchema = new mongoose.Schema<TOrder>({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
         required: true,
+      },
+      variant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProductVariant",
+        required: false,
       },
       quantity: {
         type: Number,
@@ -80,4 +91,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
   },
 });
 
-export const OrderModel = mongoose.model("Order", OrderSchema);
+OrderSchema.plugin(mongoosePaginate);
+
+export const OrderModel =
+  (mongoose.models.Order as mongoose.Model<any>) || mongoose.model("Order", OrderSchema);

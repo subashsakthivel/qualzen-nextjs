@@ -13,6 +13,8 @@ import { ProductVariantModel } from "./ProductVarient";
 import { ProductVariantSchema } from "@/schema/ProductVarient";
 import { AddressModel } from "./Address";
 import { AddressSchema } from "@/schema/Address";
+import { OrderSchema } from "@/schema/Order";
+import { OrderModel } from "./Order";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
@@ -327,6 +329,11 @@ export const DataModel: {
     schema: AddressSchema,
     dbModel: AddressModel,
     url: "/api/dataAPI/address",
+  },
+  order: {
+    schema: OrderSchema,
+    dbModel: OrderModel,
+    url: "/api/dataAPI/order",
   },
 };
 
