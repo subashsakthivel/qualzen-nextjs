@@ -15,7 +15,7 @@ export const ProductSchema = z.object({
   description: z.string(),
   sku: z.string(),
   price: z.number().min(0),
-  discountedPrice: z.number().min(0).optional(),
+  discountPrice: z.number().min(0),
   stockQuantity: z.number().min(0).default(0),
   category: z.union([z.string(), CategorySchema]),
   brand: z.string().optional(),

@@ -28,7 +28,6 @@ export async function GET(
     }
     const requestObj = JSON.parse(searchParams.get("request") || "{}");
     const responseData = await getData(dataModel, operation, requestObj);
-    console.log(JSON.stringify(responseData, null, 2));
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {
     console.log(err);

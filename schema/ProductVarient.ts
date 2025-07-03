@@ -4,6 +4,7 @@ export const ProductVariantSchema = z.object({
   _id: z.string().optional(),
   sku: z.string(),
   variantSpecificPrice: z.number().min(0).default(0),
+  variantSpecificDiscountPrice: z.number().min(0).default(0).optional(),
   stockQuantity: z.number().min(0).default(0),
   imageNames: z.array(z.string()).min(1).max(10),
   attributes: z

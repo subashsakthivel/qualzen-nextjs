@@ -5,15 +5,17 @@ import { AddressSchema } from "./Address";
 export const OrderSchema = z.object({
   user: z.union([z.string(), UserInfoSchema]),
   orderDate: z.date().default(new Date()),
+  receipt: z.string().optional(),
   transactionId: z.string(),
-  status: z.enum(["pending", "shipped", "delivered", "cancelled"]).default("pending"),
-  totalAmount: z.number().min(0),
+  status: z.enum(["created", "attempted", "paid"]).default("created"),
+  amount: z.number().min(0),
+  currency: z.string().default("INR"),
   shippingAddress: z.union([z.string(), AddressSchema]),
-  billingAddress: z.union([z.string(), AddressSchema]),
-  shippingMethod: z.enum(["standard", "express"]).default("standard"),
+  billingAddress: z.union([z.string(), AddressSchema]).default("private").optional(),
+  shippingMethod: z.enum(["standard", "express"]).default("standard").optional(),
   shippingCost: z.number().min(0).default(0),
   trackingNumber: z.string(),
-  paymentMethod: z.enum(["credit_card", "paypal", "bank_transfer", "UPI"]).default("credit_card"),
+  paymentMethod: z.enum(["credit_card", "paypal", "bank_transfer", "UPI"]).optional(),
   products: z.array(
     z.object({
       product: z.string(),
@@ -22,8 +24,10 @@ export const OrderSchema = z.object({
     })
   ),
   notes: z.string().optional(),
-  createdAt: z.date().default(new Date()),
-  updatedAt: z.date().default(new Date()),
+  createdAt: z.date().default(new Date()).optional(),
+  updatedAt: z.date().default(new Date()).optional(),
 });
 
 export type TOrder = z.infer<typeof OrderSchema>;
+
+export type TOrderedProducts = z.infer<typeof OrderSchema>["products"];

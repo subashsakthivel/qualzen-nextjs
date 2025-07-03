@@ -21,7 +21,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     required: true,
     min: 0,
   },
-  discountedPrice: {
+  discountPrice: {
     type: Number,
     required: false,
     min: 0,

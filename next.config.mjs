@@ -34,6 +34,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "lumalabs.ai", // todo:  remove
       },
+      {
+        protocol: "https",
+        hostname: "qual-test-warfeo.s3.ap-south-1.amazonaws.com", // todo:  remove
+      },
     ],
   },
   webpack(config) {

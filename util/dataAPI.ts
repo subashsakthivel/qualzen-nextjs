@@ -60,7 +60,6 @@ export async function getData<T>(
     // if (operation === "GET_TABLE_DATA" && datamodel.getTableData) {
     //   return await datamodel.getTableData(queryFilter, options);
     // }
-    console.log(options);
     if (datamodel.getData) {
       return await datamodel.getData(queryFilter, options);
     }
@@ -100,6 +99,13 @@ export async function postData<T>(datamodel: DataModelInterface, data: any): Pro
     console.error("Error fetching data:", error);
     throw error;
   }
+}
+
+export async function getFilteredData(
+  datamodel: DataModelInterface,
+  { filter, limit = 1000, sort = { ["timestamp"]: -1 }, page = 1, ...otherOptions }: FetchDataParams
+) {
+  datamodel.dbModel.find(parseFilter(filter!));
 }
 
 export async function postFormData<T>(
@@ -332,7 +338,9 @@ export async function updateFormData<T>(
 export async function deleteData<T>(datamodel: DataModelInterface, id: string): Promise<T> {
   try {
     await dbConnect();
-
+    if (datamodel.deleteData) {
+      return await datamodel.deleteData(id);
+    }
     const responseData = await datamodel.dbModel.findByIdAndDelete(id);
     return responseData;
   } catch (error) {

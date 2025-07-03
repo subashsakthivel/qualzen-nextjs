@@ -12,6 +12,11 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     min: 0,
   },
+  variantSpecificDiscountPrice: {
+    type: Number,
+    required: false,
+    min: 0,
+  },
   stockQuantity: {
     type: Number,
     required: true,
@@ -55,5 +60,5 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
 });
 
 export const ProductVariantModel =
-  mongoose.models.ProductVariant<TProductVariant> ||
+  (mongoose.models?.ProductVariant as mongoose.Model<TProductVariant>) ||
   mongoose.model<TProductVariant>("ProductVariant", ProductVariantDBSchema);

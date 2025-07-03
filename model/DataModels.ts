@@ -28,6 +28,7 @@ export interface DataModelInterface {
   getTableData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
   getData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
   postData?: (data: any) => Promise<any>;
+  deleteData?: (id: string) => Promise<any>;
   updateData?: (id: string, data: any) => Promise<any>;
   authorized?: () => boolean;
 }
@@ -58,7 +59,6 @@ export const DataModel: {
         ...options,
         populate: [{ path: "parentCategory" }, { path: "attributes" }],
       }).then((result) => {
-        console.log("result", JSON.stringify(result));
         const resultData = JSON.parse(JSON.stringify(result));
         return {
           ...resultData,
@@ -71,7 +71,6 @@ export const DataModel: {
           }),
         };
       });
-      console.log("data", JSON.stringify(data));
       return data;
     },
     postData: async (data: TCategory) => {
@@ -139,7 +138,6 @@ export const DataModel: {
       return await ProductModel.paginate(queryFilter, {
         ...options,
       }).then(async (result) => {
-        console.log("result", JSON.stringify(result));
         const resultData = JSON.parse(JSON.stringify(result));
         const docs = await Promise.all(
           resultData.docs.map(async (doc: any) => {
@@ -168,13 +166,6 @@ export const DataModel: {
             };
           })
         );
-        console.log(
-          "docs",
-          JSON.stringify({
-            ...resultData,
-            docs,
-          })
-        );
         return {
           ...resultData,
           docs,
@@ -188,7 +179,7 @@ export const DataModel: {
         error,
       } = ProductSchema.safeParse(JSON.parse(data.get("data") as string));
       if (error || !success) {
-        console.log(error);
+        console.error(error);
         return;
       }
       if (productData) {
@@ -210,7 +201,7 @@ export const DataModel: {
         const failedUploads = uploadResults
           .filter((result): result is PromiseRejectedResult => result.status === "rejected")
           .map((result) => result.reason.message);
-        console.log("Failed uploads:", failedUploads);
+        console.error("Failed uploads:", failedUploads);
         // Upload variant images and create variants
         const variants = await ProductVariantModel.insertMany(
           await Promise.all(
@@ -237,12 +228,11 @@ export const DataModel: {
                 const failedUploads = uploadResults
                   .filter((result): result is PromiseRejectedResult => result.status === "rejected")
                   .map((result) => result.reason.message);
-                console.log("Failed uploads:", failedUploads);
+                console.error("Failed uploads:", failedUploads);
                 return variant;
               })
           )
         );
-        console.log("Variants created");
         productData.variants = variants;
         return await ProductModel.create(productData);
       }
@@ -303,26 +293,59 @@ export const DataModel: {
         productData.imageNames = await uploadImages(productData.imageNames, data);
       }
       if (productData.variants) {
-        productData.variants = await Promise.all(
-          productData.variants.map(async (variant: any) => {
-            if (variant.imageNames) {
-              variant.imageNames = await uploadImages(variant.imageNames, data);
-            }
-            if (variant._id) {
-              return ProductVariantModel.findByIdAndUpdate(variant._id, variant, {
-                new: true,
-                runValidators: true,
-              });
-            } else {
-              return ProductVariantModel.create(variant);
-            }
-          })
-        );
+        productData.variants = (
+          await Promise.all(
+            productData.variants.map(async (variant: any) => {
+              if (variant.imageNames) {
+                variant.imageNames = await uploadImages(variant.imageNames, data);
+              }
+              if (variant._id) {
+                return ProductVariantModel.findByIdAndUpdate(variant._id, variant, {
+                  new: true,
+                  runValidators: true,
+                });
+              } else {
+                return ProductVariantModel.create(variant);
+              }
+            })
+          )
+        ).filter((variant) => variant !== null);
       }
       return await ProductModel.findByIdAndUpdate(id, productData, {
         new: true,
         runValidators: true,
       });
+    },
+    deleteData: async (id: string) => {
+      const product = await ProductModel.findByIdAndDelete(id);
+      if (product) {
+        await Promise.all(
+          product.imageNames.map((imageName) => {
+            try {
+              S3Util.getInstance().deleteFile(imageName);
+            } catch (error) {
+              console.error(`Failed to delete image ${imageName}:`, error);
+            }
+          })
+        );
+        await Promise.all(
+          product.variants.map(async (variantId) => {
+            const variant = await ProductVariantModel.findByIdAndDelete(variantId);
+            if (variant) {
+              return Promise.all(
+                variant.imageNames.map((imageName) => {
+                  try {
+                    S3Util.getInstance().deleteFile(imageName);
+                  } catch (error) {
+                    console.error(`Failed to delete variant image ${imageName}:`, error);
+                  }
+                })
+              );
+            }
+          })
+        );
+      }
+      return product;
     },
   },
   address: {
@@ -356,6 +379,6 @@ async function uploadImages(imageNames: string[], data: FormData): Promise<strin
   const failedUploads = uploadResults
     .filter((result): result is PromiseRejectedResult => result.status === "rejected")
     .map((result) => result.reason.message);
-  console.log("Failed uploads:", failedUploads);
+  console.error("Failed uploads:", failedUploads);
   return uploadedImages;
 }

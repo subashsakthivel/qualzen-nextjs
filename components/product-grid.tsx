@@ -21,6 +21,7 @@ export function ProductGrid({ products }: { products: TProductRes[] }) {
 
 function ProductCard({ product }: { product: TProductRes }) {
   const { addToCart } = useCart();
+  console.log("image ", product.imageSrc[0]);
 
   return (
     <Card className="overflow-hidden group">
