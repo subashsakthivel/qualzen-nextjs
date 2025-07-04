@@ -8,8 +8,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 type CartContextType = {
   cartItems: TProductRes[];
   addToCart: (product: TProductRes) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, variantId: string | undefined) => void;
+  updateQuantity: (productId: string, varaintId: string | undefined, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -41,7 +41,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (product: TProductRes) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item._id === product._id);
+      const existingItem = prevItems.find(
+        (item) => item._id === product._id && item.variantId === product.variantId
+      );
 
       if (existingItem) {
         return prevItems.map((item) =>
@@ -53,8 +55,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item._id !== productId));
+  const removeFromCart = (productId: string, variantId: string | undefined) => {
+    setCartItems((prevItems) =>
+      prevItems.filter((item) => item._id !== productId && item.variantId !== variantId)
+    );
 
     // If cart is empty after removal, clear localStorage
     if (cartItems.length === 1) {
@@ -62,11 +66,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, variantId: string | undefined, quantity: number) => {
     if (quantity < 1) return;
 
     setCartItems((prevItems) =>
-      prevItems.map((item) => (item._id === productId ? { ...item, quantity } : item))
+      prevItems.map((item) =>
+        item._id === productId && item.variantId === variantId ? { ...item, quantity } : item
+      )
     );
   };
 

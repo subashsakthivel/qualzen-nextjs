@@ -18,8 +18,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCart } from "@/components/cart-provider";
+import { signIn, useSession } from "next-auth/react";
 
 export default function CheckoutPage() {
+  const { status, data } = useSession({
+    required: true,
+    onUnauthenticated() {
+      signIn(undefined, { callbackUrl: "/checkout" }); // Redirect to login if not authenticated
+    },
+  });
   const { cartItems, subtotal, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -34,6 +41,10 @@ export default function CheckoutPage() {
         </Button>
       </div>
     );
+  }
+
+  if (cartItems.length > 0 && status === "loading") {
+    return <div>Loding...</div>;
   }
 
   if (isComplete) {

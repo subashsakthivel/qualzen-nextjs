@@ -1,10 +1,11 @@
 import { SignInForm } from "@/components/auth/signin-form";
 // import Image from "next/image";
 
-export default function LoginPage() {
+export default function LoginPage({ callbackUrl }: { callbackUrl?: string }) {
+  console.log("LoginPage callbackUrl:", callbackUrl);
   return (
     <div>
-      <SignInForm />
+      <SignInForm callbackUrl={callbackUrl} />
     </div>
   );
 }

@@ -5,14 +5,14 @@ import { Button } from "../ui/button";
 import { signIn } from "next-auth/react";
 import { FaApple, FaGoogle } from "react-icons/fa";
 
-const AuthProviders = () => {
+const AuthProviders = ({ callbackUrl = "/" }: { callbackUrl?: string }) => {
   return (
     <div className="flex flex-col space-y-3">
       <Button
         type="button"
         variant="outline"
         className="flex items-center justify-center gap-2"
-        onClick={() => signIn("google")}
+        onClick={() => signIn("google", { callbackUrl })}
       >
         <FaGoogle size={16} />
         <span>Continue with Google</span>
@@ -21,7 +21,7 @@ const AuthProviders = () => {
         type="button"
         variant="outline"
         className="flex items-center justify-center gap-2"
-        onClick={() => signIn("apple")}
+        onClick={() => signIn("apple", { callbackUrl })}
       >
         <FaApple size={16} />
         <span>Continue with Apple</span>

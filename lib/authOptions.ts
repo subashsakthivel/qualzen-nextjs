@@ -117,9 +117,6 @@ export const authOptions: NextAuthOptions = {
       if (session?.user) session.user.role = token.role;
       return session;
     },
-    redirect({ baseUrl }) {
-      return baseUrl + "/private";
-    },
   },
   session: {
     strategy: "jwt",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Minus, Plus, ShoppingCart } from "lucide-react";
@@ -22,8 +22,9 @@ type TAtttributes = {
   quantity: number;
   sortOrder: number;
 };
-export default function ProductView({ params }: { params: { id: string } }) {
-  const productId = Number.parseInt(params.id);
+export default function ProductView({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = React.use(params);
+  const productId = unwrappedParams.id;
   const [product, setProduct] = useState<TProductRes | undefined>(undefined);
 
   const [quantity, setQuantity] = useState(1);
@@ -57,24 +58,22 @@ export default function ProductView({ params }: { params: { id: string } }) {
         product.attributes = product.attributes.sort((a, b) => a.sortOrder - b.sortOrder);
 
         const varaintAttributes: TAtttributes[] = [];
-        product.variants
-          .filter((v) => typeof v !== "string")
-          .map((variant) => {
-            variant.attributes.map((attr) => {
-              const existing = varaintAttributes.find((v) => v.name === v.name);
-              if (existing) {
-                existing.values.push({ variantId: variant._id ?? "-", value: attr.value });
-                existing.quantity += variant.stockQuantity;
-              } else {
-                varaintAttributes.push({
-                  name: attr.name,
-                  values: [{ variantId: variant._id ?? "-", value: attr.value }],
-                  quantity: variant.stockQuantity,
-                  sortOrder: attr.sortOrder,
-                });
-              }
-            });
+        product.variants.map((variant) => {
+          variant.attributes.map((attr) => {
+            const existing = varaintAttributes.find((v) => v.name === v.name);
+            if (existing) {
+              existing.values.push({ variantId: variant._id ?? "-", value: attr.value });
+              existing.quantity += variant.stockQuantity;
+            } else {
+              varaintAttributes.push({
+                name: attr.name,
+                values: [{ variantId: variant._id ?? "-", value: attr.value }],
+                quantity: variant.stockQuantity,
+                sortOrder: attr.sortOrder,
+              });
+            }
           });
+        });
         const productAttributes = product.attributes.filter((attr) =>
           varaintAttributes.find((a) => a.name === attr.name)
         );
@@ -89,11 +88,9 @@ export default function ProductView({ params }: { params: { id: string } }) {
   function onSelectAttribute(attributeName: string, attributeValue: string) {
     selectedAttributes[attributeName] = attributeValue;
     if (Object.keys(selectedAttributes).length === attributes.length) {
-      const selectedVariant = product?.variants
-        .filter((v) => typeof v !== "string")
-        .find((variant) => {
-          return variant.attributes.every((attr) => selectedAttributes[attr.name] === attr.value);
-        });
+      const selectedVariant = product?.variants.find((variant) => {
+        return variant.attributes.every((attr) => selectedAttributes[attr.name] === attr.value);
+      });
       if (selectedVariant && typeof selectedVariant !== "string") {
         setSelectedVariant(selectedVariant._id ?? null);
       } else {
@@ -114,10 +111,11 @@ export default function ProductView({ params }: { params: { id: string } }) {
   }
 
   const handleAddToCart = () => {
-    if (!selectedSize || !selectedColor) return;
+    if (product.variants.length > 0 && !selectedVariant) return;
 
     addToCart({
       ...product,
+      variantId: selectedVariant ?? undefined,
     });
   };
 

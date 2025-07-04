@@ -28,16 +28,14 @@ export async function getTotalAmount(
     }
     if (order.variantId) {
       const variant = product.variants.find(
-        (v) => typeof v !== "string" && v._id != undefined && v._id.toString() === order.variantId
+        (v) => v._id != undefined && v._id.toString() === order.variantId
       );
       if (!product.variants && !variant) {
         throw new Error(`Product Variant with ID ${order.variantId} does not found`);
       }
 
       total +=
-        typeof variant !== "string" && variant !== undefined
-          ? variant.variantSpecificPrice ?? variant.variantSpecificPrice
-          : 0;
+        variant !== undefined ? variant.variantSpecificPrice ?? variant.variantSpecificPrice : 0;
     } else {
       total += product.discountedPrice;
     }

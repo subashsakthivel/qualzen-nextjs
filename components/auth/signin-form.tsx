@@ -7,7 +7,12 @@ import AuthProviders from "./providers";
 import { AUTH_URLS } from "@/constants/url-mapper";
 import { Mail } from "lucide-react";
 
-export function SignInForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
+export function SignInForm({
+  className,
+  callbackUrl,
+  ...props
+}: React.ComponentPropsWithoutRef<"form"> & { callbackUrl?: string }) {
+  console.log("callbackrl", callbackUrl);
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -17,7 +22,7 @@ export function SignInForm({ className, ...props }: React.ComponentPropsWithoutR
         </p>
       </div>
       <div className="grid gap-6">
-        <AuthProviders />
+        <AuthProviders callbackUrl={callbackUrl} />
         <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
           <span className="relative z-10 bg-background px-2 text-muted-foreground">
             Or continue with

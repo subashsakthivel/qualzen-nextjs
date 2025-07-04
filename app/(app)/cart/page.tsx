@@ -35,12 +35,12 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item) => (
-            <Card key={item.id} className="overflow-hidden">
+            <Card key={item._id} className="overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative w-full sm:w-[120px] h-[120px]">
                     <Image
-                      src={item.image || "/placeholder.svg"}
+                      src={item.imageSrc[0] || "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover"
@@ -50,8 +50,12 @@ export default function CartPage() {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {item.selectedSize && `Size: ${item.selectedSize}`}
-                        {item.selectedColor && `, Color: ${item.selectedColor}`}
+                        {item.selectedVariant?.attributes.map((attr) => (
+                          <span key={attr.name}>
+                            {attr.name}: {attr.value}
+                            {", "}
+                          </span>
+                        ))}
                       </p>
                       <p className="font-bold mt-1">${item.price.toFixed(2)}</p>
                     </div>
@@ -60,16 +64,30 @@ export default function CartPage() {
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
+                        onClick={() =>
+                          updateQuantity(
+                            item._id,
+                            item.variantId,
+                            (item.selectedVariant?.stockQuantity || item.stockQuantity || 1) - 1
+                          )
+                        }
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="w-10 text-center">{item.quantity || 1}</span>
+                      <span className="w-10 text-center">
+                        {item.selectedVariant?.stockQuantity || item.stockQuantity || 1}
+                      </span>
                       <Button
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
+                        onClick={() =>
+                          updateQuantity(
+                            item._id,
+                            item.variantId,
+                            (item.selectedVariant?.stockQuantity || item.stockQuantity || 1) + 1
+                          )
+                        }
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -77,7 +95,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 ml-2"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item._id, item.variantId)}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>

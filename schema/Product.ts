@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CategorySchema } from "./Category";
-import { ProductVariantSchema } from "./ProductVarient";
+import { ProductVariantSchema, TProductVariant } from "./ProductVarient";
 
 export const ProductAttributeSchema = z.object({
   name: z.string(),
@@ -30,4 +30,10 @@ export const ProductSchema = z.object({
 
 export type TProduct = z.infer<typeof ProductSchema>;
 
-export type TProductRes = TProduct & { imageSrc: string[]; _id: string }; // todo: need zod for this
+export type TProductRes = Omit<TProduct, "variants"> & {
+  imageSrc: string[];
+  _id: string;
+  variantId?: string;
+  selectedVariant?: TProductVariant & { imageSrc: string[] };
+  variants: TProductVariant[];
+}; // todo: need zod for this
