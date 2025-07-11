@@ -113,7 +113,7 @@ export const DataModel: {
     },
     authorized: () => true,
   },
-  userInfo: {
+  userinfo: {
     schema: UserInfoSchema,
     dbModel: UserInfoModel,
     url: "/api/dataAPI/UserInfo",

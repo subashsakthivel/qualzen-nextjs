@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ProductSchema } from "@/schema/Product";
 import { CategorySchema } from "@/schema/Category";
+import { AddressSchema } from "@/schema/Address";
+import { UserInfoSchema } from "@/schema/UserInfo";
 // import { CategorySchema } from "./Category";
 
 export interface IDataSourceMap {
@@ -31,5 +33,15 @@ export const DataSourceMap: {
       "brand",
       "image_urls",
     ],
+  },
+  address: {
+    url: "/api/dataAPI/address",
+    schema: AddressSchema,
+    columns: [],
+  },
+  userinfo: {
+    url: "/api/dataAPI/userinfo",
+    schema: UserInfoSchema,
+    columns: [],
   },
 };

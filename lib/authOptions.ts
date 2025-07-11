@@ -13,15 +13,18 @@ import { CommonUtil } from "@/util/util";
 import dbConnect from "./mongoose";
 import { InvalidInputError } from "@/constants/erros";
 import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
+import { date } from "zod";
 
-async function checkAndAddUser(user: TUserInfo) {
+async function checkAndAddUser(user: TUserInfo): Promise<TUserInfo> {
   await dbConnect();
   const existingUser = await UserInfoModel.findOne({ email: user.email });
   if (existingUser) {
     console.log("User already exists in the database:", existingUser);
+    return existingUser;
   } else {
-    await UserInfoModel.create(user);
+    const userInfo = await UserInfoModel.create(user);
     console.log("User added to the database:", user);
+    return userInfo;
   }
 }
 export const authOptions: NextAuthOptions = {
@@ -52,46 +55,50 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        username: {
-          label: "Username",
-          type: "text",
-          placeholder: "your-name",
-        },
-        password: {
-          label: "Password",
-          type: "password",
-          placeholder: "your-tough-password",
-        },
-        email: {
-          label: "Email",
-          type: "email",
-          placeholder: "your-email",
-        },
-      },
-      async authorize(credentials) {
-        console.log("Credentials : ", credentials);
-        const user = await getUserByEmail(credentials?.email as string);
-        if (!user) {
-          console.log("User not found in the database:", credentials?.email);
-          return null;
-        } else {
-          return await verifyEmailAndPassword(credentials?.email as string);
-        }
-      },
-    }),
+    // CredentialsProvider({
+    //   name: "Credentials",
+    //   credentials: {
+    //     username: {
+    //       label: "Username",
+    //       type: "text",
+    //       placeholder: "your-name",
+    //     },
+    //     password: {
+    //       label: "Password",
+    //       type: "password",
+    //       placeholder: "your-tough-password",
+    //     },
+    //     email: {
+    //       label: "Email",
+    //       type: "email",
+    //       placeholder: "your-email",
+    //     },
+    //     userId: {
+    //       value: "",
+    //     }
+    //   },
+    //   async authorize(credentials) {
+    //     console.log("Credentials : ", credentials);
+    //     const user = await getUserByEmail(credentials?.email as string);
+    //     if (!user) {
+    //       console.log("User not found in the database:", credentials?.email);
+    //       throw new Error("User Not found");
+    //     } else {
+    //       return await verifyEmailAndPassword(credentials?.email as string);
+    //     }
+    //   },
+    // }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
   adapter: MongoDBAdapter(clientPromise) as Adapter,
   callbacks: {
     async jwt({ token, account, profile, session, user, trigger }) {
       //persist user data in token
-      console.log("trigger", trigger);
+      if (user || profile) {
+        console.log("trigger", trigger);
 
-      if (trigger === "signUp" || trigger === "update" || trigger === "signIn") {
         console.warn("jwt token", token, account, profile, session, user, trigger);
+
         const userObj = CommonUtil.filterObjectByType(
           { ...token, ...account, ...profile, ...session, ...user },
           Object.keys(UserInfoSchema.shape)
@@ -103,18 +110,23 @@ export const authOptions: NextAuthOptions = {
           throw new InvalidInputError(error);
         } else {
           console.log("User data is valid:", data);
-          checkAndAddUser(data as TUserInfo);
+          const userInfo = await checkAndAddUser(data as TUserInfo);
+          token.userId = userInfo.userId;
         }
-      }
-      if (user && account) {
-        token.accessToken = account.access_token;
-        token.role = user.role;
+
+        if (user && account) {
+          token.accessToken = account.access_token;
+          token.role = user.role;
+        }
       }
 
       return token;
     },
     async session({ session, token }) {
-      if (session?.user) session.user.role = token.role;
+      if (session?.user) {
+        session.user.role = token.role;
+        session.user.userId = token.userId;
+      }
       return session;
     },
   },

@@ -12,11 +12,20 @@ export class PaymentService {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
   }
+  static getInstance() {
+    return new PaymentService();
+  }
   async createOrder(
     options: Orders.RazorpayOrderCreateRequestBody,
     orderData: TOrder
   ): Promise<TOrder> {
     const order = await this.razorpay.orders.create(options);
+    orderData.transactionId = order.id;
+    orderData.receipt = order.receipt;
+    orderData.status = order.status;
+    orderData.currency = order.currency;
+    orderData.amount = order.amount as number;
+
     if (!order) {
       throw new Error("Failed to create Razorpay order");
     }

@@ -1,3 +1,4 @@
+import { authOptions } from "@/lib/authOptions";
 import { DataModel } from "@/model/DataModels";
 import {
   deleteData,
@@ -7,6 +8,7 @@ import {
   updateData,
   updateFormData,
 } from "@/util/dataAPI";
+import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -27,6 +29,16 @@ export async function GET(
       return NextResponse.json({ message: "Invalid operation" }, { status: 400 });
     }
     const requestObj = JSON.parse(searchParams.get("request") || "{}");
+    if (modelName === "address" || modelName === "userinfo") {
+      const session = await getServerSession(authOptions);
+      if (!session || !session.user.role) {
+        return NextResponse.json({ error: "Access Denied", staus: 401 }, { status: 401 });
+      }
+
+      const filter = session.user.role === "admin" ? {} : { userId: session.user.userId };
+      const resData = await getData(dataModel, operation, { ...requestObj, ...filter });
+      return NextResponse.json({ message: "success", data: resData }, { status: 200 });
+    }
     const responseData = await getData(dataModel, operation, requestObj);
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {

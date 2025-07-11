@@ -185,8 +185,12 @@ export async function getDataFromServer<T>(
   }
 }
 
-export async function postDataToServer<T>(dataSource: IDataSourceMap, data: any): Promise<T> {
+export async function postDataToServer<T>(
+  dataSource: IDataSourceMap,
+  data: any
+): Promise<{ message: string; data: T }> {
   try {
+    console.log("postDataFromserver", data);
     const { data: postData } = data;
     const { data: safeData, error, success } = dataSource.schema.safeParse(postData);
     if (!success) {

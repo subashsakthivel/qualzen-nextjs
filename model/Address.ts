@@ -3,19 +3,13 @@ import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const AddressDBSchema = new mongoose.Schema<TAddress>({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "UserInfo",
+  userId: {
+    type: String,
     required: true,
   },
   contactName: {
     type: String,
     required: true,
-  },
-  contactNumber: {
-    type: String,
-    required: true,
-    trim: true,
   },
   addressLine1: {
     type: String,

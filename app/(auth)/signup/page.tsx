@@ -1,9 +1,15 @@
 import { SignUpForm } from "@/components/auth/signup-form";
 
-export default function NewsletterSignup() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  console.log("callbackurl", callbackUrl);
   return (
     <div>
-      <SignUpForm />
+      <SignUpForm callbackUrl={callbackUrl} />
     </div>
   );
 }

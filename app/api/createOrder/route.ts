@@ -27,9 +27,9 @@ export async function getTotalAmount(
       throw new Error(`Product with ID ${order.productId} not found`);
     }
     if (order.variantId) {
-      const variant = product.variants.find(
-        (v) => v._id != undefined && v._id.toString() === order.variantId
-      );
+      const variant = product.variants
+        .filter((v) => typeof v !== "string")
+        .find((v) => v._id != undefined && v._id.toString() === order.variantId);
       if (!product.variants && !variant) {
         throw new Error(`Product Variant with ID ${order.variantId} does not found`);
       }

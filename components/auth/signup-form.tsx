@@ -7,7 +7,11 @@ import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
 import { signIn } from "next-auth/react";
 
-export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
+export function SignUpForm({
+  className,
+  callbackUrl,
+  ...props
+}: React.ComponentPropsWithoutRef<"form"> & { callbackUrl?: string }) {
   async function handleSubmit(formdata: FormData) {
     const response = await signIn("credentials", {
       username: formdata.get("username"),
@@ -25,7 +29,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         <h1 className="text-2xl font-bold">Create your account</h1>
       </div>
       <div className="grid gap-6">
-        <AuthProviders />
+        <AuthProviders callbackUrl={callbackUrl} />
         <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
           <span className="relative z-10 bg-background px-2 text-muted-foreground">
             Or continue with

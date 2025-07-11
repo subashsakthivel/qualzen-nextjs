@@ -3,6 +3,7 @@ import { SignInForm } from "@/components/auth/signin-form";
 
 export default function LoginPage({ callbackUrl }: { callbackUrl?: string }) {
   console.log("LoginPage callbackUrl:", callbackUrl);
+  console.log("podann");
   return (
     <div>
       <SignInForm callbackUrl={callbackUrl} />
