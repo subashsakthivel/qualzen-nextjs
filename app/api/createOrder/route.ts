@@ -3,9 +3,8 @@ import { PaymentService } from "@/lib/payment";
 import { DataModel } from "@/model/DataModels";
 import { ProductModel } from "@/model/Product";
 import { TOrder } from "@/schema/Order";
-import { TProductVariant } from "@/schema/ProductVarient";
 import { TUserInfo } from "@/schema/UserInfo";
-import { FilterState, getData } from "@/util/dataAPI";
+import { getData } from "@/util/dataAPI";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -31,33 +30,69 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Invalid User" }, { status: 403 });
   }
   const userInfo = userInfoResData.docs[0];
-  const { orders, receipt, currency, notes, shippingAddressId, shippingMethod } =
-    await request.json();
-
+  if (!userInfo) {
+    return NextResponse.json({ message: "Invalid User" }, { status: 403 });
+  }
+  const {
+    orders,
+    notes,
+    contactNumber,
+    shippingAddressId,
+    billingAddressId,
+    shippingMethod,
+    amount,
+  } = await request.json();
+  const totalAmount = Math.round(await getTotalAmount(orders));
+  if (Math.abs(amount - totalAmount) >= 1) {
+    return NextResponse.json({ message: "Item may be not found" }, { status: 400 }); // return the item which is not availble
+  }
   const orderData: TOrder = {
     user: userInfo,
     status: "created",
-    amount: await getTotalAmount(orders),
+    amount,
     shippingAddress: shippingAddressId,
+    billingAddress: billingAddressId ?? shippingAddressId,
     shippingMethod,
     shippingCost: 0, // todo need calculation
-    trackingNumber: Math.random() + "_",
-    products: orders,
+    products: orders.map((order: any) => ({
+      product: order.productId,
+      variant: order.variantId,
+      quantity: order.quantity,
+    })),
     notes,
+    trackingNumber: 0,
     currency: "",
     orderDate: new Date(),
     transactionId: "",
+    receipt: `${userInfo.firstName} ${userInfo.lastName ?? ""} ${Date.now()}`,
   };
+  console.log("Order data", orderData);
   const paymentService = PaymentService.getInstance();
-  const order = paymentService.createOrder(
+  const order = await paymentService.createOrder(
     {
-      ...orderData,
-      notes: notes ? { note: notes } : undefined,
+      amount: amount,
+      currency: orderData.currency,
+
+      receipt: orderData.receipt,
+      customer_details: {
+        name: userInfo.firstName ?? userInfo.email,
+        contact: contactNumber ?? userInfo.phoneNumber,
+        email: userInfo.email,
+        billing_address: {
+          name: billingAddressId ?? shippingAddressId,
+        },
+        shipping_address: {
+          name: shippingAddressId,
+        },
+      },
     },
     orderData
   );
-  if (!orders || !Array.isArray(orders) || orders.length === 0) {
-    return new Response("Invalid order data", { status: 400 });
+
+  if (order && order.transactionId && order.transactionId !== "") {
+    return NextResponse.json({ orderId: order.transactionId }, { status: 200 });
+  } else {
+    return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
   }
 }
 
@@ -65,10 +100,10 @@ export async function getTotalAmount(
   orders: { productId: string; variantId?: string; quantity: number }[]
 ): Promise<number> {
   const products = await ProductModel.find({
-    _id: { $in: orders.map((order) => order.productId), stockQuantity: { $gte: 1 } },
+    _id: { $in: orders.map((order) => order.productId) },
   }).populate({
     path: "variants",
-    match: { _id: { $in: orders.map((order) => order.variantId) }, stockQuantity: { $gte: 1 } },
+    match: { _id: { $in: orders.map((order) => order.variantId) } },
   });
   return orders.reduce((total, order) => {
     const product = products.find((p) => p._id.toString() === order.productId);
@@ -82,11 +117,16 @@ export async function getTotalAmount(
       if (!product.variants && !variant) {
         throw new Error(`Product Variant with ID ${order.variantId} does not found`);
       }
+      if (!variant || variant.stockQuantity < 1) {
+        throw new Error("product sold out", { cause: order });
+      }
 
-      total +=
-        variant !== undefined ? variant.variantSpecificPrice ?? variant.variantSpecificPrice : 0;
+      total += variant.variantSpecificPrice;
     } else {
-      total += product.discountPrice;
+      if (product.stockQuantity < 1) {
+        throw new Error("product sold out", { cause: order });
+      }
+      total += product.price;
     }
     return total;
   }, 0);

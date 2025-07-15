@@ -29,11 +29,11 @@ export default function Checkout() {
       signIn(undefined, { callbackUrl: "/checkout" }); // Redirect to login if not authenticated
     },
   });
-  const { cartItems, subtotal, clearCart } = useCart();
+  const { cartItems, total, clearCart } = useCart();
   const [selectedAddress, setSelectedAddress] = useState<string | undefined>(undefined);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addresses, setAddresses] = useState<TAddress[]>([]);
-  const [contactNumber, setContactNumber] = useState<TUserInfo["phoneNumber"]>("");
+  const [contactNumber, setContactNumber] = useState<string>("");
 
   const [formData, setFormData] = useState<TAddress>({
     contactName: "",
@@ -49,6 +49,77 @@ export default function Checkout() {
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  async function createOrder(): Promise<string> {
+    const response = await fetch("/api/createOrder", {
+      method: "POST",
+      body: JSON.stringify({
+        orders: cartItems.map((item) => ({
+          productId: item._id,
+          variantId: item.selectedVariant?._id,
+          quantity: item.quantity,
+        })),
+        amount: total,
+        shippingAddressId: selectedAddress,
+        contactNumber: contactNumber,
+        shippingMethod: "standard", //todo : need to handle
+        // notes: "GOD bless you",
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    return data.orderId;
+  }
+
+  async function handlePayment() {
+    try {
+      const orderId: string = await createOrder();
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: total,
+        currency: "INR",
+        name: session?.user.name,
+        description: "description",
+        order_id: orderId,
+        handler: async function (response: any) {
+          const data = {
+            OrderCreationId: orderId,
+            PaymentId: response.razorpay_payment_id,
+            OrderId: response.razorpay_order_id,
+            ClientSignature: response.razorpay_signature,
+          };
+
+          const result = await fetch("/api/verify", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers: { "Content-Type": "application/json" },
+          });
+          const res = await result.json();
+          if (res.isOk) alert("payment succeed");
+          else {
+            alert(res.message);
+          }
+        },
+        prefill: {
+          name: session?.user.name,
+          email: session?.user.email,
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.on("payment.failed", function (response: any) {
+        alert(response.error.description);
+      });
+      paymentObject.open();
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   const handleSaveAddress = async () => {
     // Handle saving the new address
@@ -294,7 +365,7 @@ export default function Checkout() {
           </Card>
         </div>
 
-        <OrderSummary cartItems={cartItems} subtotal={100} />
+        <OrderSummary cartItems={cartItems} total={total} handlePayment={handlePayment} />
       </div>
     </div>
   );

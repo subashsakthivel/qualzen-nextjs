@@ -64,30 +64,16 @@ export default function CartPage() {
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() =>
-                          updateQuantity(
-                            item._id,
-                            item.variantId,
-                            (item.selectedVariant?.stockQuantity || item.stockQuantity || 1) - 1
-                          )
-                        }
+                        onClick={() => updateQuantity(item._id, item.variantId, item.quantity - 1)}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="w-10 text-center">
-                        {item.selectedVariant?.stockQuantity || item.stockQuantity || 1}
-                      </span>
+                      <span className="w-10 text-center">{item.quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() =>
-                          updateQuantity(
-                            item._id,
-                            item.variantId,
-                            (item.selectedVariant?.stockQuantity || item.stockQuantity || 1) + 1
-                          )
-                        }
+                        onClick={() => updateQuantity(item._id, item.variantId, item.quantity - 1)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>

@@ -14,7 +14,7 @@ export const OrderSchema = z.object({
   billingAddress: z.union([z.string(), AddressSchema]).default("private").optional(),
   shippingMethod: z.enum(["standard", "express"]).default("standard").optional(),
   shippingCost: z.number().min(0).default(0),
-  trackingNumber: z.string(),
+  trackingNumber: z.number(),
   paymentMethod: z.enum(["credit_card", "paypal", "bank_transfer", "UPI"]).optional(),
   products: z.array(
     z.object({
@@ -23,7 +23,7 @@ export const OrderSchema = z.object({
       quantity: z.number().min(1),
     })
   ),
-  notes: z.string().optional(),
+  notes: z.record(z.union([z.string(), z.number()])).optional(),
   createdAt: z.date().default(new Date()).optional(),
   updatedAt: z.date().default(new Date()).optional(),
 });

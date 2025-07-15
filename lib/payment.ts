@@ -8,7 +8,7 @@ export class PaymentService {
   private razorpay: Razorpay;
   private constructor() {
     this.razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
+      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
   }
@@ -20,15 +20,12 @@ export class PaymentService {
     orderData: TOrder
   ): Promise<TOrder> {
     const order = await this.razorpay.orders.create(options);
-    orderData.transactionId = order.id;
-    orderData.receipt = order.receipt;
-    orderData.status = order.status;
-    orderData.currency = order.currency;
-    orderData.amount = order.amount as number;
+    Object.assign(order, orderData);
 
     if (!order) {
       throw new Error("Failed to create Razorpay order");
     }
+    orderData.transactionId = order.id;
     return await postData(DataModel["order"], orderData);
   }
 }

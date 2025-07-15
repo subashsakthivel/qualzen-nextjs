@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
           id: profile.sub,
           role: "user",
           image: profile.picture,
+          firstName: profile.name,
         };
       },
     }),

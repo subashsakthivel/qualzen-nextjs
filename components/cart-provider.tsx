@@ -4,21 +4,22 @@ import { TProductRes } from "@/schema/Product";
 import type React from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
-
+export type TCartItem = TProductRes & { quantity: number };
 type CartContextType = {
-  cartItems: TProductRes[];
+  cartItems: TCartItem[];
   addToCart: (product: TProductRes) => void;
   removeFromCart: (productId: string, variantId: string | undefined) => void;
   updateQuantity: (productId: string, varaintId: string | undefined, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
+  total: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cartItems, setCartItems] = useState<TProductRes[]>([]);
+  const [cartItems, setCartItems] = useState<TCartItem[]>([]);
 
   // Load cart from localStorage on client side
   useEffect(() => {
@@ -40,19 +41,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [cartItems]);
 
   const addToCart = (product: TProductRes) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (item) => item._id === product._id && item.variantId === product.variantId
-      );
+    const existingItem = cartItems.find(
+      (item) => item._id === product._id && item.variantId === product.variantId
+    );
+    const productQuantity = product.selectedVariant
+      ? product.variants.find((variant) => variant._id === product.selectedVariant?._id)
+          ?.stockQuantity ?? 0
+      : product.stockQuantity;
+    //todo : show soldout toast
+    const item: TCartItem = {
+      ...product,
+      quantity: existingItem ? existingItem.quantity + 1 : 1,
+    };
 
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item._id === product._id ? { ...item, quantity: (item.stockQuantity || 1) + 1 } : item
-        );
-      } else {
-        return [...prevItems, { ...product, quantity: 1 }];
-      }
-    });
+    setCartItems((prevItems) =>
+      prevItems.map((prevItem) =>
+        item._id === product._id && item.variantId === product.variantId ? item : prevItem
+      )
+    );
   };
 
   const removeFromCart = (productId: string, variantId: string | undefined) => {
@@ -60,20 +66,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       prevItems.filter((item) => item._id !== productId && item.variantId !== variantId)
     );
 
-    // If cart is empty after removal, clear localStorage
-    if (cartItems.length === 1) {
+    if (cartItems.length === 0) {
       localStorage.removeItem("cart");
     }
   };
 
   const updateQuantity = (productId: string, variantId: string | undefined, quantity: number) => {
-    if (quantity < 1) return;
-
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item._id === productId && item.variantId === variantId ? { ...item, quantity } : item
-      )
+    const updatedItem = cartItems.find(
+      (item) => item._id === productId && item.variantId === variantId
     );
+    if (!updatedItem) {
+      //todo : show toeast
+    } else {
+      const productQuantity = updatedItem?.variantId
+        ? updatedItem.variants.find((variant) => variant._id === updatedItem.selectedVariant?._id)
+            ?.stockQuantity ?? 0
+        : updatedItem.stockQuantity;
+      //todo : low stock alert
+      updatedItem.quantity++;
+      setCartItems((prevItems) =>
+        prevItems.map((prevItem) =>
+          prevItem._id === productId && prevItem.variantId === variantId ? updatedItem : prevItem
+        )
+      );
+    }
   };
 
   const clearCart = () => {
@@ -81,12 +97,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("cart");
   };
 
-  const totalItems = cartItems.reduce((total, item) => total + (item.stockQuantity || 1), 0);
+  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
 
-  const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * (item.stockQuantity || 1),
-    0
-  );
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const total = Math.floor(subtotal);
 
   return (
     <CartContext.Provider
@@ -98,6 +112,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         totalItems,
         subtotal,
+        total,
       }}
     >
       {children}

@@ -1,6 +1,7 @@
 import { TOrder } from "@/schema/Order";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
+import Counter from "./Counter";
 
 const OrderSchema = new mongoose.Schema<TOrder>({
   user: {
@@ -12,6 +13,9 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     type: Date,
     default: Date.now,
   },
+  receipt: {
+    type: String,
+  },
   transactionId: {
     type: String,
     required: true,
@@ -19,13 +23,17 @@ const OrderSchema = new mongoose.Schema<TOrder>({
   },
   status: {
     type: String,
-    enum: ["pending", "shipped", "delivered", "cancelled"],
-    default: "pending",
+    enum: ["created", "attempted", "paid"],
+    default: "created",
   },
-  totalAmount: {
+  amount: {
     type: Number,
     required: true,
     min: 0,
+  },
+  currency: {
+    type: String,
+    default: "INR",
   },
   shippingAddress: {
     type: mongoose.Schema.Types.ObjectId,
@@ -49,8 +57,8 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     default: 0,
   },
   trackingNumber: {
-    type: String,
-    required: false,
+    type: Number,
+    required: true,
     unique: true,
   },
   paymentMethod: {
@@ -78,7 +86,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     },
   ],
   notes: {
-    type: String,
+    type: Map,
     required: false,
   },
   createdAt: {
@@ -89,6 +97,18 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     type: Date,
     default: Date.now,
   },
+});
+
+OrderSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    const counter = await Counter.findByIdAndUpdate(
+      { _id: "trackingNumber" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    this.trackingNumber = counter.seq;
+  }
+  next();
 });
 
 OrderSchema.plugin(mongoosePaginate);
