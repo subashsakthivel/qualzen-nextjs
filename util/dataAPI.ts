@@ -1,9 +1,12 @@
 import dbConnect from "@/lib/mongoose";
-import { DataModelInterface } from "@/model/DataModels";
+import { DataModel, DataModelInterface } from "@/model/DataModels";
 import { IDataSourceMap } from "@/model/DataSourceMap";
-import { PaginateModel, PaginateOptions, PaginateResult } from "mongoose";
+import { PaginateModel, PaginateOptions, PaginateResult, UpdateQuery } from "mongoose";
 import { buildEncodedUrl } from "./requestUtil";
 import { S3Util } from "./S3Util";
+import { Field } from "react-hook-form";
+import { FilterQuery } from "mongoose";
+import { constants } from "node:fs";
 
 export interface FetchDataParams extends PaginateOptions {
   filter?: FilterState;
@@ -15,6 +18,42 @@ export interface FetchDataParams extends PaginateOptions {
 type LogicalOperator = "AND" | "OR";
 export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
 
+type TFilterOperator =
+  | "equals"
+  | "notEquals"
+  | "contains"
+  | "in"
+  | "notIn"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte";
+type TUpdateOperator =
+  | "set"
+  | "inc"
+  | "unset"
+  | "push"
+  | "pull"
+  | "addToSet"
+  | "mul"
+  | "min"
+  | "max"
+  | "rename"
+  | "setOnInsert"
+  | "currentDate";
+type TCondition<T> = {
+  field: keyof T;
+  operator: TFilterOperator;
+  value: T[keyof T];
+};
+
+type TUpdate<T> = {
+  field: keyof T;
+  operator: TUpdateOperator;
+  value: any;
+}[];
+
+type TFilter<T> = TCondition<T>[];
 export interface FilterRule {
   field: string;
   operator: string;
@@ -306,6 +345,39 @@ export async function updateData<T>(
   }
 }
 
+export async function updateDataO<T>(
+  datamodel: string,
+  filter: TFilter<T>,
+  data: { updateQuery: TUpdate<T> | Partial<T>; version?: number }
+): Promise<string> {
+  try {
+    await dbConnect();
+    const dataModelInstance = DataModel[datamodel];
+    const schema = dataModelInstance.schema.partial();
+    const { data: safeData, error, success } = schema.safeParse(data);
+    if (!success) {
+      console.error("Validation failed:", JSON.stringify(data, null, 2));
+      console.error("Error details:", error);
+      throw new Error("Please check the input data format and try again.");
+    }
+
+    console.log("safeData", safeData);
+    const filterQuery = parseFilterCondition<T>(filter);
+    const version = data?.version ?? 0;
+    const updateQuery =
+      version === 0 ? parseUpdateQuery(data.updateQuery as any as TUpdate<T>) : data.updateQuery;
+
+    const responseData = await dataModelInstance.dbModel.updateMany(filterQuery, updateQuery, {
+      new: true, // return the updated document
+      runValidators: true,
+      upsert: version >= 1.1,
+    });
+    return responseData.modifiedCount + " docs upadted sucessfully";
+  } catch (error) {
+    console.error("Error updating data:", error);
+    throw error;
+  }
+}
 export async function updateFormData<T>(
   datamodel: DataModelInterface,
   id: string,
@@ -351,4 +423,63 @@ export async function deleteData<T>(datamodel: DataModelInterface, id: string): 
     console.error("Error deleting data:", error);
     throw error;
   }
+}
+
+function parseFilterCondition<T>(conditions: TFilter<T>): FilterQuery<T> {
+  const filterQuery: FilterQuery<T> = {};
+  for (const condition of conditions) {
+    const { field, operator, value } = condition;
+    const filter = {} as any;
+
+    switch (operator) {
+      case "equals":
+        filter[field] = value;
+        break;
+      case "notEquals":
+        filter[field] = { $ne: value };
+        break;
+      case "contains":
+        filter[field] = { $regex: value, $options: "i" };
+        break;
+      case "in":
+        filter[field] = { $in: Array.isArray(value) ? value : [value] };
+        break;
+      case "notIn":
+        filter[field] = { $nin: Array.isArray(value) ? value : [value] };
+        break;
+      case "gt":
+        filter[field] = { $gt: value };
+        break;
+      case "gte":
+        filter[field] = { $gte: value };
+        break;
+      case "lt":
+        filter[field] = { $lt: value };
+        break;
+      case "lte":
+        filter[field] = { $lte: value };
+        break;
+      default:
+        throw new Error(`Unsupported operator: ${operator}`);
+    }
+    filterQuery[field as keyof T] = filter as FilterQuery<T>[keyof T];
+  }
+
+  return filterQuery;
+}
+
+function parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
+  const updateQuery: UpdateQuery<T> = {};
+
+  for (const { field, operator, value } of updates) {
+    const ope = `$${operator}` as keyof UpdateQuery<T>;
+
+    if (!updateQuery[ope]) {
+      updateQuery[ope] = {} as any;
+    }
+
+    (updateQuery[ope] as any)[field as string] = value;
+  }
+
+  return updateQuery;
 }

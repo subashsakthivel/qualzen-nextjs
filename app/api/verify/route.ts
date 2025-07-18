@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { updateData } from "@/util/dataAPI";
+import { DataModel } from "@/model/DataModels";
 
 const generatedSignature = (OrderId: string, PaymentId: string) => {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
     );
   }
   //update Order status
+  await updateData(DataModel["order"], "hfghfdgfdgf", {});
   return NextResponse.json(
     { message: "payment verified successfully", isOk: true },
     { status: 200 }
