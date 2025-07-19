@@ -95,7 +95,7 @@ export async function PUT(
       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
     } else {
       const { id, data } = await request.json();
-      const responseData = await updateData(dataModel, id, data);
+      const responseData = await updateData(modelName, { updateQuery: data }, undefined, id);
       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
     }
   } catch (err) {

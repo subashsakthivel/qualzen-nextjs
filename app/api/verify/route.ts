@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { updateData } from "@/util/dataAPI";
+import { TFilter, updateData } from "@/util/dataAPI";
 import { DataModel } from "@/model/DataModels";
+import { TOrder } from "@/schema/Order";
 
 const generatedSignature = (OrderId: string, PaymentId: string) => {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -26,9 +27,10 @@ export async function POST(request: NextRequest) {
     );
   }
   //update Order status
-  await updateData(DataModel["order"], "hfghfdgfdgf", {});
+  const filter: TFilter<TOrder> = [{ field: "transactionId", value: OrderId, operator: "equals" }];
+  const response = await updateData<TOrder>("order", { updateQuery: { status: "paid" } }, filter);
   return NextResponse.json(
-    { message: "payment verified successfully", isOk: true },
+    { message: "payment verified successfully", isOk: true, data: response },
     { status: 200 }
   );
 }

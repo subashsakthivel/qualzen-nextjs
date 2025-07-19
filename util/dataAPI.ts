@@ -4,9 +4,8 @@ import { IDataSourceMap } from "@/model/DataSourceMap";
 import { PaginateModel, PaginateOptions, PaginateResult, UpdateQuery } from "mongoose";
 import { buildEncodedUrl } from "./requestUtil";
 import { S3Util } from "./S3Util";
-import { Field } from "react-hook-form";
+
 import { FilterQuery } from "mongoose";
-import { constants } from "node:fs";
 
 export interface FetchDataParams extends PaginateOptions {
   filter?: FilterState;
@@ -53,7 +52,7 @@ type TUpdate<T> = {
   value: any;
 }[];
 
-type TFilter<T> = TCondition<T>[];
+export type TFilter<T> = TCondition<T>[];
 export interface FilterRule {
   field: string;
   operator: string;
@@ -316,40 +315,41 @@ export function parseFilter(filterState: FilterState): Record<string, any> {
   };
 }
 
-export async function updateData<T>(
-  datamodel: DataModelInterface,
-  id: string,
-  data: any
-): Promise<T> {
-  try {
-    await dbConnect();
-    const schema = datamodel.schema.partial();
-    const { data: safeData, error, success } = schema.safeParse(data);
-    if (!success) {
-      console.error("Validation failed:", JSON.stringify(data, null, 2));
-      console.error("Error details:", error);
-      throw new Error("Please check the input data format and try again.");
-    }
-    if (datamodel.updateData) {
-      return await datamodel.updateData(id, safeData);
-    }
-    console.log("safeData", safeData);
-    const responseData = await datamodel.dbModel.findByIdAndUpdate(id, safeData, {
-      new: true,
-      runValidators: true,
-    });
-    return responseData;
-  } catch (error) {
-    console.error("Error updating data:", error);
-    throw error;
-  }
-}
+// export async function updateData<T>(
+//   datamodel: DataModelInterface,
+//   id: string,
+//   data: any
+// ): Promise<T> {
+//   try {
+//     await dbConnect();
+//     const schema = datamodel.schema.partial();
+//     const { data: safeData, error, success } = schema.safeParse(data);
+//     if (!success) {
+//       console.error("Validation failed:", JSON.stringify(data, null, 2));
+//       console.error("Error details:", error);
+//       throw new Error("Please check the input data format and try again.");
+//     }
+//     if (datamodel.updateData) {
+//       return await datamodel.updateData(id, safeData);
+//     }
+//     console.log("safeData", safeData);
+//     const responseData = await datamodel.dbModel.findByIdAndUpdate(id, safeData, {
+//       new: true,
+//       runValidators: true,
+//     });
+//     return responseData;
+//   } catch (error) {
+//     console.error("Error updating data:", error);
+//     throw error;
+//   }
+// }
 
-export async function updateDataO<T>(
+export async function updateData<T>(
   datamodel: string,
-  filter: TFilter<T>,
-  data: { updateQuery: TUpdate<T> | Partial<T>; version?: number }
-): Promise<string> {
+  data: { updateQuery: TUpdate<T> | Partial<T>; version?: number },
+  filter?: TFilter<T>,
+  id?: string
+): Promise<string | T> {
   try {
     await dbConnect();
     const dataModelInstance = DataModel[datamodel];
@@ -362,17 +362,27 @@ export async function updateDataO<T>(
     }
 
     console.log("safeData", safeData);
-    const filterQuery = parseFilterCondition<T>(filter);
-    const version = data?.version ?? 0;
+    const version = data.version ?? 0;
+
     const updateQuery =
       version === 0 ? parseUpdateQuery(data.updateQuery as any as TUpdate<T>) : data.updateQuery;
-
-    const responseData = await dataModelInstance.dbModel.updateMany(filterQuery, updateQuery, {
-      new: true, // return the updated document
-      runValidators: true,
-      upsert: version >= 1.1,
-    });
-    return responseData.modifiedCount + " docs upadted sucessfully";
+    if (id) {
+      const resData = await dataModelInstance.dbModel.findByIdAndUpdate(id, updateQuery, {
+        new: true,
+        runValidators: true,
+      });
+      return resData;
+    } else if (filter) {
+      const filterQuery = parseFilterCondition<T>(filter);
+      const responseData = await dataModelInstance.dbModel.updateMany(filterQuery, updateQuery, {
+        new: true, // return the updated document
+        runValidators: true,
+        upsert: version >= 1.1,
+      });
+      return responseData.modifiedCount + " docs upadted sucessfully";
+    } else {
+      throw new Error("No filter and id");
+    }
   } catch (error) {
     console.error("Error updating data:", error);
     throw error;
