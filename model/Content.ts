@@ -7,33 +7,44 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
     required: true,
     trim: true,
   },
-  keyWord: {
+  description: {
     type: String,
+    required: false,
+  },
+  keyWord: {
+    type: [String],
     required: true,
   },
-  body: {
+  identifier: {
     type: String,
     required: true,
+    trim: true,
   },
   imageName: {
     type: String,
     required: false,
   },
-  onClickUrl: {
+  imageUrl: {
     type: String,
     required: false,
-    validate: {
-      validator: function (v: string) {
-        return !v || /^(https?:\/\/)?([\w.-]+)+(:\d+)?(\/[\w.-]*)*\/?$/.test(v);
-      },
-      message: "Invalid URL format",
-    },
   },
   backgroundImageName: {
     type: String,
     required: false,
   },
-  fileName: {
+  backgroundImageUrl: {
+    type: String,
+    required: false,
+  },
+  ctaText: {
+    type: String,
+    required: false,
+  },
+  ctaTextLink: {
+    type: String,
+    required: false,
+  },
+  ctaLink: {
     type: String,
     required: false,
   },

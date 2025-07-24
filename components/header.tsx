@@ -1,115 +1,117 @@
 "use client";
-
-import Link from "next/link";
-import { useState } from "react";
-import { Menu, Search, ShoppingCart, User, X } from "lucide-react";
+import React, { useState } from "react";
+import { ShoppingBag, Menu, X, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useCart } from "@/components/cart-provider";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import Link from "next/link";
 
-export function Header() {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { cartItems } = useCart();
-  const cartItemCount = cartItems.length;
+export const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const cartItemsCount = 0; // This would come from cart context
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/products", label: "Products" },
+    { to: "/offers", label: "Offers" },
+    { to: "/about", label: "About" },
+    { to: "/contact", label: "Contact" },
+    { to: "/help", label: "Help" },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="container flex h-16 items-center px-4">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-            <nav className="flex flex-col gap-4 mt-8">
-              <Link href="/" className="text-lg font-medium">
-                Home
-              </Link>
-              <Link href="/products" className="text-lg font-medium">
-                All Products
-              </Link>
-              <Link href="/products/men" className="text-lg font-medium">
-                Men
-              </Link>
-              <Link href="/products/women" className="text-lg font-medium">
-                Women
-              </Link>
-              <Link href="/about" className="text-lg font-medium">
-                About
-              </Link>
-              <Link href="/contact" className="text-lg font-medium">
-                Contact
-              </Link>
-            </nav>
-          </SheetContent>
-        </Sheet>
-
-        <Link href="/" className="ml-4 md:ml-0 flex items-center gap-2">
-          <span className="text-xl font-bold">StyleHub</span>
-        </Link>
-
-        <nav className="mx-6 hidden md:flex items-center gap-6 text-sm">
-          <Link href="/" className="font-medium transition-colors hover:text-primary">
-            Home
-          </Link>
-          <Link href="/products" className="font-medium transition-colors hover:text-primary">
-            All Products
-          </Link>
-          <Link href="/products/men" className="font-medium transition-colors hover:text-primary">
-            Men
-          </Link>
-          <Link href="/products/women" className="font-medium transition-colors hover:text-primary">
-            Women
-          </Link>
-        </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          {isSearchOpen ? (
-            <div className="relative flex items-center">
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="w-[200px] md:w-[300px]"
-                autoFocus
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 logo-gradient rounded-lg flex items-center justify-center shadow-lg">
+              <Image
+                src="/lovable-uploads/9dac5233-cc93-4962-a22d-70263c999a5b.png"
+                width={24}
+                height={24}
+                alt="VF Logo"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0"
-                onClick={() => setIsSearchOpen(false)}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close search</span>
-              </Button>
             </div>
-          ) : (
-            <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
-            </Button>
-          )}
-
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-            <span className="sr-only">Account</span>
-          </Button>
-
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                  {cartItemCount}
-                </span>
-              )}
-              <span className="sr-only">Cart</span>
-            </Button>
+            <span className="font-bold text-2xl bg-gradient-to-r from-primary via-purple-600 to-secondary bg-clip-text text-transparent">
+              VARFEO
+            </span>
           </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                href={link.to}
+                className="text-sm font-medium transition-colors hover:text-primary"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Button variant="ghost" size="icon">
+              <Search className="h-4 w-4" />
+            </Button>
+            <Link href="/signin">
+              <Button variant="ghost" size="icon">
+                <User className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/cart" className="relative">
+              <Button variant="ghost" size="icon">
+                <ShoppingBag className="h-4 w-4" />
+                {cartItemsCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  href={link.to}
+                  className="block px-3 py-2 text-base font-medium transition-colors hover:text-primary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="flex items-center space-x-4 px-3 py-2">
+                <Link href="/signin">
+                  <Button variant="ghost" size="icon">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/cart">
+                  <Button variant="ghost" size="icon">
+                    <ShoppingBag className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
-}
+};

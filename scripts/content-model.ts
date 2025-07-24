@@ -1,0 +1,30 @@
+export const heroSectionContent = [
+  {
+    title: "Welcome to QualZen",
+    keyWords: ["mental health", "well-being", "support"],
+    identifier: "hero-banner",
+    backgroundImageUrl: "https://i.pinimg.com/1200x/78/93/4f/78934fc7f30fc1e3a3ea54cd14f46041.jpg",
+    ctaText: "Get Started",
+    ctaLink: "/get-started",
+    type: "banner",
+  },
+  {
+    title: "Take a Step Towards Better Fashion",
+    keyWords: ["mental health", "well-being", "support"],
+    identifier: "hero-banner",
+    backgroundImageUrl: "https://i.pinimg.com/1200x/c4/12/5b/c4125b07e10568a098c937705337a544.jpg",
+    ctaText: "Get Started",
+    ctaLink: "/get-started",
+    type: "banner",
+  },
+  {
+    title: "Build a Better You",
+    description: "Explore our resources for mental health and well-being",
+    keyWords: ["mental health", "well-being", "support"],
+    identifier: "hero-banner",
+    backgroundImageUrl: "https://i.pinimg.com/1200x/8b/29/6c/8b296c7735232fa1cbc69e415ac7c25b.jpg",
+    ctaText: "Get Started",
+    ctaLink: "/get-started",
+    type: "banner",
+  },
+];

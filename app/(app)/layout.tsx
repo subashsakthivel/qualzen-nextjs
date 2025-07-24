@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import "./../globals.css";
-import Footer from "@/components/blocks/Footer";
-import { ppEditorialNewUltralightItalic, inter } from "./../fonts";
+import { inter } from "./../fonts";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import SessionProviderClientComponent from "../(auth)/SessionProviderClientComponent";
 import { CartProvider } from "@/components/cart-provider";
-import { Header } from "@/components/header";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -20,11 +20,11 @@ export default async function RootLayout({
 }>) {
   const session = await getServerSession(authOptions);
   return (
-    <html lang="en" className={`${ppEditorialNewUltralightItalic.variable} ${inter.variable}`}>
+    <html lang="en" className={` ${inter.variable}`}>
       <body>
         <SessionProviderClientComponent session={session}>
           <CartProvider>
-            <div className="flex flex-col min-h-screen">
+            <div className="min-h-screen flex flex-col">
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />

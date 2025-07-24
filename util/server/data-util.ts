@@ -1,59 +1,65 @@
 import dbConnect from "@/lib/mongoose";
-import { DataModelService } from "./db-core";
+import { DBUtil, GetDataParams } from "./db-core";
+import { CacheHandler } from "next/dist/server/lib/incremental-cache";
+import { localcache } from "@/lib/cache";
+import QueryMap from "@/cache/cache-query";
+import { PaginateResult } from "mongoose";
 
 export class DataUtil {
   private constructor() {}
 
-  static async persistOnDB<K extends keyof DataModelService>(
+  static async persistData<K extends keyof DBUtil>(
     userId: string,
     operation: K,
-    ...args: Parameters<(typeof DataModelService)[K]>
-  ): Promise<ReturnType<(typeof DataModelService)[K]>> {
+    cacheKey?: string,
+    ...args: Parameters<DBUtil[K]>
+  ): Promise<ReturnType<DBUtil[K]>> {
     try {
-      await dbConnect();
-      const method = DataModelService[operation] as (...args: any[]) => Promise<any>;
-      return await method(...args);
+      const instance = DBUtil.getInstance();
+      const method = instance[operation];
+
+      if (typeof method !== "function") {
+        throw new Error(`Operation ${String(operation)} is not a valid DBUtil method`);
+      }
+      if (cacheKey) {
+        localcache.delete(cacheKey);
+        this.fetchData(userId, cacheKey, undefined);
+      }
+      return await (method as (...args: any[]) => any)(...args);
     } catch (err) {
-      console.error("Error connecting to the database:", userId, this.arguments, err);
+      console.error("Error performing DB operation:", userId, operation, err);
       throw new Error("Database operation failed");
     }
-
-    return {} as any;
   }
 
-  public static async fetchFromDB<K extends StaticFunctionKeys<typeof DataModelService>>(
+  public static async fetchData<T>(
     userId: string | undefined,
-    operation: K,
-    ...args: Parameters<(typeof DataModelService)[K]>
-  ): Promise<ReturnType<(typeof DataModelService)[K]>> {
+    cacheKey: string,
+    args?: GetDataParams<T>
+  ): Promise<{ data: PaginateResult<T> | T[] }> {
     try {
-      await dbConnect();
-      const method = DataModelService[operation] as (...args: any[]) => Promise<any>;
-      return await method(...args);
+      // TODO: Check user permissions for data access
+      const cachedData = localcache.get(cacheKey);
+      if (cachedData) return { data: cachedData };
+
+      const isCustom = cacheKey === "custom";
+      const query = isCustom ? args : QueryMap.get(cacheKey);
+
+      if ((!isCustom && !query) || (isCustom && !args)) {
+        console.error("Invalid cache key or parameters", userId, cacheKey, args);
+        throw new Error("Invalid request parameters");
+      }
+
+      const data = await DBUtil.getInstance().getData<T>(query!);
+      if (!isCustom) {
+        localcache.set(cacheKey, data, {
+          ttl: 1000 * 60 * 60, // 1 hour
+        });
+      }
+      return { data };
     } catch (err) {
       console.error("Error connecting to the database:", err);
       throw new Error("Database operation failed");
     }
-    return {} as any;
   }
 }
-
-export async function fetchFromDB<K extends StaticFunctionKeys<typeof DataUtil>>(
-  userId: string | undefined,
-  operation: K,
-  ...args: Parameters<(typeof DataUtil)[K]>
-): Promise<ReturnType<(typeof DataUtil)[K]>> {
-  try {
-    await dbConnect();
-    const method = DataUtil[operation] as (...args: any[]) => Promise<any>;
-    return await method(...args);
-  } catch (err) {
-    console.error("Error connecting to the database:", err);
-    throw new Error("Database operation failed");
-  }
-  return {} as any;
-}
-
-type StaticFunctionKeys<T> = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
-}[keyof T];

@@ -15,6 +15,8 @@ import { AddressModel } from "../Address";
 import { AddressSchema } from "@/schema/Address";
 import { OrderSchema } from "@/schema/Order";
 import { OrderModel } from "../Order";
+import { ContentSchema } from "@/schema/Content";
+import { ContentModel } from "../Content";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
@@ -33,7 +35,7 @@ export interface DataModelInterface {
   updateData?: (id: string, data: any) => Promise<any>;
   authorized?: () => boolean;
 }
-export type TDataModels = "category" | "product" | "address" | "userinfo" | "order";
+export type TDataModels = "category" | "product" | "address" | "userinfo" | "order" | "content";
 export const DataModelMap: Record<TDataModels, DataModelInterface> = {
   category: {
     schema: CategorySchema,
@@ -394,6 +396,11 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
     schema: OrderSchema,
     dbModel: OrderModel,
     url: "/api/dataAPI/order",
+  },
+  content: {
+    schema: ContentSchema,
+    dbModel: ContentModel,
+    url: "/api/dataAPI/content",
   },
 };
 

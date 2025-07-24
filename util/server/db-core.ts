@@ -6,19 +6,24 @@ import {
   UpdateQuery,
 } from "mongoose";
 import { FetchDataOptions, TCriteria, TFilter, TUpdate } from "../util-type";
-import dbConnect from "@/lib/mongoose";
 import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";
+import dbConnect from "@/lib/mongoose";
 
-interface GetDataParams<T> {
+export interface GetDataParams<T> {
   modelName: TDataModels;
   operation?: string;
   options: FetchDataOptions<T>;
 }
 
-export class DataModelService {
+export class DBUtil {
+  static instance = new DBUtil();
   private constructor() {}
 
-  public static async getData<T>({
+  public static getInstance() {
+    return DBUtil.instance;
+  }
+
+  async getData<T>({
     modelName,
     operation = "GET_DATA",
     options: {
@@ -30,6 +35,7 @@ export class DataModelService {
       ...otherOptions
     },
   }: GetDataParams<T>): Promise<PaginateResult<T> | T[]> {
+    await dbConnect();
     if (sort) {
       for (const key in sort) {
         sort[key] = sort[key] === "asc" ? "asc" : "desc";
@@ -70,7 +76,7 @@ export class DataModelService {
     }
   }
 
-  public static async postData<T>({
+  async postData<T>({
     modelName,
     operation = "POST_DATA",
     data,
@@ -104,7 +110,7 @@ export class DataModelService {
     }
   }
 
-  public static async updateData<T>({
+  async updateData<T>({
     modelName,
     operation = "UPDATE_DATA",
     id,
@@ -175,7 +181,7 @@ export class DataModelService {
     }
   }
 
-  public static async deleteData<T>({
+  async deleteData<T>({
     modelName,
     operation = "DELETE_DATA",
     id,

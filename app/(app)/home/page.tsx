@@ -19,7 +19,7 @@ export default function LandingPage() {
         <div className="w-full md:w-[260px] flex-shrink-0 flex flex-col justify-between h-full">
           <div className="flex flex-col gap-16">
             <h1
-              className={`${ppEditorialNewUltralightItalic.className} text-4xl md:text-6xl font-light italic text-white/80 tracking-tighter leading-[130%]`}
+              className={`text-4xl md:text-6xl font-light italic text-white/80 tracking-tighter leading-[130%]`}
               style={{ fontSize: `${4 * headerSize}rem` }}
             >
               Brand

@@ -1,127 +1,115 @@
+import React from "react";
+import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Instagram, Twitter } from "lucide-react";
 
-export function Footer() {
+export const Footer = () => {
   return (
-    <footer className="border-t bg-background">
-      <div className="container px-4 py-12 mx-auto">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="bg-muted/50 border-t">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">StyleHub</h3>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 logo-gradient rounded-lg flex items-center justify-center shadow-lg">
+                <Image
+                  width={24}
+                  height={24}
+                  src="/lovable-uploads/9dac5233-cc93-4962-a22d-70263c999a5b.png"
+                  alt="VF Logo"
+                  className="w-6 h-6 object-contain filter brightness-0 invert"
+                />
+              </div>
+              <span className="font-bold text-2xl bg-gradient-to-r from-primary via-purple-600 to-secondary bg-clip-text text-transparent">
+                VARFEO
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Premium clothing for every occasion. Quality materials, timeless designs.
+              Premium fashion clothing brand with bold designs. Express your unique style with
+              VARFEO.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Facebook className="h-5 w-5" />
-                <span className="sr-only">Facebook</span>
+              <Facebook className="h-5 w-5 text-muted-foreground hover:text-primary cursor-pointer" />
+              <Instagram className="h-5 w-5 text-muted-foreground hover:text-primary cursor-pointer" />
+              <Twitter className="h-5 w-5 text-muted-foreground hover:text-primary cursor-pointer" />
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Quick Links</h3>
+            <div className="space-y-2">
+              <Link
+                href="/products"
+                className="block text-sm text-muted-foreground hover:text-primary"
+              >
+                All Products
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Instagram className="h-5 w-5" />
-                <span className="sr-only">Instagram</span>
+              <Link
+                href="/offers"
+                className="block text-sm text-muted-foreground hover:text-primary"
+              >
+                Special Offers
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground">
-                <Twitter className="h-5 w-5" />
-                <span className="sr-only">Twitter</span>
+              <Link
+                href="/orders"
+                className="block text-sm text-muted-foreground hover:text-primary"
+              >
+                Track Orders
+              </Link>
+              <Link href="/help" className="block text-sm text-muted-foreground hover:text-primary">
+                Help Center
               </Link>
             </div>
           </div>
+
+          {/* Customer Service */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold">Shop</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/products/men" className="text-muted-foreground hover:text-foreground">
-                  Men&#39;s Collection
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/products/women"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  Women&#39;s Collection
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/new" className="text-muted-foreground hover:text-foreground">
-                  New Arrivals
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/sale" className="text-muted-foreground hover:text-foreground">
-                  Sale
-                </Link>
-              </li>
-            </ul>
+            <h3 className="font-semibold">Customer Service</h3>
+            <div className="space-y-2">
+              <Link
+                href="/contact"
+                className="block text-sm text-muted-foreground hover:text-primary"
+              >
+                Contact Us
+              </Link>
+              <Link
+                href="/about"
+                className="block text-sm text-muted-foreground hover:text-primary"
+              >
+                About Us
+              </Link>
+              <Link href="/help" className="block text-sm text-muted-foreground hover:text-primary">
+                FAQ
+              </Link>
+              <div className="text-sm text-muted-foreground">Returns & Exchanges</div>
+            </div>
           </div>
+
+          {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold">Company</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-foreground">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-muted-foreground hover:text-foreground">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/stores" className="text-muted-foreground hover:text-foreground">
-                  Store Locator
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold">Customer Service</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/help" className="text-muted-foreground hover:text-foreground">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/shipping" className="text-muted-foreground hover:text-foreground">
-                  Shipping & Returns
-                </Link>
-              </li>
-              <li>
-                <Link href="/size-guide" className="text-muted-foreground hover:text-foreground">
-                  Size Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-muted-foreground hover:text-foreground">
-                  FAQ
-                </Link>
-              </li>
-            </ul>
+            <h3 className="font-semibold">Contact Info</h3>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4" />
+                <span>+1 (555) 123-4567</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                <span>support@varfeo.com</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>123 Fashion St, NY 10001</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-between gap-4 border-t pt-8 mt-8 md:flex-row">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} StyleHub. All rights reserved.
-          </p>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-foreground">
-              Terms of Service
-            </Link>
-            <Link href="/cookies" className="hover:text-foreground">
-              Cookie Policy
-            </Link>
-          </div>
+
+        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <p>&copy; 2024 VARFEO. All rights reserved.</p>
         </div>
       </div>
     </footer>
   );
-}
+};
