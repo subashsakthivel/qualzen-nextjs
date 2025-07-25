@@ -1,14 +1,35 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ShoppingBag, Menu, X, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
-
+import logoImg from "@/public/next.svg"; // Adjust the path as necessary
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartItemsCount = 0; // This would come from cart context
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        // Scroll down: hide navbar
+        setIsVisible(false);
+      } else {
+        // Scroll up: show navbar
+        setIsVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   const navLinks = [
     { to: "/", label: "Home" },
@@ -20,23 +41,28 @@ export const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={
+        "sticky z-50 w-full " +
+        (lastScrollY > 50 ? "bg-primary-foreground" : "bg-transparent border-none") +
+        " " +
+        (isVisible ? "top-0" : "-top-16") +
+        " ease-out duration-300"
+      }
+    >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 logo-gradient rounded-lg flex items-center justify-center shadow-lg">
+            <div className="relative w-10 h-10 rounded-lg flex items-center justify-center shadow-lg">
               <Image
-                src="/lovable-uploads/9dac5233-cc93-4962-a22d-70263c999a5b.png"
-                width={24}
-                height={24}
+                src={logoImg}
+                fill
                 alt="VF Logo"
                 className="w-6 h-6 object-contain filter brightness-0 invert"
               />
             </div>
-            <span className="font-bold text-2xl bg-gradient-to-r from-primary via-purple-600 to-secondary bg-clip-text text-transparent">
-              VARFEO
-            </span>
+            <span className="font-bold text-2xl">VARFEO</span>
           </Link>
 
           {/* Desktop Navigation */}

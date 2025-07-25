@@ -7,9 +7,9 @@ import { CategorySection } from "@/components/category-section";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <HeroSection />
-      <div className="container px-4 py-12 mx-auto space-y-16">
+      <div className="  container px-4 py-12 mx-auto space-y-16">
         <CategorySection />
         <FeaturedProducts />
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -25,6 +25,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

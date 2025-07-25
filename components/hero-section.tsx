@@ -1,39 +1,63 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "./ui/carousel";
+import { Card, CardContent } from "./ui/card";
+import Image from "next/image";
 export function HeroSection() {
   return (
-    <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
-      <div
-        className="relative h-[70vh] flex items-center justify-start bg-cover bg-center"
-        style={{ backgroundImage: "url('/placeholder.svg?height=1080&width=1920')" }}
-      >
-        <div className="container px-4 mx-auto">
-          <div className="max-w-lg space-y-6 text-white">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              New Season Collection
-            </h1>
-            <p className="text-lg md:text-xl">
-              Discover our latest styles crafted with premium materials for exceptional comfort and
-              timeless elegance.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Button asChild size="lg" className="bg-white text-black hover:bg-white/90">
-                <Link href="/products">Shop Now</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="text-white border-white hover:bg-white/10"
-              >
-                <Link href="/products/new">New Arrivals</Link>
-              </Button>
-            </div>
-          </div>
+    <>
+      <Carousel className="absolute h-screen w-screen top-0 ">
+        <CarouselContent className="h-full">
+          <CarouselItem>
+            <Card>
+              <CardContent>
+                <Image
+                  src={"https://i.pinimg.com/1200x/78/93/4f/78934fc7f30fc1e3a3ea54cd14f46041.jpg"}
+                  alt="tss"
+                  fill
+                  className="object-cover"
+                />
+              </CardContent>
+            </Card>
+          </CarouselItem>
+          <CarouselItem>
+            <Card>
+              <CardContent>
+                <Image
+                  src={"https://i.pinimg.com/1200x/c4/12/5b/c4125b07e10568a098c937705337a544.jpg"}
+                  alt="tss"
+                  fill
+                  className="object-cover"
+                />
+              </CardContent>
+            </Card>
+          </CarouselItem>
+          <CarouselItem>
+            <Card>
+              <CardContent>
+                <Image
+                  src={"https://i.pinimg.com/1200x/8b/29/6c/8b296c7735232fa1cbc69e415ac7c25b.jpg"}
+                  alt="tss"
+                  fill
+                  className="object-cover"
+                />
+              </CardContent>
+            </Card>
+          </CarouselItem>
+        </CarouselContent>
+        <div className="absolute">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Fuga est, labore voluptas nam
+          dignissimos, repellat voluptatibus facilis vel alias odio recusandae adipisci, ducimus
+          deleniti incidunt veniam molestias? Laboriosam, sunt totam?
         </div>
-      </div>
-    </div>
+        <CarouselPrevious className="absolute bg-black top-8 left-10" />
+        <CarouselNext className="absolute bg-black" />
+      </Carousel>
+      <div className="min-h-screen"></div>
+    </>
   );
 }

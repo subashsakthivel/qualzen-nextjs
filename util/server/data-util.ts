@@ -8,7 +8,7 @@ import { PaginateResult } from "mongoose";
 export class DataUtil {
   private constructor() {}
 
-  static async persistData<K extends keyof DBUtil>(
+  public static async persistData<K extends keyof DBUtil>(
     userId: string,
     operation: K,
     cacheKey?: string,

@@ -21,17 +21,24 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
   return (
     <html lang="en" className={` ${inter.variable}`}>
-      <body>
+      <body className="overflow-x-hidden">
         <SessionProviderClientComponent session={session}>
           <CartProvider>
-            <div className="min-h-screen flex flex-col">
+            <div className="relative flex flex-col">
               <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
+              <main className="flex flex-col ">{children}</main>
             </div>
           </CartProvider>
         </SessionProviderClientComponent>
       </body>
     </html>
   );
+}
+
+{
+  /* <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div> */
 }
