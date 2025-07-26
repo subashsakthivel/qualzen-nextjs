@@ -3,9 +3,9 @@ import React, { useEffect, useState } from "react";
 import { ShoppingBag, Menu, X, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
 import Image from "next/image";
 import Link from "next/link";
-import logoImg from "@/public/next.svg"; // Adjust the path as necessary
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartItemsCount = 0; // This would come from cart context
@@ -44,7 +44,7 @@ export const Header = () => {
     <header
       className={
         "sticky z-50 w-full " +
-        (lastScrollY > 50 ? "bg-primary-foreground" : "bg-transparent border-none") +
+        (lastScrollY > 200 ? "bg-primary-foreground" : "bg-transparent border-none") +
         " " +
         (isVisible ? "top-0" : "-top-16") +
         " ease-out duration-300"
@@ -56,7 +56,7 @@ export const Header = () => {
           <Link href="/" className="flex items-center space-x-3">
             <div className="relative w-10 h-10 rounded-lg flex items-center justify-center shadow-lg">
               <Image
-                src={logoImg}
+                src={"/next.svg"}
                 fill
                 alt="VF Logo"
                 className="w-6 h-6 object-contain filter brightness-0 invert"
