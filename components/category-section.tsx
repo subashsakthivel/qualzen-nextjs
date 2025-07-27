@@ -22,11 +22,8 @@ export function CategorySection() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col items-center text-center space-y-2">
+      <div className="flex flex-col items-center text-center space-y-2 border-b-4 border-b-amber-400">
         <h2 className="text-3xl font-bold tracking-tight">Shop by Category</h2>
-        <p className="text-muted-foreground max-w-[600px]">
-          Browse our collections and find your perfect style
-        </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {categories.map((category) => (

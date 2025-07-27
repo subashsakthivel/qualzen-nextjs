@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { FeaturedProducts } from "@/components/featured-products";
 import { HeroSection } from "@/components/hero-section";
 import { CategorySection } from "@/components/category-section";
+import HeroCarousel from "../(test)/testui/_components/HeroSection";
 
 export default function Home() {
   return (
     <>
-      <HeroSection />
+      <HeroCarousel />
       <div className="  container px-4 py-12 mx-auto space-y-16">
         <CategorySection />
         <FeaturedProducts />

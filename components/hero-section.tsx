@@ -43,7 +43,7 @@ export function HeroSection() {
                       Shop Now
                     </Button>
                     <Button className="shadow-lg px-10 bg-gradient-to-r from-red-900 via-yellow-500  text-white font-bold relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700 hover:shadow-lg hover:shadow-primary/25">
-                      View
+                      Explore
                     </Button>
                     <CarouselNext className="right-1/3" />
                   </div>
@@ -68,7 +68,7 @@ export function HeroSection() {
                       Shop Now
                     </Button>
                     <Button className="shadow-lg px-10 bg-gradient-to-r from-red-900 via-yellow-500  text-white font-bold relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700 hover:shadow-lg hover:shadow-primary/25">
-                      View
+                      Explore
                     </Button>
                     <CarouselNext className=" bg-black  right-10" />
                   </div>
@@ -93,7 +93,7 @@ export function HeroSection() {
                       Shop Now
                     </Button>
                     <Button className="shadow-lg px-10 bg-gradient-to-r from-red-900 via-yellow-500  text-white font-bold relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700 hover:shadow-lg hover:shadow-primary/25">
-                      View
+                      Explore
                     </Button>
                     <CarouselNext className=" bg-black  right-10" />
                   </div>
