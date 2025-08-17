@@ -1,10 +1,12 @@
+"use client";
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ChevronDown, ChevronUp, Mail, Phone, MessageCircle } from "lucide-react";
+import Link from "next/link";
 
-export const Help = () => {
+const Help = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
@@ -17,7 +19,7 @@ export const Help = () => {
     {
       question: "What is your return policy?",
       answer:
-        "We offer a 30-day return policy for unworn items in original condition with tags attached.",
+        "We offer a 13-day return policy for unworn items in original condition with tags attached.",
     },
     {
       question: "How long does shipping take?",
@@ -32,14 +34,15 @@ export const Help = () => {
     {
       question: "How do I change or cancel my order?",
       answer:
-        "Orders can be modified or cancelled within 1 hour of placement. After that, please contact customer service.",
+        "Orders can be modified or cancelled within 35 minutes of placement. After that, please contact customer service.",
     },
     {
       question: "What payment methods do you accept?",
-      answer:
-        "We accept all major credit cards, PayPal, and digital wallets like Apple Pay and Google Pay.",
+      answer: "We accept all major credit cards, Google Pay ad other UPI.",
     },
   ];
+
+  const sendMail = `mailto:varfeo.support@gmail?subject=${encodeURIComponent("CR - Query")}`;
 
   const filteredFaqs = faqs.filter(
     (faq) =>
@@ -70,7 +73,7 @@ export const Help = () => {
         </div>
 
         {/* Contact Options */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <Card>
             <CardContent className="p-6 text-center">
               <Mail className="h-8 w-8 mx-auto mb-4 text-primary" />
@@ -79,18 +82,7 @@ export const Help = () => {
                 Get help via email within 24 hours
               </p>
               <Button variant="outline" size="sm">
-                Send Email
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <MessageCircle className="h-8 w-8 mx-auto mb-4 text-primary" />
-              <h3 className="font-semibold mb-2">Live Chat</h3>
-              <p className="text-sm text-muted-foreground mb-4">Chat with our team in real-time</p>
-              <Button variant="outline" size="sm">
-                Start Chat
+                <Link href={sendMail}>Send Email</Link>
               </Button>
             </CardContent>
           </Card>
@@ -101,7 +93,7 @@ export const Help = () => {
               <h3 className="font-semibold mb-2">Phone Support</h3>
               <p className="text-sm text-muted-foreground mb-4">Call us Mon-Fri, 9AM-6PM EST</p>
               <Button variant="outline" size="sm">
-                Call Now
+                <Link href={"tel:+919876543210"}>Call Now</Link>
               </Button>
             </CardContent>
           </Card>
@@ -145,3 +137,5 @@ export const Help = () => {
     </div>
   );
 };
+
+export default Help;

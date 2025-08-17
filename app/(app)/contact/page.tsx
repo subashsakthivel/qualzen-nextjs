@@ -1,11 +1,14 @@
+"use client";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Icon } from "lucide-react";
+import { FaFacebook, FaGoogle, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import Link from "next/link";
 
-export const Contact = () => {
+const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,23 +32,46 @@ export const Contact = () => {
   const contactInfo = [
     {
       icon: <MapPin className="h-5 w-5 text-primary" />,
-      title: "Address",
-      details: "123 Fashion Street, New York, NY 10001",
+      title: "Address : (Main Branch)",
+      details: "19 , Pichampalayam, Tirupur",
     },
     {
       icon: <Phone className="h-5 w-5 text-primary" />,
       title: "Phone",
-      details: "+1 (555) 123-4567",
+      details: "+91 63830 19245 | +91 99737 74859",
     },
     {
       icon: <Mail className="h-5 w-5 text-primary" />,
       title: "Email",
-      details: "support@xfashion.com",
+      details: "varfeo.support@gmail.com",
     },
     {
       icon: <Clock className="h-5 w-5 text-primary" />,
       title: "Business Hours",
-      details: "Mon-Fri: 9AM-6PM EST",
+      details: "Mon-Fri: 8AM-12PM IST",
+    },
+  ];
+
+  const socialMedia = [
+    {
+      name: "Gmail",
+      icon: <FaGoogle />,
+      href: "https://gmail.com",
+    },
+    {
+      name: "Instagram",
+      icon: <FaInstagram />,
+      href: "https://instagram.com",
+    },
+    {
+      name: "FaceBook",
+      icon: <FaFacebook />,
+      href: "https://instagram.com",
+    },
+    {
+      name: "WhatsApp",
+      icon: <FaWhatsapp />,
+      href: "https://instagram.com",
     },
   ];
 
@@ -62,7 +88,7 @@ export const Contact = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
-          <div>
+          <div className="space-y-5">
             <Card>
               <CardHeader>
                 <CardTitle>Send us a message</CardTitle>
@@ -123,6 +149,20 @@ export const Contact = () => {
                 </form>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact through social media</CardTitle>
+              </CardHeader>
+              <CardContent className="space-x-2 flex justify-center items-center flex-wrap">
+                {socialMedia.map((media) => (
+                  <div key={media.name} className="flex justify-center items-center border p-5">
+                    <Link href={media.href}>
+                      {media.icon} <div>{media.name}</div>
+                    </Link>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Contact Information */}
@@ -148,7 +188,7 @@ export const Contact = () => {
             </div>
 
             {/* Map Placeholder */}
-            <Card>
+            {/* <Card>
               <CardContent className="p-0">
                 <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
                   <div className="text-center">
@@ -158,10 +198,10 @@ export const Contact = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Quick Contact */}
-            <Card className="hero-gradient text-white">
+            {/* <Card className="hero-gradient text-white">
               <CardContent className="p-6">
                 <h3 className="font-bold text-lg mb-2">Need Immediate Help?</h3>
                 <p className="mb-4 opacity-90">
@@ -179,10 +219,12 @@ export const Contact = () => {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default Contact;

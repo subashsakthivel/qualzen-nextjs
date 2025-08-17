@@ -1,3 +1,4 @@
+"use client";
 import React, { use, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-export const ProductShowcase = ({ params }: { params: Promise<{ id: string }> }) => {
+const ProductShowcase = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = use(params);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedColor, setSelectedColor] = useState("Red");
@@ -281,3 +282,5 @@ export const ProductShowcase = ({ params }: { params: Promise<{ id: string }> })
     </div>
   );
 };
+
+export default ProductShowcase;

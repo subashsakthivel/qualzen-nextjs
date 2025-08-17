@@ -1,4 +1,5 @@
 import { PaginateOptions, RootQuerySelector } from "mongoose";
+import z from "zod";
 
 export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
 
@@ -12,19 +13,23 @@ type TFilterOperator =
   | "gte"
   | "lt"
   | "lte";
-type TUpdateOperator =
-  | "set"
-  | "inc"
-  | "unset"
-  | "push"
-  | "pull"
-  | "addToSet"
-  | "mul"
-  | "min"
-  | "max"
-  | "rename"
-  | "setOnInsert"
-  | "currentDate";
+
+const zUpdateOperator = z.enum([
+  "set",
+  "inc",
+  "unset",
+  "push",
+  "pull",
+  "addToSet",
+  "mul",
+  "min",
+  "max",
+  "rename",
+  "setOnInsert",
+  "currentDate",
+]);
+type TUpdateOperator = z.infer<typeof zUpdateOperator>;
+
 export type TCriteria<T> = {
   field: keyof T;
   operator: TFilterOperator;
@@ -36,6 +41,14 @@ export type TUpdate<T> = {
   operator: TUpdateOperator;
   value: any;
 }[];
+
+export const zUpdateQuerySchema = z.array(
+  z.object({
+    field: z.string(),
+    operator: zUpdateOperator,
+    value: z.any(),
+  })
+);
 
 export type TFilter<T> =
   | TCriteria<T>

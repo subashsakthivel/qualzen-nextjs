@@ -35,7 +35,15 @@ export interface DataModelInterface {
   updateData?: (id: string, data: any) => Promise<any>;
   authorized?: () => boolean;
 }
-export type TDataModels = "category" | "product" | "address" | "userinfo" | "order" | "content";
+export type TDataModels =
+  | "category"
+  | "product"
+  | "address"
+  | "userinfo"
+  | "order"
+  | "content"
+  | "productVariant"
+  | "base";
 export const DataModelMap: Record<TDataModels, DataModelInterface> = {
   category: {
     schema: CategorySchema,
@@ -143,14 +151,14 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
         const docs = await Promise.all(
           resultData.docs.map(async (doc: any) => {
             const imageSrc = await Promise.all(
-              doc.imageNames.map((imageName: string) => {
+              doc.images.map((imageName: string) => {
                 return S3Util.getInstance().getObjectUrl(imageName);
               })
             );
             const variants = await Promise.all(
               doc.variants.map(async (variant: any) => {
                 const imageSrc = await Promise.all(
-                  variant.imageNames.map((imageName: string) => {
+                  variant.images.map((imageName: string) => {
                     return S3Util.getInstance().getObjectUrl(imageName);
                   })
                 );
@@ -181,14 +189,14 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
         const docs = await Promise.all(
           resultData.docs.map(async (doc: any) => {
             const imageSrc = await Promise.all(
-              doc.imageNames.map((imageName: string) => {
+              doc.images.map((imageName: string) => {
                 return S3Util.getInstance().getObjectUrl(imageName);
               })
             );
             const variants = await Promise.all(
               doc.variants.map(async (variant: any) => {
                 const imageSrc = await Promise.all(
-                  variant.imageNames.map((imageName: string) => {
+                  variant.images.map((imageName: string) => {
                     return S3Util.getInstance().getObjectUrl(imageName);
                   })
                 );
@@ -224,7 +232,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
       if (productData) {
         // Upload main product images
         const uploadResults = await Promise.allSettled(
-          productData.imageNames.map(async (imageName) => {
+          productData.images.map(async (imageName) => {
             const imageFile = data.get(imageName) as File;
             if (!imageFile) throw new Error(`Image file not found for ${imageName}`);
             const type = imageFile.name.split(".").pop() || "";
@@ -232,7 +240,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
             return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
           })
         );
-        productData.imageNames = uploadResults
+        productData.images = uploadResults
           .filter(
             (result): result is PromiseFulfilledResult<string> => result.status === "fulfilled"
           )
@@ -248,7 +256,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
               .filter((variant) => typeof variant !== "string")
               .map(async (variant) => {
                 const uploadResults = await Promise.allSettled(
-                  variant.imageNames.map(async (imageName) => {
+                  variant.images.map(async (imageName) => {
                     const imageFile = data.get(imageName) as File;
                     if (!imageFile)
                       throw new Error(`Variant image file not found for ${imageName}`);
@@ -258,7 +266,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
                     return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
                   })
                 );
-                variant.imageNames = uploadResults
+                variant.images = uploadResults
                   .filter(
                     (result): result is PromiseFulfilledResult<string> =>
                       result.status === "fulfilled"
@@ -328,15 +336,15 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
       }
       if (!productData) return;
 
-      if (productData.imageNames) {
-        productData.imageNames = await uploadImages(productData.imageNames, data);
+      if (productData.images) {
+        productData.images = await uploadImages(productData.images, data);
       }
       if (productData.variants) {
         productData.variants = (
           await Promise.all(
             productData.variants.map(async (variant: any) => {
-              if (variant.imageNames) {
-                variant.imageNames = await uploadImages(variant.imageNames, data);
+              if (variant.images) {
+                variant.images = await uploadImages(variant.images, data);
               }
               if (variant._id) {
                 return ProductVariantModel.findByIdAndUpdate(variant._id, variant, {
@@ -359,7 +367,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
       const product = await ProductModel.findByIdAndDelete(id);
       if (product) {
         await Promise.all(
-          product.imageNames.map((imageName) => {
+          product.images.map((imageName) => {
             try {
               S3Util.getInstance().deleteFile(imageName);
             } catch (error) {
@@ -372,7 +380,7 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
             const variant = await ProductVariantModel.findByIdAndDelete(variantId);
             if (variant) {
               return Promise.all(
-                variant.imageNames.map((imageName) => {
+                variant.images.map((imageName) => {
                   try {
                     S3Util.getInstance().deleteFile(imageName);
                   } catch (error) {
@@ -402,11 +410,21 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
     dbModel: ContentModel,
     url: "/api/dataAPI/content",
   },
+  base: {
+    schema: ContentSchema,
+    dbModel: ContentModel,
+    url: "/api/dataAPI/content",
+  },
+  productVariant: {
+    schema: ContentSchema,
+    dbModel: ContentModel,
+    url: "/api/dataAPI/content",
+  },
 };
 
-async function uploadImages(imageNames: string[], data: FormData): Promise<string[]> {
+async function uploadImages(images: string[], data: FormData): Promise<string[]> {
   const uploadResults = await Promise.allSettled(
-    imageNames.map(async (imageName) => {
+    images.map(async (imageName) => {
       const imageFile = data.get(imageName) as File;
       if (!imageFile) {
         console.error(`Image file not found for ${imageName}`);

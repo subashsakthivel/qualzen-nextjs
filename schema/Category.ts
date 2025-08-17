@@ -4,6 +4,7 @@ import { categorySpecificAttributesSchema } from "./CategorySpecificAttributes";
 export const CategorySchema = z.object({
   _id: z.string().optional(),
   name: z.string(),
+  image: z.string(),
   displayName: z.string().optional(),
   description: z.string().optional(),
   parentCategory: z

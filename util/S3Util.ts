@@ -10,10 +10,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ErrorRequest } from "./responseUtil";
 import crypto from "crypto";
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
-const BUCKET_REGION = process.env.S3_BUCKET_REGION!;
-const ACCESS_KEY = process.env.S3_ACCESS_KEY!;
-const SECRET_ACCESS_KEY = process.env.S3_SECRET_ACCESS_KEY!;
+const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+const ACCESS_KEY = process.env.R2_ACCESS_KEY!;
+const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
+const ENDPOINT = process.env.R2_ENDPOINT!;
 const DEFAULT_FILES_ACL = ObjectCannedACL.bucket_owner_full_control;
 
 export class S3Util {
@@ -22,7 +22,7 @@ export class S3Util {
 
   private constructor() {
     this.client = new S3Client({
-      region: BUCKET_REGION,
+      endpoint: ENDPOINT,
       credentials: {
         accessKeyId: ACCESS_KEY,
         secretAccessKey: SECRET_ACCESS_KEY,
@@ -63,8 +63,6 @@ export class S3Util {
     });
     console.log("Going to upload a image ", fileKey);
     await this.client.send(command);
-    const url = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileKey}`;
-    console.log(`${file.name} uploaded ${url}`);
     return fileKey;
   }
 

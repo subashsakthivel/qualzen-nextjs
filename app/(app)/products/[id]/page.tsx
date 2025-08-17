@@ -11,6 +11,8 @@ import { useCart } from "@/components/cart-provider";
 import { getDataFromServer } from "@/util/dataAPI";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct, TProductRes } from "@/schema/Product";
+import { TProductVariant } from "@/schema/ProductVarient";
+import { PaginateResult } from "mongoose";
 
 // Mock product data - in a real app, you would fetch this from an API
 type TAtttributes = {
@@ -18,42 +20,115 @@ type TAtttributes = {
   values: {
     variantId: string;
     value: string;
+    stockQuantity: number;
   }[];
   quantity: number;
   sortOrder: number;
 };
+
+type TProductInfo = {
+  product: TProductRes;
+  attributes: TAtttributes[];
+  sellingPrice: number;
+};
+
+const products: TProductRes[] = [
+  {
+    category: "ssa",
+    description: "fewf",
+    images: ["https://i.pinimg.com/736x/0f/8f/79/0f8f798a6bf1a388d90daba86d0618ce.jpg"],
+    isActive: true,
+    name: "fredo.",
+    price: 8909,
+    sellingPrice: 89,
+    sku: "cdn",
+    stockQuantity: 9,
+    tags: ["cksdl"],
+    _id: "123qaz",
+    brand: "cndkscsd",
+    instructions: "ckdsnlcsdklclmcdmkldsc",
+    otherdetails: "cndskcndscinsdlkncd",
+    relatedLinks: ["cknsdcsdncnl"],
+    attributes: [
+      {
+        name: "color",
+        value: "red",
+        sortOrder: 1,
+      },
+      {
+        name: "size",
+        value: "red",
+        sortOrder: 1,
+      },
+    ],
+    variants: [
+      {
+        _id: "wsx",
+        sku: "",
+        price: 1020,
+        sellingPrice: 1000,
+        stockQuantity: 10,
+        images: ["https://i.pinimg.com/736x/50/da/b6/50dab62ca362c53da99147a477572ea4.jpg"],
+        attributes: [
+          {
+            name: "color",
+            value: "red",
+            sortOrder: 1,
+          },
+          {
+            name: "size",
+            value: "red",
+            sortOrder: 1,
+          },
+        ],
+        isActive: true,
+      },
+    ],
+  },
+];
+
+const productsTest: PaginateResult<TProductRes> = {
+  docs: products,
+  hasNextPage: false,
+  hasPrevPage: false,
+  limit: 10,
+  offset: 10,
+  pagingCounter: 9,
+  totalDocs: 2,
+  totalPages: 1,
+};
+
 export default function ProductView({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
   const productId = unwrappedParams.id;
-  const [product, setProduct] = useState<TProductRes | undefined>(undefined);
-
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
   const [attributes, setAttributes] = useState<TAtttributes[]>([]);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
-  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
-  const [productAttributes, setProductAttributes] = useState<TProduct["attributes"]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<TProductVariant>();
+  const [images, setImages] = useState<string[]>([]);
+  const [productInfo, setProductInfo] = useState<TProductInfo>();
 
   const { addToCart } = useCart();
 
   useEffect(() => {
     async function loadProduct() {
       const fetchProduct = async (): Promise<TProductRes | undefined> => {
-        const resultData = await getDataFromServer(DataSourceMap["product"], "GET_DATA", {
-          filter: {
-            logicalOperator: "AND",
-            rules: [{ field: "_id", operator: "equals", value: productId }],
-          },
-          populate: [{ path: "variants" }],
-        });
+        // const resultData = await getDataFromServer(DataSourceMap["product"], "GET_DATA", {
+        //   filter: {
+        //     logicalOperator: "AND",
+        //     rules: [{ field: "_id", operator: "equals", value: productId }],
+        //   },
+        //   populate: [{ path: "variants" }],
+        // });
+        const resultData = productsTest;
         if (resultData && resultData.docs && resultData.docs.length == 1) {
           return resultData.docs[0] as TProductRes;
         }
         return undefined;
       };
       const product = await fetchProduct();
+      const productInfo = {} as TProductInfo;
       if (product) {
         product.attributes = product.attributes.sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -62,24 +137,45 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
           variant.attributes.map((attr) => {
             const existing = varaintAttributes.find((v) => v.name === v.name);
             if (existing) {
-              existing.values.push({ variantId: variant._id ?? "-", value: attr.value });
+              existing.values.push({
+                variantId: variant._id ?? "-",
+                value: attr.value,
+                stockQuantity: variant.stockQuantity,
+              });
               existing.quantity += variant.stockQuantity;
             } else {
               varaintAttributes.push({
                 name: attr.name,
-                values: [{ variantId: variant._id ?? "-", value: attr.value }],
+                values: [
+                  {
+                    variantId: variant._id ?? "-",
+                    value: attr.value,
+                    stockQuantity: variant.stockQuantity,
+                  },
+                ],
                 quantity: variant.stockQuantity,
                 sortOrder: attr.sortOrder,
               });
             }
           });
         });
+
         const productAttributes = product.attributes.filter((attr) =>
           varaintAttributes.find((a) => a.name === attr.name)
         );
-        setProduct(product);
-        setProductAttributes(productAttributes);
-        setAttributes(varaintAttributes.sort((a, b) => a.sortOrder - b.sortOrder));
+        product.attributes = product.attributes.filter((attr) =>
+          varaintAttributes.find((a) => a.name === attr.name)
+        );
+        productInfo.product = product;
+        productInfo.attributes = varaintAttributes.sort((a, b) => a.sortOrder - b.sortOrder);
+        productInfo.sellingPrice = product.sellingPrice;
+        debugger;
+        const images: string[] = product.images;
+        product.variants.map((v) => v.images.map((i) => images.push(i)));
+        debugger;
+        setImages(images);
+        setAttributes(productInfo.attributes);
+        setProductInfo(productInfo);
       }
     }
     loadProduct();
@@ -87,18 +183,20 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
 
   function onSelectAttribute(attributeName: string, attributeValue: string) {
     selectedAttributes[attributeName] = attributeValue;
-    if (Object.keys(selectedAttributes).length === attributes.length) {
-      const selectedVariant = product?.variants.find((variant) => {
-        return variant.attributes.every((attr) => selectedAttributes[attr.name] === attr.value);
-      });
-      if (selectedVariant && typeof selectedVariant !== "string") {
-        setSelectedVariant(selectedVariant._id ?? null);
-      } else {
-        setSelectedVariant(null);
-      }
+
+    const selectedVariant = productInfo?.product.variants.find((variant) => {
+      return variant.attributes.every((attr) => selectedAttributes[attr.name] === attr.value);
+    });
+    setSelectedAttributes(selectedAttributes);
+    if (selectedVariant && typeof selectedVariant !== "string") {
+      setSelectedImage(0);
+      setSelectedVariant(selectedVariant);
+      setImages(
+        selectedVariant && selectedVariant.images.length > 0 ? selectedVariant.images : images
+      );
     }
   }
-  if (!product) {
+  if (!productInfo?.product) {
     return (
       <div className="container px-4 py-12 mx-auto text-center">
         <h1 className="text-2xl font-bold">Product not found</h1>
@@ -111,12 +209,9 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
   }
 
   const handleAddToCart = () => {
-    if (product.variants.length > 0 && !selectedVariant) return;
+    if (productInfo.product.variants.length > 0 && !selectedVariant) return;
 
-    addToCart({
-      ...product,
-      variantId: selectedVariant ?? undefined,
-    });
+    addToCart(productInfo.product, selectedVariant);
   };
 
   return (
@@ -130,23 +225,26 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
           Products
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground">{product.name}</span>
+        <span className="text-foreground">{productInfo.product.name}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border">
             <Image
-              src={product.imageSrc[selectedImage] || "/placeholder.svg"}
-              alt={product.name}
+              src={images[selectedImage] || "/placeholder.svg"}
+              alt={productInfo.product.name}
               fill
               className="object-cover"
             />
-            {!product.isActive && <Badge className="absolute top-4 right-4">Not Avaialble</Badge>}
+            {/* {(variant && variant.isActive) ||
+              (!variant && !product.isActive && (
+                <Badge className="absolute top-4 right-4">Not Avaialble</Badge>
+              ))} */}
           </div>
 
           <div className="flex gap-4">
-            {product.imageSrc.map((image, index) => (
+            {images.map((image, index) => (
               <button
                 key={index}
                 className={`relative aspect-square w-20 overflow-hidden rounded-md border ${
@@ -156,7 +254,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
               >
                 <Image
                   src={image || "/placeholder.svg"}
-                  alt={`${product.name} - Image ${index + 1}`}
+                  alt={`${productInfo.product.name} - Image ${index + 1}`}
                   fill
                   className="object-cover"
                 />
@@ -167,11 +265,11 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
 
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            <p className="text-2xl font-bold mt-2">${product.price.toFixed(2)}</p>
+            <h1 className="text-3xl font-bold">{productInfo.product.name}</h1>
+            <p className="text-2xl font-bold mt-2">${productInfo.sellingPrice}</p>
           </div>
 
-          <p className="text-muted-foreground">{product.description}</p>
+          <p className="text-muted-foreground">{productInfo.product.description}</p>
 
           <div className="space-y-4">
             {attributes.map((attribute, index) => (
@@ -181,7 +279,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
                   {attribute.values.map((attrValue) => (
                     <Button
                       key={attrValue.value}
-                      variant={selectedSize === attrValue.value ? "default" : "outline"}
+                      variant={!selectedAttributes[attrValue.value] ? "default" : "outline"}
                       className={`min-w-[60px] ${
                         selectedAttributes[attribute.name] === attrValue.value
                           ? "bg-primary text-primary-foreground border-l-2"
@@ -193,9 +291,6 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
                     </Button>
                   ))}
                 </div>
-                {!selectedSize && (
-                  <p className="text-sm text-muted-foreground mt-2">Please select a size</p>
-                )}
               </div>
             ))}
           </div>
@@ -221,7 +316,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
           <Button
             size="lg"
             className="w-full"
-            disabled={product.variants.length > 0 && !selectedVariant}
+            disabled={!selectedVariant}
             onClick={handleAddToCart}
           >
             <ShoppingCart className="h-5 w-5 mr-2" />
@@ -239,7 +334,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
             </TabsList>
             <TabsContent value="details" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
-                {product.attributes.map((attr) => (
+                {productInfo.product.attributes.map((attr) => (
                   <div key={attr.name}>
                     <h4 className="font-medium">{attr.name}</h4>
                     <p className="text-sm text-muted-foreground">{attr.value}</p>

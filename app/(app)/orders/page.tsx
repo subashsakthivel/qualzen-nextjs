@@ -96,10 +96,11 @@ export const Orders = () => {
               <CardContent>
                 <div className="space-y-4">
                   {order.items.map((item, index) => (
-                    <div key={index} className="flex items-center space-x-4">
+                    <div key={index} className="flex items-center space-x-4 relative">
                       <Image
                         src={item.image}
                         alt={item.name}
+                        fill
                         className="w-16 h-16 object-cover rounded"
                       />
                       <div className="flex-1">
@@ -134,3 +135,5 @@ export const Orders = () => {
     </div>
   );
 };
+
+export default Orders;

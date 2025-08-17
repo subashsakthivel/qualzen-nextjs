@@ -2,17 +2,23 @@ import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeaturedProducts } from "@/components/featured-products";
-import { HeroSection } from "@/components/hero-section";
 import { CategorySection } from "@/components/category-section";
-import HeroCarousel from "../(test)/testui/_components/HeroSection";
+import HeroCarousel from "@/components/hero-section";
+import CategoriesCatelog from "@/components/CategoriesCatelog";
+import BlogPostsList from "@/components/BlogPostsList";
+import TopSocialPostsList from "@/components/TopSocialPostsList";
+import SubscribeNewsLetter from "@/components/subscribe-newletter";
 
 export default function Home() {
   return (
     <>
       <HeroCarousel />
-      <div className="  container px-4 py-12 mx-auto space-y-16">
+
+      <div className="  container  space-y-32 my-10">
         <CategorySection />
         <FeaturedProducts />
+        <CategoriesCatelog />
+        <TopSocialPostsList />
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight">Ready to upgrade your style?</h2>
           <p className="max-w-[600px] text-muted-foreground">
@@ -25,6 +31,8 @@ export default function Home() {
             </Link>
           </Button>
         </div>
+        <BlogPostsList />
+        <SubscribeNewsLetter />
       </div>
     </>
   );

@@ -1,11 +1,12 @@
 import {
   FilterQuery,
+  modelNames,
   PaginateModel,
   PaginateResult,
   RootQuerySelector,
   UpdateQuery,
 } from "mongoose";
-import { FetchDataOptions, TCriteria, TFilter, TUpdate } from "../util-type";
+import { FetchDataOptions, TCriteria, TFilter, TUpdate, zUpdateQuerySchema } from "../util-type";
 import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";
 import dbConnect from "@/lib/mongoose";
 
@@ -16,8 +17,12 @@ export interface GetDataParams<T> {
 }
 
 export class DBUtil {
-  static instance = new DBUtil();
-  private constructor() {}
+  static instance = new DBUtil("base");
+  modelName: TDataModels;
+
+  constructor(modelName: TDataModels) {
+    this.modelName = modelName;
+  }
 
   public static getInstance() {
     return DBUtil.instance;
@@ -53,7 +58,7 @@ export class DBUtil {
     // todo : operation invalid error
     try {
       const { dbModel, getData, getPaginationData } = DataModelMap[modelName];
-      const queryFilter = parseFilterQuery(filter!);
+      const queryFilter = DBUtil.parseFilterQuery(filter!);
       if (operation === "GET_DATA_V2.1" && getPaginationData) {
         return await getPaginationData(queryFilter, options);
       } else if (operation === "GET_DATA_V2.0" && getData) {
@@ -76,17 +81,18 @@ export class DBUtil {
     }
   }
 
-  async postData<T>({
+  static async postData<T>({
     modelName,
     operation = "POST_DATA",
     data,
   }: {
     modelName: TDataModels;
     operation?: string;
-    data: T;
+    data: T | FormData;
   }): Promise<T> {
     const { dbModel, schema, authorized, postData } = DataModelMap[modelName];
-    const { data: safeData, error, success } = schema.safeParse(data);
+    const inputData = data instanceof FormData ? data.get("data") : data;
+    const { data: safeData, error, success } = schema.safeParse(inputData);
     if (!success) {
       console.error("Invalid data:", error);
       throw new Error("Invalid data");
@@ -110,7 +116,7 @@ export class DBUtil {
     }
   }
 
-  async updateData<T>({
+  static async updateData<T>({
     modelName,
     operation = "UPDATE_DATA",
     id,
@@ -121,7 +127,7 @@ export class DBUtil {
     operation?: string;
     id?: string;
     filter?: TFilter<T>;
-    data: TUpdate<T>;
+    data: TUpdate<T> | Partial<T> | Partial<T>[];
   }): Promise<any> {
     const { dbModel, schema, authorized, updateData } = DataModelMap[modelName];
 
@@ -129,8 +135,12 @@ export class DBUtil {
       throw new Error("Unauthorized operation");
     }
 
-    const validateData = () => {
-      const { data: safeData, error, success } = schema.safeParse(data);
+    const validateData = (data: TUpdate<T> | Partial<T>) => {
+      const {
+        data: safeData,
+        error,
+        success,
+      } = Array.isArray(data) ? zUpdateQuerySchema.safeParse(data) : schema.safeParse(data);
       if (!success) {
         console.error("Invalid data:", error);
         throw new Error("Invalid data");
@@ -142,20 +152,20 @@ export class DBUtil {
       switch (operation) {
         case "UPDATE_DATA_V2":
           if (id && updateData) {
-            const safeData = validateData();
+            const safeData = validateData(data as TUpdate<T>);
             return (await updateData(id, safeData)) as T;
           }
           break;
         case "UPDATE_DATA_V1.2":
           if (id) {
-            const safeData = validateData();
+            const safeData = validateData(data as TUpdate<T>);
             return await dbModel.findByIdAndUpdate(id, safeData);
           }
           break;
         case "UPDATE_DATA_V1.1":
           if (filter) {
-            const updateQuery = parseUpdateQuery(data);
-            const queryFilter = parseFilterQuery(filter);
+            const updateQuery = DBUtil.parseUpdateQuery(data as TUpdate<T>);
+            const queryFilter = DBUtil.parseFilterQuery(filter);
             return await dbModel.updateMany(queryFilter, updateQuery, {
               multi: true,
               upsert: true,
@@ -164,13 +174,21 @@ export class DBUtil {
           break;
         case "UPDATE_DATA":
           if (filter) {
-            const updateQuery = parseUpdateQuery(data);
-            const queryFilter = parseFilterQuery(filter);
+            const updateQuery = DBUtil.parseUpdateQuery(data as TUpdate<T>);
+            const queryFilter = DBUtil.parseFilterQuery(filter);
             return await dbModel.updateMany(queryFilter, updateQuery, {
               multi: true,
               upsert: false,
             });
           }
+          break;
+        case "REPLACE_DATA":
+          const modifiedData = Array.isArray(data)
+            ? data.map((d) => validateData(d as Partial<T>))
+            : validateData(data);
+          return Array.isArray(data)
+            ? data.map(async (d) => await dbModel.replaceOne({ _id: (d as any)._id }, d))
+            : await dbModel.replaceOne({ _id: (modifiedData as any)._id }, modifiedData);
           break;
         default:
           throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
@@ -210,7 +228,7 @@ export class DBUtil {
           break;
         case "DELETE_DATA":
           if (filter) {
-            const queryFilter = parseFilterQuery(filter);
+            const queryFilter = DBUtil.parseFilterQuery(filter);
             return await dbModel.deleteMany(queryFilter).lean();
           }
           break;
@@ -222,63 +240,73 @@ export class DBUtil {
       throw new Error("Data deletion failed");
     }
   }
-}
 
-function parseFilterQuery<T>(filter: TFilter<T>): FilterQuery<T> {
-  if ("logic" in filter) {
-    const logicalOperator = filter.logic === "and" ? "$and" : "$or";
-    const subFilters = filter.criteria.map(parseFilterQuery);
-    return { [logicalOperator]: subFilters } as RootQuerySelector<T>;
-  }
-
-  const { field, operator, value } = filter as TCriteria<T>;
-  const filterQuery = {} as any;
-  switch (operator) {
-    case "equals":
-      filterQuery[field] = value;
-      break;
-    case "notEquals":
-      filterQuery[field] = { $ne: value };
-      break;
-    case "contains":
-      filterQuery[field] = { $regex: value, $options: "i" };
-      break;
-    case "in":
-      filterQuery[field] = { $in: Array.isArray(value) ? value : [value] };
-      break;
-    case "notIn":
-      filterQuery[field] = { $nin: Array.isArray(value) ? value : [value] };
-      break;
-    case "gt":
-      filterQuery[field] = { $gt: value };
-      break;
-    case "gte":
-      filterQuery[field] = { $gte: value };
-      break;
-    case "lt":
-      filterQuery[field] = { $lt: value };
-      break;
-    case "lte":
-      filterQuery[field] = { $lte: value };
-      break;
-    default:
-      throw new Error(`Unsupported operator: ${operator}`);
-  }
-  return filterQuery as FilterQuery<T>[keyof T];
-}
-
-function parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
-  const updateQuery: UpdateQuery<T> = {};
-
-  for (const { field, operator, value } of updates) {
-    const ope = `$${operator}` as keyof UpdateQuery<T>;
-
-    if (!updateQuery[ope]) {
-      updateQuery[ope] = {} as any;
+  protected static parseFilterQuery<T>(filter: TFilter<T>): FilterQuery<T> {
+    if ("logic" in filter) {
+      const logicalOperator = filter.logic === "and" ? "$and" : "$or";
+      const subFilters = filter.criteria.map(DBUtil.parseFilterQuery);
+      return { [logicalOperator]: subFilters } as RootQuerySelector<T>;
     }
 
-    (updateQuery[ope] as any)[field as string] = value;
+    const { field, operator, value } = filter as TCriteria<T>;
+    const filterQuery = {} as any;
+    switch (operator) {
+      case "equals":
+        filterQuery[field] = value;
+        break;
+      case "notEquals":
+        filterQuery[field] = { $ne: value };
+        break;
+      case "contains":
+        filterQuery[field] = { $regex: value, $options: "i" };
+        break;
+      case "in":
+        filterQuery[field] = { $in: Array.isArray(value) ? value : [value] };
+        break;
+      case "notIn":
+        filterQuery[field] = { $nin: Array.isArray(value) ? value : [value] };
+        break;
+      case "gt":
+        filterQuery[field] = { $gt: value };
+        break;
+      case "gte":
+        filterQuery[field] = { $gte: value };
+        break;
+      case "lt":
+        filterQuery[field] = { $lt: value };
+        break;
+      case "lte":
+        filterQuery[field] = { $lte: value };
+        break;
+      default:
+        throw new Error(`Unsupported operator: ${operator}`);
+    }
+    return filterQuery as FilterQuery<T>[keyof T];
   }
 
-  return updateQuery;
+  protected static parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
+    const updateQuery: UpdateQuery<T> = {};
+
+    for (const { field, operator, value } of updates) {
+      const ope = `$${operator}` as keyof UpdateQuery<T>;
+
+      if (!updateQuery[ope]) {
+        updateQuery[ope] = {} as any;
+      }
+
+      (updateQuery[ope] as any)[field as string] = value;
+    }
+
+    return updateQuery;
+  }
+
+  protected parseInputdata<T>(modelName: TDataModels, data: any): T {
+    const { schema } = DataModelMap[modelName];
+    const { data: safeData, error, success } = schema.parse(data);
+    if (!success) {
+      console.error("Invalid data:", error);
+      throw new Error("Invalid data");
+    }
+    return safeData;
+  }
 }

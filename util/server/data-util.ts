@@ -1,21 +1,31 @@
-import dbConnect from "@/lib/mongoose";
 import { DBUtil, GetDataParams } from "./db-core";
-import { CacheHandler } from "next/dist/server/lib/incremental-cache";
 import { localcache } from "@/lib/cache";
 import QueryMap from "@/cache/cache-query";
 import { PaginateResult } from "mongoose";
+import { TDataModels } from "@/model/server/data-model-mappings";
+
+type TDataUtilCallback<T,V,K> = {
+  callback : () => T,
+  onFailue? : () => V,
+  onSucess : () => K
+}
 
 export class DataUtil {
   private constructor() {}
 
-  public static async persistData<K extends keyof DBUtil>(
+  public static async persistData<
+    K extends {
+      [P in keyof DBUtil]: DBUtil[P] extends (...args: any[]) => any ? P : never;
+    }[keyof DBUtil]
+  >(
     userId: string,
+    modelName: TDataModels,
     operation: K,
     cacheKey?: string,
     ...args: Parameters<DBUtil[K]>
   ): Promise<ReturnType<DBUtil[K]>> {
     try {
-      const instance = DBUtil.getInstance();
+      const instance = new DBUtil(modelName);
       const method = instance[operation];
 
       if (typeof method !== "function") {
@@ -61,5 +71,15 @@ export class DataUtil {
       console.error("Error connecting to the database:", err);
       throw new Error("Database operation failed");
     }
+  }
+
+  public static async createNew({
+    userId , key , callback , onSuccess , onFailure  
+  }: {
+    userId : string,
+    key : string,
+    callback : () => {} | [{callback : ()=>{}, onSuc]
+  }) {
+
   }
 }

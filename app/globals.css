@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "PPEditorialNew-UltralightItalic";
-  src: url("/public/fonts/PPEditorialNew-UltralightItalic.ttf") format("truetype");
-  font-weight: 200;
-  font-style: italic;
-  font-display: swap;
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -107,14 +99,13 @@
   h4,
   h5,
   h6 {
-    font-family: "PPEditorialNew-UltralightItalic", sans-serif;
-    font-weight: 200;
-    font-style: italic;
+    font-family: var(--font-nsop);
+    font-weight: 400;
     letter-spacing: -0.025em;
   }
 
   p {
-    font-family: var(--font-inter);
+    font-family: var(--font-nsop);
     font-weight: 300;
     opacity: 0.6;
   }

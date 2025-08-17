@@ -1,5 +1,4 @@
 "use client";
-import ProductList from "@/components/productList";
 import InfiniteScroll from "@/components/ui/infinitescroll";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct, TProductRes } from "@/schema/Product";
@@ -16,15 +15,17 @@ function ProductGallery({ initialProducts }: { initialProducts: PaginateResult<T
 
   const loadMoreProducts = async () => {
     if (hasMoreData) {
-      const resultData = await getDataFromServer(DataSourceMap.product, "GET_DATA", {
-        limit: 20,
-        page: page + 1,
-        populate: [{ path: "variants" }],
-      });
-      console.log(resultData);
-      setHasMoreData(resultData.hasNextPage);
-      setProducts((prevProducts) => [...prevProducts, ...(resultData.docs as TProductRes[])]);
-      setPage(resultData.page ?? page + 1);
+      debugger;
+      console.log("load more products");
+      // const resultData = await getDataFromServer(DataSourceMap.product, "GET_DATA", {
+      //   limit: 20,
+      //   page: page + 1,
+      //   populate: [{ path: "variants" }],
+      // });
+      // console.log(resultData);
+      // setHasMoreData(resultData.hasNextPage);
+      // setProducts((prevProducts) => [...prevProducts, ...(resultData.docs as TProductRes[])]);
+      // setPage(resultData.page ?? page + 1);
     }
   };
 

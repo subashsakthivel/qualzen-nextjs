@@ -10,6 +10,16 @@ import { useCart } from "@/components/cart-provider";
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, subtotal, clearCart } = useCart();
+  debugger;
+  const cartItemInfo = cartItems.map((item) => ({
+    id: item.variant ? item.product._id + " " + item.variant._id : item.product._id,
+    image: item.variant ? item.variant.images[0] : item.product.images[0],
+    name: item.product.name,
+    price: item.variant ? item.variant.sellingPrice : item.product.sellingPrice,
+    product: item.product,
+    variant: item.variant,
+    quantity: item.quantity,
+  }));
 
   if (cartItems.length === 0) {
     return (
@@ -34,13 +44,13 @@ export default function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          {cartItems.map((item) => (
-            <Card key={item._id} className="overflow-hidden">
+          {cartItemInfo.map((item) => (
+            <Card key={item.id} className="overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative w-full sm:w-[120px] h-[120px]">
                     <Image
-                      src={item.imageSrc[0] || "/placeholder.svg"}
+                      src={item.image || "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover"
@@ -50,21 +60,23 @@ export default function CartPage() {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {item.selectedVariant?.attributes.map((attr) => (
+                        {item.variant?.attributes.map((attr) => (
                           <span key={attr.name}>
                             {attr.name}: {attr.value}
                             {", "}
                           </span>
                         ))}
                       </p>
-                      <p className="font-bold mt-1">${item.price.toFixed(2)}</p>
+                      <p className="font-bold mt-1">${item.price}</p>
                     </div>
                     <div className="flex items-center mt-4 sm:mt-0">
                       <Button
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item._id, item.variantId, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.product, item.quantity - 1, item.variant)
+                        }
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -73,7 +85,9 @@ export default function CartPage() {
                         variant="outline"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item._id, item.variantId, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.product, item.quantity + 1, item.variant)
+                        }
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -81,7 +95,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 ml-2"
-                        onClick={() => removeFromCart(item._id, item.variantId)}
+                        onClick={() => removeFromCart(item.product, item.variant)}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>

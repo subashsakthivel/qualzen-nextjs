@@ -7,12 +7,12 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     trim: true,
   },
-  variantSpecificPrice: {
+  price: {
     type: Number,
     required: true,
     min: 0,
   },
-  variantSpecificDiscountPrice: {
+  sellingPrice: {
     type: Number,
     required: false,
     min: 0,
@@ -22,7 +22,7 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     min: 0,
   },
-  imageNames: {
+  images: {
     type: [String],
     default: [],
     minlength: 1,

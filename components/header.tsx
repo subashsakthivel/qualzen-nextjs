@@ -4,6 +4,13 @@ import { ShoppingBag, Menu, X, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+const newsItems = [
+  "🔥 FLASH SALE: 50% off all winter collections ending today!",
+  "🎉 100K+ customers joined VARFEO family this month!",
+  "✨ New arrivals: Premium leather collection now available",
+  "🚀 Free shipping worldwide on orders over $200",
+  "💎 VIP members get early access to exclusive drops",
+];
 import Image from "next/image";
 import Link from "next/link";
 export const Header = () => {
@@ -44,12 +51,27 @@ export const Header = () => {
     <header
       className={
         "sticky z-50 w-full " +
-        (lastScrollY > 200 ? "bg-primary-foreground" : "bg-transparent border-none") +
+        (lastScrollY > 200 ? "bg-primary-foreground" : "bg-transparent border-none text-lg") +
         " " +
-        (isVisible ? "top-0" : "-top-16") +
-        " ease-out duration-300"
+        (isVisible ? "top-0" : "-top-28") +
+        " ease-out duration-100"
       }
     >
+      <section
+        className={
+          "bg-primary text-white py-2 overflow-hidden " + (lastScrollY == 0 ? "block" : "hidden")
+        }
+      >
+        <div className="whitespace-nowrap">
+          <div className="news-ticker w-full flex justify-around">
+            {newsItems.map((news, index) => (
+              <span key={index} className="inline-block mx-8 text-lg font-thin">
+                {news}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -71,7 +93,7 @@ export const Header = () => {
               <Link
                 key={link.to}
                 href={link.to}
-                className="text-sm font-medium transition-colors hover:text-primary"
+                className="text-sm font-medium transition-colors hover:text-primary text-shadow-lg"
               >
                 {link.label}
               </Link>
@@ -110,7 +132,7 @@ export const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t">
+          <div className="md:hidden border-t bg-primary-foreground">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navLinks.map((link) => (
                 <Link

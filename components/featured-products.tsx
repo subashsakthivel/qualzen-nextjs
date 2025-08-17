@@ -12,7 +12,7 @@ const products = [
     id: 1,
     name: "Classic White T-Shirt",
     price: 29.99,
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://i.pinimg.com/736x/4b/d9/72/4bd97237173fa8d01f13860b4c7e9ea4.jpg",
     category: "men",
     isNew: true,
   },
@@ -20,7 +20,7 @@ const products = [
     id: 2,
     name: "Slim Fit Jeans",
     price: 59.99,
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://i.pinimg.com/736x/9f/81/d8/9f81d80e40266483299a2ce62b6a51a1.jpg",
     category: "men",
     isNew: false,
   },
@@ -28,7 +28,7 @@ const products = [
     id: 3,
     name: "Summer Floral Dress",
     price: 79.99,
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://i.pinimg.com/736x/5b/27/ab/5b27ab11d1a93fb70e3ae4e1714ebf9e.jpg",
     category: "women",
     isNew: true,
   },
@@ -36,7 +36,39 @@ const products = [
     id: 4,
     name: "Casual Hoodie",
     price: 49.99,
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://i.pinimg.com/1200x/d6/66/02/d6660255305ac378c7b630a07c4bfd0c.jpg",
+    category: "men",
+    isNew: false,
+  },
+  {
+    id: 5,
+    name: "Casual Hoodie",
+    price: 49.99,
+    image: "https://i.pinimg.com/1200x/9d/eb/e9/9debe987a8930bf3d6e09256832f980f.jpg",
+    category: "men",
+    isNew: false,
+  },
+  {
+    id: 6,
+    name: "Casual Hoodie",
+    price: 49.99,
+    image: "https://i.pinimg.com/736x/d7/5e/0a/d75e0ac362630bf1e167f09d5ae54995.jpg",
+    category: "men",
+    isNew: false,
+  },
+  {
+    id: 7,
+    name: "Casual Hoodie",
+    price: 49.99,
+    image: "https://i.pinimg.com/736x/ed/76/f9/ed76f9a8897a2b14c9db2f8ef9cdaa7d.jpg",
+    category: "men",
+    isNew: false,
+  },
+  {
+    id: 8,
+    name: "Casual Hoodie",
+    price: 49.99,
+    image: "https://i.pinimg.com/1200x/80/2e/9e/802e9e7055ac646c6f909959a6e1c225.jpg",
     category: "men",
     isNew: false,
   },
@@ -44,14 +76,11 @@ const products = [
 
 export function FeaturedProducts() {
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col items-center text-center space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Featured Products</h2>
-        <p className="text-muted-foreground max-w-[600px]">
-          Our most popular items, handpicked for you
-        </p>
+    <section className="space-y-6 ">
+      <div className="flex flex-col items-center text-center space-y-2 m-12">
+        <h2 className="text-3xl font-bold tracking-tight ">Featured Products</h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -61,8 +90,6 @@ export function FeaturedProducts() {
 }
 
 function ProductCard({ product }: any) {
-  const { addToCart } = useCart();
-
   return (
     <Card className="overflow-hidden group">
       <Link href={`/products/${product.id}`}>
@@ -82,12 +109,6 @@ function ProductCard({ product }: any) {
         </Link>
         <p className="font-bold mt-1">${product.price.toFixed(2)}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <Button className="w-full" size="sm" onClick={() => addToCart(product)}>
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Add to Cart
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

@@ -1,15 +1,16 @@
 "use client";
 
-import { TProductRes } from "@/schema/Product";
+import { TProduct } from "@/schema/Product";
+import { TProductVariant } from "@/schema/ProductVarient";
 import type React from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
-export type TCartItem = TProductRes & { quantity: number };
+export type TCartItem = { product: TProduct; variant?: TProductVariant; quantity: number };
 type CartContextType = {
   cartItems: TCartItem[];
-  addToCart: (product: TProductRes) => void;
-  removeFromCart: (productId: string, variantId: string | undefined) => void;
-  updateQuantity: (productId: string, varaintId: string | undefined, quantity: number) => void;
+  addToCart: (product: TProduct, variant?: TProductVariant) => void;
+  removeFromCart: (product: TProduct, variant?: TProductVariant) => void;
+  updateQuantity: (product: TProduct, quantity: number, variant?: TProductVariant) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -40,30 +41,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cartItems]);
 
-  const addToCart = (product: TProductRes) => {
+  const addToCart = (product: TProduct, variant?: TProductVariant) => {
+    debugger;
     const existingItem = cartItems.find(
-      (item) => item._id === product._id && item.variantId === product.variantId
+      (item) => item.product._id === product._id && item.variant?._id === variant?._id
     );
-    const productQuantity = product.selectedVariant
-      ? product.variants.find((variant) => variant._id === product.selectedVariant?._id)
-          ?.stockQuantity ?? 0
-      : product.stockQuantity;
-    //todo : show soldout toast
+    const productQuantity = variant ? variant.stockQuantity : product.stockQuantity;
+
+    if (productQuantity === 0 || (existingItem && existingItem.quantity >= productQuantity)) {
+      //todo : show not have error toast
+      return;
+    }
+
     const item: TCartItem = {
-      ...product,
+      product,
+      variant,
       quantity: existingItem ? existingItem.quantity + 1 : 1,
     };
 
-    setCartItems((prevItems) =>
-      prevItems.map((prevItem) =>
-        item._id === product._id && item.variantId === product.variantId ? item : prevItem
-      )
-    );
+    if (!existingItem) {
+      setCartItems([...cartItems, item]);
+    } else {
+      setCartItems((prevItems) =>
+        prevItems.map((prevItem) =>
+          item.product._id === product._id && item.variant?._id === variant?._id ? item : prevItem
+        )
+      );
+    }
   };
 
-  const removeFromCart = (productId: string, variantId: string | undefined) => {
+  const removeFromCart = (product: TProduct, variant?: TProductVariant) => {
     setCartItems((prevItems) =>
-      prevItems.filter((item) => item._id !== productId && item.variantId !== variantId)
+      prevItems.filter(
+        (item) => item.product._id !== product._id && item.variant?._id !== variant?._id
+      )
     );
 
     if (cartItems.length === 0) {
@@ -71,22 +82,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateQuantity = (productId: string, variantId: string | undefined, quantity: number) => {
+  const updateQuantity = (product: TProduct, quantity: number, variant?: TProductVariant) => {
     const updatedItem = cartItems.find(
-      (item) => item._id === productId && item.variantId === variantId
+      (item) => item.product._id === product._id && item.variant?._id === variant?._id
     );
     if (!updatedItem) {
       //todo : show toeast
     } else {
-      const productQuantity = updatedItem?.variantId
-        ? updatedItem.variants.find((variant) => variant._id === updatedItem.selectedVariant?._id)
-            ?.stockQuantity ?? 0
-        : updatedItem.stockQuantity;
-      //todo : low stock alert
-      updatedItem.quantity++;
+      const productQuantity = variant ? variant.stockQuantity : product.stockQuantity;
+      if (productQuantity < quantity) {
+        // todo : show dont have stock tast
+        // update the cart local storage
+        return;
+      }
+      updatedItem.quantity = Math.max(1, quantity);
       setCartItems((prevItems) =>
         prevItems.map((prevItem) =>
-          prevItem._id === productId && prevItem.variantId === variantId ? updatedItem : prevItem
+          prevItem.product._id === product._id && prevItem.variant?._id === variant?._id
+            ? updatedItem
+            : prevItem
         )
       );
     }
@@ -98,8 +112,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
-
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce(
+    (total, item) =>
+      total +
+      (item.variant ? item.variant.sellingPrice : item.product.sellingPrice) * item.quantity,
+    0
+  );
   const total = Math.floor(subtotal);
 
   return (

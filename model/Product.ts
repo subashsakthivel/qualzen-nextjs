@@ -21,7 +21,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     required: true,
     min: 0,
   },
-  discountPrice: {
+  sellingPrice: {
     type: Number,
     required: false,
     min: 0,
@@ -41,7 +41,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: String,
     required: false,
   },
-  imageNames: {
+  images: {
     type: [String],
     default: [],
   },
@@ -75,6 +75,15 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  instructions: {
+    type: String,
+  },
+  otherdetails: {
+    type: String,
+  },
+  relatedLinks: {
+    type: [String],
   },
   createdAt: {
     type: Date,

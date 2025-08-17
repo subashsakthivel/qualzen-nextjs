@@ -9,21 +9,23 @@ export const ProductAttributeSchema = z.object({
 });
 
 export const ProductSchema = z.object({
-  name: z.string(),
   _id: z.string().optional(),
-
+  category: z.union([z.string(), CategorySchema]),
+  name: z.string(),
   description: z.string(),
   sku: z.string(),
   price: z.number().min(0),
-  discountPrice: z.number().min(0),
+  sellingPrice: z.number().min(0),
   stockQuantity: z.number().min(0).default(0),
-  category: z.union([z.string(), CategorySchema]),
+  images: z.array(z.string()).min(1).max(10),
   brand: z.string().optional(),
-  imageNames: z.array(z.string()).min(1).max(10),
   attributes: z.array(ProductAttributeSchema).max(6),
   variants: z.array(z.union([z.string(), ProductVariantSchema])).max(10),
   isActive: z.boolean().default(true),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).max(3).default([]),
+  instructions: z.string().optional(),
+  otherdetails: z.string().optional(),
+  relatedLinks: z.array(z.string()).optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -31,9 +33,5 @@ export const ProductSchema = z.object({
 export type TProduct = z.infer<typeof ProductSchema>;
 
 export type TProductRes = Omit<TProduct, "variants"> & {
-  imageSrc: string[];
-  _id: string;
-  variantId?: string;
-  selectedVariant?: TProductVariant & { imageSrc: string[] };
   variants: TProductVariant[];
 }; // todo: need zod for this
