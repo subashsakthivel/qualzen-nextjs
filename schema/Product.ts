@@ -20,7 +20,7 @@ export const ProductSchema = z.object({
   images: z.array(z.string()).min(1).max(10),
   brand: z.string().optional(),
   attributes: z.array(ProductAttributeSchema).max(6),
-  variants: z.array(z.union([z.string(), ProductVariantSchema])).max(10),
+  variants: z.array(ProductVariantSchema).max(10),
   isActive: z.boolean().default(true),
   tags: z.array(z.string()).max(3).default([]),
   instructions: z.string().optional(),
@@ -31,7 +31,3 @@ export const ProductSchema = z.object({
 });
 
 export type TProduct = z.infer<typeof ProductSchema>;
-
-export type TProductRes = Omit<TProduct, "variants"> & {
-  variants: TProductVariant[];
-}; // todo: need zod for this

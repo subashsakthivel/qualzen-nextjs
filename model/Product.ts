@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { TProduct } from "@/schema/Product";
 import mongoosePaginate from "mongoose-paginate-v2";
+import { ProductVariantModel } from "./ProductVarient";
 
 const ProductDBSchema = new mongoose.Schema<TProduct>({
   name: {
@@ -61,13 +62,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
       },
     },
   ],
-  variants: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductVariant",
-      default: null,
-    },
-  ],
+  variants: [ProductVariantModel],
   tags: {
     type: [String],
     default: [],
