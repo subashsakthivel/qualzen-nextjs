@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
-import { TProduct } from "@/schema/Product";
+import { ProductSchema, TProduct } from "@/schema/Product";
 import mongoosePaginate from "mongoose-paginate-v2";
 import { ProductVariantModel } from "./ProductVarient";
+import DatabaseUtil from "@/util/dbUtil";
+import R2Util from "@/util/S3Util";
 
 const ProductDBSchema = new mongoose.Schema<TProduct>({
   name: {
@@ -88,6 +90,41 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: Date,
     default: Date.now,
   },
+});
+
+ProductDBSchema.pre("save", async function (next) {
+  try {
+    const product = this;
+    if (this.isNew) {
+      ProductSchema.parse(product.toObject());
+      product._id = await DatabaseUtil.getSeq({ _id: "product" });
+    }
+    next();
+  } catch (err) {
+    next(err as Error);
+  }
+});
+ProductDBSchema.post("save", async function (doc, next) {
+  try {
+    next();
+  } catch (err) {
+    await R2Util.deleteFiles(doc.images);
+    next(err as Error);
+  }
+});
+ProductDBSchema.post("find", async function (docs: TProduct[] | null, next) {
+  if (docs) {
+    docs.map(async (doc) => {
+      doc.images = await R2Util.getObjectUrls(doc.images);
+    });
+  }
+  next();
+});
+ProductDBSchema.post("findOne", async function (doc: TProduct | null, next) {
+  if (doc) {
+    doc.images = await R2Util.getObjectUrls(doc.images);
+  }
+  next();
 });
 
 ProductDBSchema.plugin(mongoosePaginate); //todo: need to remove paginate later

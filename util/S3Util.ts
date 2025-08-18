@@ -16,11 +16,19 @@ const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const ENDPOINT = process.env.R2_ENDPOINT!;
 const DEFAULT_FILES_ACL = ObjectCannedACL.bucket_owner_full_control;
 
-export class S3Util {
-  private static instance: S3Util;
+class S3Util {
   private client: S3Client;
 
-  private constructor() {
+  public constructor({
+    endpoint: ENDPOINT,
+    credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_ACCESS_KEY },
+  }: {
+    endpoint: string;
+    credentials: {
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+  }) {
     this.client = new S3Client({
       endpoint: ENDPOINT,
       credentials: {
@@ -28,13 +36,6 @@ export class S3Util {
         secretAccessKey: SECRET_ACCESS_KEY,
       },
     });
-  }
-
-  public static getInstance(): S3Util {
-    if (!S3Util.instance) {
-      S3Util.instance = new S3Util();
-    }
-    return S3Util.instance;
   }
 
   private generateFileKey(): string {
@@ -47,6 +48,11 @@ export class S3Util {
       Key: fileKey,
     });
     const url = await getSignedUrl(this.client, command, { expiresIn: 3600 });
+    return url;
+  }
+
+  public async getObjectUrls(fileKey: string[]): Promise<string[]> {
+    const url = Promise.all(fileKey.map((fileKey) => this.getObjectUrl(fileKey)));
     return url;
   }
 
@@ -105,3 +111,13 @@ export class S3Util {
     }
   }
 }
+
+const R2Util = new S3Util({
+  endpoint: ENDPOINT,
+  credentials: {
+    accessKeyId: ACCESS_KEY,
+    secretAccessKey: SECRET_ACCESS_KEY,
+  },
+});
+
+export default R2Util;

@@ -1,4 +1,5 @@
-import { PaginateOptions, RootQuerySelector } from "mongoose";
+import { TDataModels } from "@/model/server/data-model-mappings";
+import { PaginateOptions } from "mongoose";
 import z from "zod";
 
 export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
@@ -63,3 +64,14 @@ export interface FetchDataOptions<T> extends PaginateOptions {
   fields?: string;
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
 }
+
+export interface GetDataParams<T> {
+  modelName: TDataModels;
+  operation?: string;
+  options: FetchDataOptions<T>;
+}
+
+export type tFileUploadsTask = {
+  path: string;
+  multi: boolean;
+}[];

@@ -6,26 +6,32 @@ import {
   RootQuerySelector,
   UpdateQuery,
 } from "mongoose";
-import { FetchDataOptions, TCriteria, TFilter, TUpdate, zUpdateQuerySchema } from "../util-type";
+import {
+  FetchDataOptions,
+  GetDataParams,
+  TCriteria,
+  tFileUploadsTask,
+  TFilter,
+  TUpdate,
+  zUpdateQuerySchema,
+} from "../util-type";
 import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";
 import dbConnect from "@/lib/mongoose";
+import ObjectUtil from "../ObjectUtil";
+import R2Util from "../S3Util";
+import { TProduct } from "@/schema/Product";
 
-export interface GetDataParams<T> {
-  modelName: TDataModels;
-  operation?: string;
-  options: FetchDataOptions<T>;
-}
-
+type tExecution<T, V> = {
+  userId: string;
+  callback: () => Promise<T>;
+  onSuccess?: (response: T) => T | V | Promise<void>;
+  onFailure?: () => void | Promise<void>;
+};
 export class DBUtil {
-  static instance = new DBUtil("base");
   modelName: TDataModels;
 
   constructor(modelName: TDataModels) {
     this.modelName = modelName;
-  }
-
-  public static getInstance() {
-    return DBUtil.instance;
   }
 
   async getData<T>({
@@ -58,7 +64,7 @@ export class DBUtil {
     // todo : operation invalid error
     try {
       const { dbModel, getData, getPaginationData } = DataModelMap[modelName];
-      const queryFilter = DBUtil.parseFilterQuery(filter!);
+      const queryFilter = this.parseFilterQuery(filter!);
       if (operation === "GET_DATA_V2.1" && getPaginationData) {
         return await getPaginationData(queryFilter, options);
       } else if (operation === "GET_DATA_V2.0" && getData) {
@@ -81,7 +87,7 @@ export class DBUtil {
     }
   }
 
-  static async postData<T>({
+  async postData<T>({
     modelName,
     operation = "POST_DATA",
     data,
@@ -89,7 +95,7 @@ export class DBUtil {
     modelName: TDataModels;
     operation?: string;
     data: T | FormData;
-  }): Promise<T> {
+  }): Promise<T | undefined> {
     const { dbModel, schema, authorized, postData } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? data.get("data") : data;
     const { data: safeData, error, success } = schema.safeParse(inputData);
@@ -100,23 +106,33 @@ export class DBUtil {
     if (authorized && !authorized()) {
       throw new Error("Unauthorized operation");
     }
-    try {
-      if (operation === "POST_DATA_V2" && postData) {
-        const newData = await postData(safeData);
-        return newData as T;
-      } else if (operation === "POST_DATA") {
+    const execution: tExecution<T, T> = {
+      userId: "",
+      callback: async () => {
         const newData = new dbModel(safeData);
         const savedData = await newData.save();
-        return savedData.toObject() as T;
+        return savedData.toObject();
+      },
+      onSuccess: (response) => response,
+    };
+    try {
+      if (operation === "POST_DATA_V2" && postData) {
+        execution.callback = async () => await postData(safeData);
+      } else if (operation === "POST_DATA_V1.1" && data instanceof FormData) {
+        const fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
+        this.fileuploads(inputData, data, fileOperation);
+        execution.onFailure = () => this.fileDeletes(inputData, fileOperation);
+      } else if (operation === "POST_DATA") {
       } else {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
+      return this.execute(execution);
     } catch (err) {
       throw new Error("Data saving failed");
     }
   }
 
-  static async updateData<T>({
+  async updateData<T>({
     modelName,
     operation = "UPDATE_DATA",
     id,
@@ -164,8 +180,8 @@ export class DBUtil {
           break;
         case "UPDATE_DATA_V1.1":
           if (filter) {
-            const updateQuery = DBUtil.parseUpdateQuery(data as TUpdate<T>);
-            const queryFilter = DBUtil.parseFilterQuery(filter);
+            const updateQuery = this.parseUpdateQuery(data as TUpdate<T>);
+            const queryFilter = this.parseFilterQuery(filter);
             return await dbModel.updateMany(queryFilter, updateQuery, {
               multi: true,
               upsert: true,
@@ -174,8 +190,8 @@ export class DBUtil {
           break;
         case "UPDATE_DATA":
           if (filter) {
-            const updateQuery = DBUtil.parseUpdateQuery(data as TUpdate<T>);
-            const queryFilter = DBUtil.parseFilterQuery(filter);
+            const updateQuery = this.parseUpdateQuery(data as TUpdate<T>);
+            const queryFilter = this.parseFilterQuery(filter);
             return await dbModel.updateMany(queryFilter, updateQuery, {
               multi: true,
               upsert: false,
@@ -228,7 +244,7 @@ export class DBUtil {
           break;
         case "DELETE_DATA":
           if (filter) {
-            const queryFilter = DBUtil.parseFilterQuery(filter);
+            const queryFilter = this.parseFilterQuery(filter);
             return await dbModel.deleteMany(queryFilter).lean();
           }
           break;
@@ -241,10 +257,10 @@ export class DBUtil {
     }
   }
 
-  protected static parseFilterQuery<T>(filter: TFilter<T>): FilterQuery<T> {
+  protected parseFilterQuery<T>(filter: TFilter<T>): FilterQuery<T> {
     if ("logic" in filter) {
       const logicalOperator = filter.logic === "and" ? "$and" : "$or";
-      const subFilters = filter.criteria.map(DBUtil.parseFilterQuery);
+      const subFilters = filter.criteria.map(this.parseFilterQuery);
       return { [logicalOperator]: subFilters } as RootQuerySelector<T>;
     }
 
@@ -284,7 +300,7 @@ export class DBUtil {
     return filterQuery as FilterQuery<T>[keyof T];
   }
 
-  protected static parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
+  protected parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
     const updateQuery: UpdateQuery<T> = {};
 
     for (const { field, operator, value } of updates) {
@@ -308,5 +324,59 @@ export class DBUtil {
       throw new Error("Invalid data");
     }
     return safeData;
+  }
+
+  async fileuploads(data: any, form: FormData, fileuploadsTask: tFileUploadsTask) {
+    for (const task of fileuploadsTask) {
+      if (task.multi) {
+        const fileName = ObjectUtil.getValue({ obj: data, path: task.path }) as string;
+        const file = form.get(fileName) as File;
+        if (file) {
+          const uploadedFileName = await R2Util.uploadFile(file);
+          ObjectUtil.updateValue({ obj: data, path: task.path, value: uploadedFileName });
+        }
+      } else {
+        const fileNames = ObjectUtil.getValue({ obj: data, path: task.path }) as string[];
+        if (Array.isArray(fileNames) && fileNames.length > 0) {
+          const files = fileNames
+            .map((fileName) => form.get(fileName) as File)
+            .filter(Boolean) as File[];
+          if (files.length > 0) {
+            const uploadedFileNames = await R2Util.uploadFiles(files);
+            ObjectUtil.updateValue({ obj: data, path: task.path, value: uploadedFileNames });
+          }
+        }
+      }
+    }
+  }
+
+  async fileDeletes(data: any, fileuploadsTask: tFileUploadsTask) {
+    for (const task of fileuploadsTask) {
+      if (task.multi) {
+        const fileName = ObjectUtil.getValue({ obj: data, path: task.path }) as string;
+        await R2Util.deleteFile(fileName);
+      } else {
+        const fileNames = ObjectUtil.getValue({ obj: data, path: task.path }) as string[];
+        if (Array.isArray(fileNames) && fileNames.length > 0) {
+          await R2Util.deleteFiles(fileNames);
+        }
+      }
+    }
+  }
+
+  async execute<T, V>({
+    userId,
+    callback,
+    onSuccess,
+    onFailure,
+  }: tExecution<T, V>): Promise<T | undefined> {
+    try {
+      const response = await callback();
+      if (onSuccess) await onSuccess(response);
+      return response;
+    } catch (err) {
+      console.error(userId, "Execution error:", err);
+      if (onFailure) await onFailure();
+    }
   }
 }
