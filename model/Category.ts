@@ -3,6 +3,7 @@ import DatabaseUtil from "@/util/dbUtil";
 import R2Util from "@/util/S3Util";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
+import { CategorySpecificAttributesModel } from "./CategorySpecificAttributes";
 
 const CategoryDbSchema = new mongoose.Schema<TCategory>({
   name: {
@@ -42,6 +43,10 @@ CategoryDbSchema.pre("save", async function (next) {
     if (this.isNew) {
       CategorySchema.parse(product.toObject());
       product._id = await DatabaseUtil.getSeq({ _id: "product" });
+      const attributes = this.attributes || [];
+      this.attributes = await Promise.all(
+        attributes.map(async (att) => await new CategorySpecificAttributesModel(att).save())
+      );
     }
     next();
   } catch (err) {
@@ -69,6 +74,20 @@ CategoryDbSchema.post("findOne", async function (doc: TCategory | null, next) {
     doc.image = await R2Util.getObjectUrl(doc.image);
   }
   next();
+});
+CategoryDbSchema.post("deleteOne", async function (doc: TCategory | null, next) {
+  if (doc && doc.image) {
+    await R2Util.deleteFile(doc.image);
+  }
+});
+CategoryDbSchema.post("deleteMany", async function (docs: TCategory[] | null, next) {
+  if (docs) {
+    docs.forEach(async (doc) => {
+      if (doc.image) {
+        await R2Util.deleteFile(doc.image);
+      }
+    });
+  }
 });
 
 CategoryDbSchema.plugin(mongoosePaginate); //todo: need to remove paginate later

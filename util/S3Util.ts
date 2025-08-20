@@ -11,6 +11,7 @@ import { ErrorRequest } from "./responseUtil";
 import crypto from "crypto";
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+const BUCKET_REGION = process.env.R2_BUCKET_REGION || "auto";
 const ACCESS_KEY = process.env.R2_ACCESS_KEY!;
 const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const ENDPOINT = process.env.R2_ENDPOINT!;
@@ -31,6 +32,7 @@ class S3Util {
   }) {
     this.client = new S3Client({
       endpoint: ENDPOINT,
+      region: BUCKET_REGION,
       credentials: {
         accessKeyId: ACCESS_KEY,
         secretAccessKey: SECRET_ACCESS_KEY,

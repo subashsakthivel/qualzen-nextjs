@@ -8,7 +8,6 @@ import { categorySpecificAttributesSchema } from "@/schema/CategorySpecificAttri
 import { CategorySpecificAttributesModel } from "../CategorySpecificAttributes";
 import { ProductAttributeSchema, ProductSchema } from "@/schema/Product";
 import { ProductModel } from "../Product";
-import { S3Util } from "@/util/S3Util";
 import { ProductVariantModel } from "../ProductVarient";
 import { ProductVariantSchema } from "@/schema/ProductVarient";
 import { AddressModel } from "../Address";
@@ -21,19 +20,7 @@ export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   url: string;
-  collections?: {
-    [key: string]: {
-      model: mongoose.PaginateModel<any> | mongoose.Model<any>;
-      schema: z.ZodObject<any>;
-    };
-  };
-  getTableData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
-  getData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
-  getPaginationData?: (queryFilter: Record<string, any>, options: PaginateOptions) => Promise<any>;
-  postData?: (data: any) => Promise<any>;
-  deleteData?: (id: string) => Promise<any>;
-  updateData?: (id: string, data: any) => Promise<any>;
-  authorized?: () => boolean;
+  cacheKey: string;
 }
 export type TDataModels =
   | "category"
@@ -42,405 +29,72 @@ export type TDataModels =
   | "userinfo"
   | "order"
   | "content"
-  | "productVariant"
-  | "base";
+  | "productVariant";
+
 export const DataModelMap: Record<TDataModels, DataModelInterface> = {
   category: {
     schema: CategorySchema,
     dbModel: CategoryModel,
     url: "/api/dataAPI/Category",
-    collections: {
-      attributes: {
-        model: CategorySpecificAttributesModel,
-        schema: categorySpecificAttributesSchema,
-      },
-      parentCategory: {
-        model: CategoryModel,
-        schema: CategorySchema,
-      },
-      category: {
-        model: CategoryModel,
-        schema: CategorySchema,
-      },
-    },
-    getData: async (queryFilter: Record<string, any>, options: PaginateOptions) => {
-      const data = await CategoryModel.paginate(queryFilter, {
-        ...options,
-        populate: [{ path: "parentCategory" }, { path: "attributes" }],
-      }).then((result) => {
-        const resultData = JSON.parse(JSON.stringify(result));
-        return {
-          ...resultData,
-          docs: resultData.docs.map((doc: any, index: number) => {
-            return {
-              ...doc,
-              _id: undefined,
-              parentCategory: doc.parentCategory ? doc.parentCategory.name : "None",
-            };
-          }),
-        };
-      });
-      return data;
-    },
-    postData: async (data: TCategory) => {
-      const categorySpecificAttributes = await CategorySpecificAttributesModel.insertMany(
-        data.attributes
-      );
-      const category = await CategoryModel.insertOne({
-        ...data,
-        attributes: categorySpecificAttributes,
-      });
-      return category;
-    },
-    updateData: async (id: string, data: TCategory) => {
-      const attributes = await Promise.all(
-        data.attributes.map(async (attribute) => {
-          if (typeof attribute === "string") {
-            // if it is an id no need to update
-            return attribute;
-          }
-          return CategorySpecificAttributesModel.findOneAndUpdate(
-            { attributeName: attribute.attributeName },
-            { attribute },
-            { upsert: true, new: true, runValidators: true }
-          );
-        })
-      );
-
-      const category = await CategoryModel.findByIdAndUpdate(
-        id,
-        {
-          ...data,
-          attributes,
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      return category;
-    },
-    authorized: () => true,
+    cacheKey: "category",
   },
   userinfo: {
     schema: UserInfoSchema,
     dbModel: UserInfoModel,
     url: "/api/dataAPI/UserInfo",
-    authorized: () => true,
-    updateData: async (id: string, data: any) => {
-      const { data: safeData, success, error } = UserInfoSchema.partial().safeParse(data);
-      if (error || !success) {
-        console.error("User data validation failed:", error);
-        throw new Error("Please check the input data format and try again.");
-      }
-      return await UserInfoModel.findByIdAndUpdate(id, safeData, {
-        new: true,
-        runValidators: true,
-      });
-    },
+    cacheKey: "userinfo",
   },
   product: {
     schema: ProductSchema,
     dbModel: ProductModel,
     url: "/api/dataAPI/product",
-    getData: async (queryFilter: Record<string, any>, options: PaginateOptions) => {
-      return await ProductModel.paginate(queryFilter, {
-        ...options,
-      }).then(async (result) => {
-        const resultData = JSON.parse(JSON.stringify(result));
-        const docs = await Promise.all(
-          resultData.docs.map(async (doc: any) => {
-            const imageSrc = await Promise.all(
-              doc.images.map((imageName: string) => {
-                return S3Util.getInstance().getObjectUrl(imageName);
-              })
-            );
-            const variants = await Promise.all(
-              doc.variants.map(async (variant: any) => {
-                const imageSrc = await Promise.all(
-                  variant.images.map((imageName: string) => {
-                    return S3Util.getInstance().getObjectUrl(imageName);
-                  })
-                );
-                return {
-                  ...variant,
-                  imageSrc,
-                };
-              })
-            );
-            return {
-              ...doc,
-              variants,
-              imageSrc,
-            };
-          })
-        );
-        return {
-          ...resultData,
-          docs,
-        };
-      });
-    },
-    getPaginationData: async (queryFilter: Record<string, any>, options: PaginateOptions) => {
-      return await ProductModel.paginate(queryFilter, {
-        ...options,
-      }).then(async (result) => {
-        const resultData = JSON.parse(JSON.stringify(result));
-        const docs = await Promise.all(
-          resultData.docs.map(async (doc: any) => {
-            const imageSrc = await Promise.all(
-              doc.images.map((imageName: string) => {
-                return S3Util.getInstance().getObjectUrl(imageName);
-              })
-            );
-            const variants = await Promise.all(
-              doc.variants.map(async (variant: any) => {
-                const imageSrc = await Promise.all(
-                  variant.images.map((imageName: string) => {
-                    return S3Util.getInstance().getObjectUrl(imageName);
-                  })
-                );
-                return {
-                  ...variant,
-                  imageSrc,
-                };
-              })
-            );
-            return {
-              ...doc,
-              variants,
-              imageSrc,
-            };
-          })
-        );
-        return {
-          ...resultData,
-          docs,
-        };
-      });
-    },
-    postData: async (data: FormData) => {
-      const {
-        data: productData,
-        success,
-        error,
-      } = ProductSchema.safeParse(JSON.parse(data.get("data") as string));
-      if (error || !success) {
-        console.error(error);
-        return;
-      }
-      if (productData) {
-        // Upload main product images
-        const uploadResults = await Promise.allSettled(
-          productData.images.map(async (imageName) => {
-            const imageFile = data.get(imageName) as File;
-            if (!imageFile) throw new Error(`Image file not found for ${imageName}`);
-            const type = imageFile.name.split(".").pop() || "";
-            // TODO: Validate type and size
-            return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
-          })
-        );
-        productData.images = uploadResults
-          .filter(
-            (result): result is PromiseFulfilledResult<string> => result.status === "fulfilled"
-          )
-          .map((result) => result.value);
-        const failedUploads = uploadResults
-          .filter((result): result is PromiseRejectedResult => result.status === "rejected")
-          .map((result) => result.reason.message);
-        console.error("Failed uploads:", failedUploads);
-        // Upload variant images and create variants
-        const variants = await ProductVariantModel.insertMany(
-          await Promise.all(
-            productData.variants
-              .filter((variant) => typeof variant !== "string")
-              .map(async (variant) => {
-                const uploadResults = await Promise.allSettled(
-                  variant.images.map(async (imageName) => {
-                    const imageFile = data.get(imageName) as File;
-                    if (!imageFile)
-                      throw new Error(`Variant image file not found for ${imageName}`);
-                    const type = imageFile.name.split(".").pop() || "";
-                    // TODO: Validate type and size
-
-                    return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
-                  })
-                );
-                variant.images = uploadResults
-                  .filter(
-                    (result): result is PromiseFulfilledResult<string> =>
-                      result.status === "fulfilled"
-                  )
-                  .map((result) => result.value);
-                const failedUploads = uploadResults
-                  .filter((result): result is PromiseRejectedResult => result.status === "rejected")
-                  .map((result) => result.reason.message);
-                console.error("Failed uploads:", failedUploads);
-                return variant;
-              })
-          )
-        );
-        productData.variants = variants;
-        return await ProductModel.create(productData);
-      }
-    },
-    updateData: async (id: string, data: FormData) => {
-      const { attributes, variants, ...directProductData } = JSON.parse(data.get("data") as string);
-      const { data: productData } = ProductSchema.partial().safeParse(directProductData);
-      if (!productData) {
-        console.error("Product data validation failed");
-        throw new Error("Please check the input data format and try again.");
-      }
-      if (attributes) {
-        const safeAttributes = attributes.map((attribute: any) => {
-          const { data: safeAttribute } = ProductAttributeSchema.partial().safeParse(attribute);
-          if (!safeAttribute) {
-            console.error("Attribute validation failed:", attribute);
-            throw new Error("Please check the attribute data format and try again.");
-          }
-          return safeAttribute;
-        });
-        productData.attributes = safeAttributes;
-      }
-      if (variants) {
-        const safeVariants = variants.map((variant: any) => {
-          const { data: safeVariant } = ProductVariantSchema.partial().safeParse(variant);
-          if (!safeVariant) {
-            console.error("Variant validation failed:", variant);
-            throw new Error("Please check the variant data format and try again.");
-          }
-          return safeVariant;
-        });
-        productData.variants = safeVariants;
-      }
-
-      const deletedImages = data.getAll("deletedImages") as string[];
-      const deletedVariants = data.getAll("deletedVariants") as string[];
-      if (deletedImages && deletedImages.length > 0) {
-        await Promise.all(
-          deletedImages.map((imageName) => {
-            try {
-              S3Util.getInstance().deleteFile(imageName);
-            } catch (error) {
-              console.error(`Failed to delete image ${imageName}:`, error);
-            }
-          })
-        );
-      }
-      if (deletedVariants && deletedVariants.length > 0) {
-        await Promise.all(
-          deletedVariants.map((variantId) => {
-            return ProductVariantModel.findByIdAndDelete(variantId);
-          })
-        );
-      }
-      if (!productData) return;
-
-      if (productData.images) {
-        productData.images = await uploadImages(productData.images, data);
-      }
-      if (productData.variants) {
-        productData.variants = (
-          await Promise.all(
-            productData.variants.map(async (variant: any) => {
-              if (variant.images) {
-                variant.images = await uploadImages(variant.images, data);
-              }
-              if (variant._id) {
-                return ProductVariantModel.findByIdAndUpdate(variant._id, variant, {
-                  new: true,
-                  runValidators: true,
-                });
-              } else {
-                return ProductVariantModel.create(variant);
-              }
-            })
-          )
-        ).filter((variant) => variant !== null);
-      }
-      return await ProductModel.findByIdAndUpdate(id, productData, {
-        new: true,
-        runValidators: true,
-      });
-    },
-    deleteData: async (id: string) => {
-      const product = await ProductModel.findByIdAndDelete(id);
-      if (product) {
-        await Promise.all(
-          product.images.map((imageName) => {
-            try {
-              S3Util.getInstance().deleteFile(imageName);
-            } catch (error) {
-              console.error(`Failed to delete image ${imageName}:`, error);
-            }
-          })
-        );
-        await Promise.all(
-          product.variants.map(async (variantId) => {
-            const variant = await ProductVariantModel.findByIdAndDelete(variantId);
-            if (variant) {
-              return Promise.all(
-                variant.images.map((imageName) => {
-                  try {
-                    S3Util.getInstance().deleteFile(imageName);
-                  } catch (error) {
-                    console.error(`Failed to delete variant image ${imageName}:`, error);
-                  }
-                })
-              );
-            }
-          })
-        );
-      }
-      return product;
-    },
+    cacheKey: "product",
   },
   address: {
     schema: AddressSchema,
     dbModel: AddressModel,
     url: "/api/dataAPI/address",
+    cacheKey: "address",
   },
   order: {
     schema: OrderSchema,
     dbModel: OrderModel,
     url: "/api/dataAPI/order",
+    cacheKey: "order",
   },
   content: {
     schema: ContentSchema,
     dbModel: ContentModel,
     url: "/api/dataAPI/content",
-  },
-  base: {
-    schema: ContentSchema,
-    dbModel: ContentModel,
-    url: "/api/dataAPI/content",
+    cacheKey: "content",
   },
   productVariant: {
     schema: ContentSchema,
     dbModel: ContentModel,
     url: "/api/dataAPI/content",
+    cacheKey: "productVariant",
   },
 };
 
-async function uploadImages(images: string[], data: FormData): Promise<string[]> {
-  const uploadResults = await Promise.allSettled(
-    images.map(async (imageName) => {
-      const imageFile = data.get(imageName) as File;
-      if (!imageFile) {
-        console.error(`Image file not found for ${imageName}`);
-        return imageName;
-      }
-      const type = imageFile.name.split(".").pop() || "";
+// async function uploadImages(images: string[], data: FormData): Promise<string[]> {
+//   const uploadResults = await Promise.allSettled(
+//     images.map(async (imageName) => {
+//       const imageFile = data.get(imageName) as File;
+//       if (!imageFile) {
+//         console.error(`Image file not found for ${imageName}`);
+//         return imageName;
+//       }
+//       const type = imageFile.name.split(".").pop() || "";
 
-      return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
-    })
-  );
-  const uploadedImages = uploadResults
-    .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
-    .map((result) => result.value);
-  const failedUploads = uploadResults
-    .filter((result): result is PromiseRejectedResult => result.status === "rejected")
-    .map((result) => result.reason.message);
-  console.error("Failed uploads:", failedUploads);
-  return uploadedImages;
-}
+//       return S3Util.getInstance().uploadFile(imageFile, "public-read", type);
+//     })
+//   );
+//   const uploadedImages = uploadResults
+//     .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
+//     .map((result) => result.value);
+//   const failedUploads = uploadResults
+//     .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+//     .map((result) => result.reason.message);
+//   console.error("Failed uploads:", failedUploads);
+//   return uploadedImages;
+// }

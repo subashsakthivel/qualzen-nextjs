@@ -1,5 +1,5 @@
 import { TDataModels } from "@/model/server/data-model-mappings";
-import { PaginateOptions } from "mongoose";
+import { DeleteResult, FlattenMaps, PaginateOptions, PaginateResult } from "mongoose";
 import z from "zod";
 
 export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
@@ -65,11 +65,25 @@ export interface FetchDataOptions<T> extends PaginateOptions {
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
 }
 
-export interface GetDataParams<T> {
+export interface tGetDataParams<T> {
   modelName: TDataModels;
   operation?: string;
   options: FetchDataOptions<T>;
+  id?: string;
 }
+
+export type tDeleteResponse<T> =
+  | T
+  | (FlattenMaps<any> & Required<{ _id: unknown }> & { __v: number })[]
+  | (FlattenMaps<any> & Required<{ _id: unknown }> & { __v: number })
+  | DeleteResult
+  | null;
+export type tGetResponse<T> =
+  | T
+  | (FlattenMaps<any> & Required<{ _id: unknown }> & { __v: number })[]
+  | PaginateResult<T>
+  | null
+  | undefined;
 
 export type tFileUploadsTask = {
   path: string;

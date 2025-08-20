@@ -63,4 +63,6 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
   },
 });
 
-export const ContentModel = mongoose.model<TContent>("Content", ContentDbSchema);
+export const ContentModel =
+  (mongoose.models?.Content as unknown as mongoose.Model<TContent>) ||
+  mongoose.model<TContent>("Content", ContentDbSchema);

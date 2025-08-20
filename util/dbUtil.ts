@@ -39,7 +39,7 @@ import Counter from "@/model/Counter";
 //   return user;
 // }
 
-class DatabaseUtilClass {
+class DatabaseUtil {
   async getSeq({ _id }: { _id: string }) {
     const seq = await Counter.findByIdAndUpdate(
       { _id },
@@ -50,6 +50,6 @@ class DatabaseUtilClass {
   }
 }
 
-const DatabaseUtil = new DatabaseUtilClass();
+const PersistanceUtil = new DatabaseUtil();
 
-export default DatabaseUtil;
+export default PersistanceUtil;
