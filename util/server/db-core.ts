@@ -25,7 +25,6 @@ import dbConnect from "@/lib/mongoose";
 import ObjectUtil from "../ObjectUtil";
 import R2Util from "../S3Util";
 import { TProduct } from "@/schema/Product";
-import { exec } from "child_process";
 
 type tExecution<T, V> = {
   userId: string;
@@ -120,7 +119,7 @@ class DBUtil {
         fileOperation = JSON.parse(
           decodeURIComponent(data.get("fileOperation") as string)
         ) as tFileUploadsTask;
-        this.fileuploads(inputData, data, fileOperation);
+        await this.fileuploads(inputData, data, fileOperation);
         const inputDataCopy = JSON.parse(JSON.stringify(inputData)) as T;
         execution.callback = async () => await newData.save().lean();
         execution.onFailure = async () =>
@@ -360,7 +359,7 @@ class DBUtil {
 
   async fileDeletes(data: any, fileuploadsTask: tFileUploadsTask) {
     for (const task of fileuploadsTask) {
-      if (task.multi) {
+      if (!task.multi) {
         const fileName = ObjectUtil.getValue({ obj: data, path: task.path }) as string;
         await R2Util.deleteFile(fileName);
       } else {

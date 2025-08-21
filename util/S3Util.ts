@@ -30,14 +30,19 @@ class S3Util {
       secretAccessKey: string;
     };
   }) {
-    this.client = new S3Client({
-      endpoint: ENDPOINT,
-      region: BUCKET_REGION,
-      credentials: {
-        accessKeyId: ACCESS_KEY,
-        secretAccessKey: SECRET_ACCESS_KEY,
-      },
-    });
+    try {
+      this.client = new S3Client({
+        endpoint: ENDPOINT,
+        region: BUCKET_REGION,
+        credentials: {
+          accessKeyId: ACCESS_KEY,
+          secretAccessKey: SECRET_ACCESS_KEY,
+        },
+      });
+    } catch (err) {
+      console.error("Error initializing S3 client:", err);
+      throw new ErrorRequest("Failed to initialize S3 client", 500);
+    }
   }
 
   private generateFileKey(): string {

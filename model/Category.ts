@@ -39,17 +39,27 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
 
 CategoryDbSchema.pre("save", async function (next) {
   try {
-    const product = this;
+    const category = this;
     if (this.isNew) {
-      CategorySchema.parse(product.toObject());
-      product._id = await DatabaseUtil.getSeq({ _id: "product" });
-      const attributes = this.attributes || [];
-      this.attributes = await Promise.all(
-        attributes.map(async (att) => await new CategorySpecificAttributesModel(att).save())
-      );
+      category._id = await DatabaseUtil.getSeq({ _id: "product" });
     }
     next();
   } catch (err) {
+    next(err as Error);
+  }
+});
+CategoryDbSchema.pre("validate", async function (next) {
+  try {
+    const category = this;
+    CategorySchema.parse(category.toObject()); // here im facing issue with zod
+    const attributes = this.attributes || [];
+    if (attributes) {
+      category.attributes = await Promise.all(
+        attributes.map(async (att) => await new CategorySpecificAttributesModel(att).save())
+      );
+    }
+  } catch (err) {
+    console.error("Error in pre-validate hook:", err);
     next(err as Error);
   }
 });

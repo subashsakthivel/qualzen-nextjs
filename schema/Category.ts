@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { categorySpecificAttributesSchema } from "./CategorySpecificAttributes";
+import { ObjectIdSchema } from "./Common";
 
 export const CategorySchema = z.object({
-  _id: z.string().optional(),
+  _id: z.union([z.string(), ObjectIdSchema]).optional(),
   name: z.string(),
   image: z.string(),
   displayName: z.string().optional(),
