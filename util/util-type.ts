@@ -1,4 +1,3 @@
-import { TDataModels } from "@/model/server/data-model-mappings";
 import { DeleteResult, FlattenMaps, PaginateOptions, PaginateResult } from "mongoose";
 import z from "zod";
 
@@ -65,8 +64,18 @@ export interface FetchDataOptions<T> extends PaginateOptions {
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
 }
 
+export type tDataModels =
+  | "category"
+  | "product"
+  | "address"
+  | "userinfo"
+  | "order"
+  | "content"
+  | "productVariant"
+  | "categoryspecificattributes";
+
 export interface tGetDataParams<T> {
-  modelName: TDataModels;
+  modelName: tDataModels;
   operation?: string;
   options: FetchDataOptions<T>;
   id?: string;

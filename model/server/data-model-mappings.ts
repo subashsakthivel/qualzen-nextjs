@@ -16,6 +16,8 @@ import { OrderSchema } from "@/schema/Order";
 import { OrderModel } from "../Order";
 import { ContentSchema } from "@/schema/Content";
 import { ContentModel } from "../Content";
+import { cache } from "react";
+import { tDataModels } from "@/util/util-type";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
@@ -23,16 +25,8 @@ export interface DataModelInterface {
   cacheKey: string;
   subdocs?: [{ path: string; dbModel: mongoose.PaginateModel<any> | mongoose.Model<any> }];
 }
-export type TDataModels =
-  | "category"
-  | "product"
-  | "address"
-  | "userinfo"
-  | "order"
-  | "content"
-  | "productVariant";
 
-export const DataModelMap: Record<TDataModels, DataModelInterface> = {
+export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   category: {
     schema: CategorySchema,
     dbModel: CategoryModel,
@@ -44,6 +38,12 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
         dbModel: CategorySpecificAttributesModel,
       },
     ],
+  },
+  categoryspecificattributes: {
+    dbModel: CategorySpecificAttributesModel,
+    schema: categorySpecificAttributesSchema,
+    url: "/api/dataAPI/categoryspecificattributes",
+    cacheKey: "categoryspecificattributes",
   },
   userinfo: {
     schema: UserInfoSchema,

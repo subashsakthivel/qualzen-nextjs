@@ -6,7 +6,6 @@ export const CategorySchema = z.object({
   _id: z.union([z.string(), ObjectIdSchema]).optional(),
   name: z.string(),
   image: z.string(),
-  displayName: z.string().optional(),
   description: z.string().optional(),
   parentCategory: z
     .union([z.string(), z.lazy((): z.ZodTypeAny => CategorySchema), z.null()])

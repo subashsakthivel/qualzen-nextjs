@@ -1,14 +1,13 @@
 import { TCategorySpecificAttributes } from "@/schema/CategorySpecificAttributes";
 import mongoose from "mongoose";
+import DatabaseUtil from "@/util/dbUtil";
 
 const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecificAttributes>({
-  attributeName: {
+  _id: {
     type: String,
     required: true,
-    minlength: 2,
-    maxlength: 100,
   },
-  displayName: {
+  attributeName: {
     type: String,
     required: true,
     minlength: 2,
@@ -49,6 +48,18 @@ const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecific
     type: Date,
     default: Date.now,
   },
+});
+
+CategorySpecificAttributesDbSchema.pre("validate", async function (next) {
+  try {
+    const category = this;
+    if (this.isNew) {
+      category._id = await DatabaseUtil.getSeq({ _id: "categoryspecificattributes" });
+    }
+    next();
+  } catch (err) {
+    next(err as Error);
+  }
 });
 
 export const CategorySpecificAttributesModel =

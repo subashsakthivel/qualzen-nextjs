@@ -1,6 +1,7 @@
 import { localcache } from "@/lib/cache";
-import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";
+import { DataModelMap } from "@/model/server/data-model-mappings";
 import Persistance from "./db-core";
+import { tDataModels } from "../util-type";
 
 class DataAPIclass {
   async getData({
@@ -8,13 +9,20 @@ class DataAPIclass {
     operation,
     request,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation: string;
     request: any;
   }): Promise<any> {
     try {
       const { options } = request;
-      const response = await Persistance.getData({ modelName, operation, options });
+      const { cacheKey } = DataModelMap[modelName];
+      const operationCacheKey =
+        cacheKey + "-" + operation + "-" + JSON.stringify(encodeURIComponent(request));
+      if (localcache.has(operationCacheKey)) {
+        return localcache.get(operationCacheKey);
+      }
+      const response = await Persistance.getData({ modelName, operation, options: { ...options } });
+      localcache.set(operationCacheKey, response);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
@@ -27,14 +35,18 @@ class DataAPIclass {
     operation,
     request,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation: string;
     request: any;
   }): Promise<any> {
     try {
       const { cacheKey } = DataModelMap[modelName];
       const response = await Persistance.saveData({ modelName, operation, data: request });
-      localcache.delete(cacheKey);
+      localcache.entries().forEach(([key]) => {
+        if (key.startsWith(cacheKey)) {
+          localcache.delete(key);
+        }
+      });
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
@@ -47,7 +59,7 @@ class DataAPIclass {
     operation,
     request,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation: string;
     request: any;
   }): Promise<any> {

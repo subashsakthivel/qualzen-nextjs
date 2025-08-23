@@ -68,4 +68,9 @@ export const DataModel: {
     dbModel: OrderModel,
     url: "/api/dataAPI/order",
   },
+  categoryspecificattributes: {
+    dbModel: CategorySpecificAttributesModel,
+    schema: categorySpecificAttributesSchema,
+    url: "/api/dataAPI/categoryspecificattributes",
+  },
 };

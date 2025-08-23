@@ -3,7 +3,6 @@ import { z } from "zod";
 export const categorySpecificAttributesSchema = z.object({
   _id: z.string().optional(),
   attributeName: z.string().min(2).max(100),
-  displayName: z.string().min(2).max(100),
   isMandatoryForVariant: z.boolean().default(false),
   isMandatoryForProduct: z.boolean().default(false),
   allowedValues: z.array(z.string()).max(10),

@@ -41,7 +41,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
             <span className="m-1">{tag}</span>
             <span
               className="cursor-pointer font-bold p-0  m-1 rounded-full "
-              onClick={() => setTags(tags.filter((t, i) => i !== index))}
+              onClick={() => !props.disabled && setTags(tags.filter((t, i) => i !== index))}
             >
               {"  "}
               &times;{"  "}

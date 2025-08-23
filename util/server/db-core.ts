@@ -6,7 +6,6 @@ import {
   Model,
   PaginateDocument,
   PaginateModel,
-  PaginateResult,
   RootQuerySelector,
   Types,
   UpdateQuery,
@@ -14,6 +13,7 @@ import {
 import {
   FetchDataOptions,
   TCriteria,
+  tDataModels,
   tDeleteResponse,
   tFileUploadsTask,
   TFilter,
@@ -22,7 +22,7 @@ import {
   TUpdate,
   zUpdateQuerySchema,
 } from "../util-type";
-import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";
+import { DataModelMap } from "@/model/server/data-model-mappings";
 import dbConnect from "@/lib/mongoose";
 import ObjectUtil from "../ObjectUtil";
 import R2Util from "../S3Util";
@@ -57,7 +57,7 @@ class DBUtil {
       }
     }
     const options = {
-      limit: Math.min(limit, 100), // Limit to a maximum of 1000
+      limit: Math.min(limit, 100), // Limit to a maximum of 100
       sort,
       page,
       lean: otherOptions.lean || true,
@@ -95,7 +95,7 @@ class DBUtil {
     operation = "POST_DATA",
     data,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation?: string;
     data: T | FormData;
   }): Promise<T | undefined> {
@@ -120,8 +120,8 @@ class DBUtil {
       let fileOperation: tFileUploadsTask | undefined;
       if (data instanceof FormData && data.has("fileOperation")) {
         fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
-        await this.fileuploads(inputData, data, fileOperation);
-        const inputDataCopy = JSON.parse(JSON.stringify(inputData)) as T;
+        await this.fileuploads(safeData, data, fileOperation);
+        const inputDataCopy = JSON.parse(JSON.stringify(safeData)) as T;
         execution.onFailure = async () =>
           fileOperation && Persistance.fileDeletes(inputDataCopy, fileOperation);
       }
@@ -152,7 +152,7 @@ class DBUtil {
     filter,
     data,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation?: string;
     id?: string;
     filter?: TFilter<T>;
@@ -226,7 +226,7 @@ class DBUtil {
     id,
     filter,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     operation?: string;
     id?: string;
     filter?: TFilter<T>;
@@ -323,7 +323,7 @@ class DBUtil {
     return updateQuery;
   }
 
-  protected parseInputdata<T>(modelName: TDataModels, data: any): T {
+  protected parseInputdata<T>(modelName: tDataModels, data: any): T {
     const { schema } = DataModelMap[modelName];
     const { data: safeData, error, success } = schema.parse(data);
     if (!success) {
@@ -401,33 +401,41 @@ class DBUtil {
     data,
     session,
   }: {
-    modelName: TDataModels;
+    modelName: tDataModels;
     data: any;
     session?: mongoose.ClientSession;
   }): Promise<T> {
     const { dbModel, subdocs } = DataModelMap[modelName];
-    if (subdocs) {
-      for (const subdoc of subdocs) {
-        const { path, dbModel } = subdoc;
-        const value = ObjectUtil.getValue({ obj: data, path });
-        if (value) {
-          if (Array.isArray(value)) {
-            const docsToInsert = value.filter((v) => typeof v !== "string");
-            let savedSubdocs = [];
-            if (docsToInsert.length > 0) {
-              savedSubdocs = await dbModel.insertMany(docsToInsert, { session });
+    try {
+      if (subdocs) {
+        for (const subdoc of subdocs) {
+          const { path, dbModel } = subdoc;
+          const value = ObjectUtil.getValue({ obj: data, path });
+          if (value) {
+            if (Array.isArray(value)) {
+              const docsToInsert = value.filter((v) => typeof v !== "string");
+              let savedSubdocs = [];
+              if (docsToInsert.length > 0) {
+                savedSubdocs = await dbModel.insertMany(docsToInsert, { session });
+              }
+              // Keep original string values (if any) and merge with inserted docs
+              const stringValues = value.filter((v) => typeof v === "string");
+              ObjectUtil.updateValue({
+                obj: data,
+                path,
+                value: [...stringValues, ...savedSubdocs],
+              });
+            } else if (typeof value !== "string") {
+              const subdocInstance = new dbModel(value);
+              const savedSubdoc = await subdocInstance.save({ session });
+              ObjectUtil.updateValue({ obj: data, path, value: savedSubdoc });
             }
-            // Keep original string values (if any) and merge with inserted docs
-            const stringValues = value.filter((v) => typeof v === "string");
-            ObjectUtil.updateValue({ obj: data, path, value: [...stringValues, ...savedSubdocs] });
-            ObjectUtil.updateValue({ obj: data, path, value: savedSubdocs });
-          } else if (typeof value !== "string") {
-            const subdocInstance = new dbModel(value);
-            const savedSubdoc = await subdocInstance.save({ session });
-            ObjectUtil.updateValue({ obj: data, path, value: savedSubdoc });
           }
         }
       }
+    } catch (err) {
+      console.error("Error persisting subdocuments:", err);
+      throw new Error("Failed to persist subdocuments");
     }
     return await new dbModel(data).save({ session });
   }

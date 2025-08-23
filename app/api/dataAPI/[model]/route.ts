@@ -1,8 +1,7 @@
 import { authOptions } from "@/lib/authOptions";
-import { DataModel } from "@/model/DataModels";
-import { TDataModels } from "@/model/server/data-model-mappings";
+import { DataModelMap } from "@/model/server/data-model-mappings";
 import DataAPI from "@/util/server/data-util";
-import { getServerSession } from "next-auth";
+import { tDataModels } from "@/util/util-type";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -13,12 +12,12 @@ export async function GET(
   try {
     const { model: modelName } = await params;
     const searchParams = request.nextUrl.searchParams;
-    const dataModel = DataModel[modelName];
+    const dataModel = DataModelMap[modelName as tDataModels];
     const operation = searchParams.get("operation");
     if (!operation || !dataModel) {
       return NextResponse.json({ message: "Invalid request" }, { status: 400 });
     }
-    const requestObj = JSON.parse(searchParams.get("request") || "{}");
+    const requestObj = JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}");
     // if (modelName === "address" || modelName === "userinfo") {
     //   const session = await getServerSession({ req: request, ...authOptions });
     //   if (!session || !session.user.role) {
@@ -27,14 +26,14 @@ export async function GET(
 
     //   const filter = session.user.role === "admin" ? {} : { userId: session.user.userId };
     //   const resData = DataAPI.getData({
-    //     modelName: modelName as TDataModels,
+    //     modelName: modelName as tDataModels,
     //     operation,
     //     request: { ...requestObj, ...filter },
     //   });
     //   return NextResponse.json({ message: "success", data: resData }, { status: 200 });
     // }
     const responseData = await DataAPI.getData({
-      modelName: modelName as TDataModels,
+      modelName: modelName as tDataModels,
       operation,
       request: requestObj,
     });
@@ -52,12 +51,12 @@ export async function GET(
 export async function POST(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
   try {
     const { model: modelName } = await params;
-    const dataModel = DataModel[modelName];
+    const dataModel = DataModelMap[modelName as tDataModels];
     if (!dataModel) {
       throw new Error("Invalid request");
     }
     const dataReq = {
-      modelName: modelName as TDataModels,
+      modelName: modelName as tDataModels,
       operation: "",
       request: {},
     };
@@ -115,13 +114,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
   try {
     const { model: modelName } = await params;
-    const dataModel = DataModel[modelName];
+    const dataModel = DataModelMap[modelName as tDataModels];
     if (!dataModel) {
       throw new Error("Invalid request");
     }
     const { operation, request } = await req.json();
     const responseData = DataAPI.deleteData({
-      modelName: modelName as TDataModels,
+      modelName: modelName as tDataModels,
       operation,
       request,
     });

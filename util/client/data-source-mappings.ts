@@ -3,44 +3,44 @@ import { ProductSchema } from "@/schema/Product";
 import { CategorySchema } from "@/schema/Category";
 import { AddressSchema } from "@/schema/Address";
 import { UserInfoSchema } from "@/schema/UserInfo";
+import { tDataModels } from "../util-type";
 
 interface IDataSourceMap {
   url: string;
   schema: z.ZodType;
-  columns: string[];
 }
 
-export type TDataSources = "category" | "product" | "address" | "userinfo";
-
-export const DataSourceMap: Record<TDataSources, IDataSourceMap> = {
+export const DataSourceMap: Record<tDataModels, IDataSourceMap> = {
   category: {
     url: "/api/dataAPI/category",
     schema: CategorySchema,
-    columns: ["name", "parentCategory", "description", "updatedAt"],
   },
   product: {
     url: "/api/dataAPI/product",
     schema: ProductSchema,
-    columns: [
-      "name",
-      "description",
-      "sku",
-      "price",
-      "discounted_price",
-      "stock_quantity",
-      "category",
-      "brand",
-      "image_urls",
-    ],
   },
   address: {
     url: "/api/dataAPI/address",
     schema: AddressSchema,
-    columns: [],
   },
   userinfo: {
     url: "/api/dataAPI/userinfo",
     schema: UserInfoSchema,
-    columns: [],
+  },
+  categoryspecificattributes: {
+    url: "/api/dataAPI/categoryspecificattributes",
+    schema: z.any(),
+  },
+  order: {
+    url: "/api/dataAPI/order",
+    schema: z.any(),
+  },
+  content: {
+    url: "/api/dataAPI/content",
+    schema: z.any(),
+  },
+  productVariant: {
+    url: "/api/dataAPI/productVariant",
+    schema: z.any(),
   },
 };

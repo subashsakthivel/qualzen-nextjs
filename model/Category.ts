@@ -13,7 +13,6 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
     trim: true,
   },
   image: { type: String },
-  displayName: { type: String, required: false },
   description: { type: String, required: false },
   parentCategory: {
     type: mongoose.Schema.Types.ObjectId,

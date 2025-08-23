@@ -42,6 +42,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "i.pinimg.com", // todo:  remove
       },
+      {
+        protocol: "https",
+        hostname: "varfoestore.1be3c7f6dc46cafe42bce3c71227a5e5.r2.cloudflarestorage.com", // todo:  remove
+      },
     ],
   },
   webpack(config) {
