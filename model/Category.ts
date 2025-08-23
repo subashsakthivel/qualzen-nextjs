@@ -3,9 +3,9 @@ import DatabaseUtil from "@/util/dbUtil";
 import R2Util from "@/util/S3Util";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
-import { CategorySpecificAttributesModel } from "./CategorySpecificAttributes";
 
 const CategoryDbSchema = new mongoose.Schema<TCategory>({
+  _id: { type: String, required: true },
   name: {
     type: String,
     required: true,
@@ -37,40 +37,18 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
   },
 });
 
-CategoryDbSchema.pre("save", async function (next) {
-  try {
-    const category = this;
-    if (this.isNew) {
-      category._id = await DatabaseUtil.getSeq({ _id: "product" });
-    }
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
-});
 CategoryDbSchema.pre("validate", async function (next) {
   try {
     const category = this;
-    CategorySchema.parse(category.toObject()); // here im facing issue with zod
-    const attributes = this.attributes || [];
-    if (attributes) {
-      category.attributes = await Promise.all(
-        attributes.map(async (att) => await new CategorySpecificAttributesModel(att).save())
-      );
+    if (this.isNew) {
+      category._id = await DatabaseUtil.getSeq({ _id: "category" });
     }
-  } catch (err) {
-    console.error("Error in pre-validate hook:", err);
-    next(err as Error);
-  }
-});
-CategoryDbSchema.post("save", async function (doc, next) {
-  try {
     next();
   } catch (err) {
-    await R2Util.deleteFile(doc.image);
     next(err as Error);
   }
 });
+
 CategoryDbSchema.post("find", async function (docs: TCategory[] | null, next) {
   if (docs) {
     docs.map(async (doc) => {

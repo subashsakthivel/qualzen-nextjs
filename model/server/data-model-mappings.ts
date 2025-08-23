@@ -21,6 +21,7 @@ export interface DataModelInterface {
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   url: string;
   cacheKey: string;
+  subdocs?: [{ path: string; dbModel: mongoose.PaginateModel<any> | mongoose.Model<any> }];
 }
 export type TDataModels =
   | "category"
@@ -37,6 +38,12 @@ export const DataModelMap: Record<TDataModels, DataModelInterface> = {
     dbModel: CategoryModel,
     url: "/api/dataAPI/Category",
     cacheKey: "category",
+    subdocs: [
+      {
+        path: "attributes",
+        dbModel: CategorySpecificAttributesModel,
+      },
+    ],
   },
   userinfo: {
     schema: UserInfoSchema,

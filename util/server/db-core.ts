@@ -3,10 +3,12 @@ import {
   DeleteResult,
   FilterQuery,
   FlattenMaps,
+  Model,
   PaginateDocument,
   PaginateModel,
   PaginateResult,
   RootQuerySelector,
+  Types,
   UpdateQuery,
 } from "mongoose";
 import {
@@ -25,10 +27,11 @@ import dbConnect from "@/lib/mongoose";
 import ObjectUtil from "../ObjectUtil";
 import R2Util from "../S3Util";
 import { TProduct } from "@/schema/Product";
+import mongoose from "mongoose";
 
 type tExecution<T, V> = {
   userId: string;
-  callback: () => Promise<T>;
+  callback: (session?: mongoose.ClientSession) => Promise<T>;
   onSuccess?: (response: T) => T | V | Promise<void>;
   onFailure?: () => void | Promise<void>;
 };
@@ -96,32 +99,29 @@ class DBUtil {
     operation?: string;
     data: T | FormData;
   }): Promise<T | undefined> {
+    await dbConnect();
     const { dbModel, schema } = DataModelMap[modelName];
-    const inputData =
-      data instanceof FormData ? JSON.parse(decodeURIComponent(data.get("data") as string)) : data;
+    const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
     const { data: safeData, error, success } = schema.safeParse(inputData);
     if (!success) {
       console.error("Invalid data:", error);
       throw new Error("Invalid data");
     }
-    const newData = new dbModel(safeData);
+
     const execution: tExecution<T, T> = {
       userId: "",
-      callback: async () => {
-        const savedData = await newData.save();
-        return savedData.toObject();
+      callback: async (session) => {
+        const savedData = await this.persistData<T>({ modelName, data: safeData, session });
+        return savedData;
       },
     };
 
     try {
       let fileOperation: tFileUploadsTask | undefined;
       if (data instanceof FormData && data.has("fileOperation")) {
-        fileOperation = JSON.parse(
-          decodeURIComponent(data.get("fileOperation") as string)
-        ) as tFileUploadsTask;
+        fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
         await this.fileuploads(inputData, data, fileOperation);
         const inputDataCopy = JSON.parse(JSON.stringify(inputData)) as T;
-        execution.callback = async () => await newData.save().lean();
         execution.onFailure = async () =>
           fileOperation && Persistance.fileDeletes(inputDataCopy, fileOperation);
       }
@@ -377,14 +377,59 @@ class DBUtil {
     onSuccess,
     onFailure,
   }: tExecution<T, V>): Promise<T | undefined> {
+    const session = await mongoose.startSession();
     try {
-      const response = await callback();
-      if (onSuccess) await onSuccess(response);
-      return response;
+      const result = await session.withTransaction(async () => {
+        const response = await callback(session);
+        if (onSuccess) await onSuccess(response);
+        return response;
+      });
+      return result;
     } catch (err) {
       console.error(userId, "Execution error:", err);
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       if (onFailure) await onFailure();
+    } finally {
+      session.endSession();
     }
+  }
+
+  private async persistData<T>({
+    modelName,
+    data,
+    session,
+  }: {
+    modelName: TDataModels;
+    data: any;
+    session?: mongoose.ClientSession;
+  }): Promise<T> {
+    const { dbModel, subdocs } = DataModelMap[modelName];
+    if (subdocs) {
+      for (const subdoc of subdocs) {
+        const { path, dbModel } = subdoc;
+        const value = ObjectUtil.getValue({ obj: data, path });
+        if (value) {
+          if (Array.isArray(value)) {
+            const docsToInsert = value.filter((v) => typeof v !== "string");
+            let savedSubdocs = [];
+            if (docsToInsert.length > 0) {
+              savedSubdocs = await dbModel.insertMany(docsToInsert, { session });
+            }
+            // Keep original string values (if any) and merge with inserted docs
+            const stringValues = value.filter((v) => typeof v === "string");
+            ObjectUtil.updateValue({ obj: data, path, value: [...stringValues, ...savedSubdocs] });
+            ObjectUtil.updateValue({ obj: data, path, value: savedSubdocs });
+          } else if (typeof value !== "string") {
+            const subdocInstance = new dbModel(value);
+            const savedSubdoc = await subdocInstance.save({ session });
+            ObjectUtil.updateValue({ obj: data, path, value: savedSubdoc });
+          }
+        }
+      }
+    }
+    return await new dbModel(data).save({ session });
   }
 }
 
