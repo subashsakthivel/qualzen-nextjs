@@ -1,11 +1,9 @@
-import { CategorySchema, TCategory } from "@/schema/Category";
-import DatabaseUtil from "@/util/dbUtil";
+import { TCategory } from "@/schema/Category";
 import R2Util from "@/util/S3Util";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const CategoryDbSchema = new mongoose.Schema<TCategory>({
-  _id: { type: String, required: true },
   name: {
     type: String,
     required: true,
@@ -36,28 +34,30 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
   },
 });
 
-CategoryDbSchema.pre("validate", async function (next) {
-  try {
-    const category = this;
-    if (this.isNew) {
-      category._id = await DatabaseUtil.getSeq({ _id: "category" });
-    }
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
-});
+// CategoryDbSchema.pre("validate", async function (next) {
+//   try {
+//     const category = this;
+//     if (this.isNew) {
+//       category._id = await DatabaseUtil.getSeq({ _id: "category" });
+//     }
+//     next();
+//   } catch (err) {
+//     next(err as Error);
+//   }
+// });
 
 CategoryDbSchema.post("find", async function (docs: TCategory[] | null, next) {
   if (docs) {
-    docs.map(async (doc) => {
-      doc.image = await R2Util.getObjectUrl(doc.image);
-    });
+    docs
+      .filter((d) => d.image)
+      .map(async (doc) => {
+        doc.image = await R2Util.getObjectUrl(doc.image);
+      });
   }
   next();
 });
 CategoryDbSchema.post("findOne", async function (doc: TCategory | null, next) {
-  if (doc) {
+  if (doc && doc.image) {
     doc.image = await R2Util.getObjectUrl(doc.image);
   }
   next();

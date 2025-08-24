@@ -3,10 +3,6 @@ import mongoose from "mongoose";
 import DatabaseUtil from "@/util/dbUtil";
 
 const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecificAttributes>({
-  _id: {
-    type: String,
-    required: true,
-  },
   attributeName: {
     type: String,
     required: true,
@@ -50,17 +46,17 @@ const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecific
   },
 });
 
-CategorySpecificAttributesDbSchema.pre("validate", async function (next) {
-  try {
-    const category = this;
-    if (this.isNew) {
-      category._id = await DatabaseUtil.getSeq({ _id: "categoryspecificattributes" });
-    }
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
-});
+// CategorySpecificAttributesDbSchema.pre("validate", async function (next) {
+//   try {
+//     const category = this;
+//     if (this.isNew) {
+//       category._id = await DatabaseUtil.getSeq({ _id: "categoryspecificattributes" });
+//     }
+//     next();
+//   } catch (err) {
+//     next(err as Error);
+//   }
+// });
 
 export const CategorySpecificAttributesModel =
   (mongoose.models?.CategorySpecificAttributes as mongoose.Model<TCategorySpecificAttributes>) ||

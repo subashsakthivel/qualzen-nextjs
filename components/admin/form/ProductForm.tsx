@@ -35,17 +35,16 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import TagInput from "@/components/ui/taginput";
 import { useEffect, useState } from "react";
-import CategoryList from "@/components/admin/SelectValueFromList";
 import QueryClientHook from "@/components/queryClientHook";
 import axios from "axios";
 import { redirect } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { postDataToServer } from "@/util/dataAPI";
 import { TCategory } from "@/schema/Category";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
+import DataClientAPI from "@/util/client/data-client-api";
 
 type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
 type TVariant = TProductVariant & {
@@ -64,7 +63,8 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
   const [curVarient, setCurentVarient] = useState<number>(-1);
 
   const mutation = useMutation({
-    mutationFn: (data) => postDataToServer(DataSourceMap.product, data),
+    mutationFn: async (request: FormData) =>
+      await DataClientAPI.saveData({ modelName: "product", request }),
     onSuccess: () => redirect("/"),
   });
 
@@ -123,11 +123,11 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
           tags: tags,
           sku: formData.get("sku") as string,
           price: Number.parseFloat(formData.get("price") as string),
-          discountedPrice: Number.parseFloat(formData.get("discountedPrice") as string),
+          sellingPrice: Number.parseFloat(formData.get("discountedPrice") as string),
           stockQuantity: Number.parseInt(formData.get("stockQuantity") as string),
           attributes: [...attributes, ...predefinedAttributes],
           variants: [],
-          imageNames,
+          images: imageNames,
           isActive: formData.get("status") === "active",
         };
 
@@ -144,7 +144,7 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
         varients.map((variant) => {
           variant.imageFiles.forEach((imageFile) => {
             const name = uuidv4();
-            variant.imageNames.push(name);
+            variant.images.push(name);
             productForm.append(name, imageFile);
           });
         });
@@ -160,14 +160,14 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
           tags: tags,
           sku: formData.get("sku") as string,
           price: Number.parseFloat(formData.get("price") as string),
-          discountedPrice: Number.parseFloat(formData.get("discountedPrice") as string),
+          sellingPrice: Number.parseFloat(formData.get("discountedPrice") as string),
           stockQuantity: stockQuantity,
           attributes: [...attributes],
           variants: varients.map((variant) => ({
             ...variant,
             attributes: [...variant.attributes, ...variant.predefinedAttributes],
           })),
-          imageNames,
+          images: imageNames,
           isActive: formData.get("status") === "active",
         };
 
@@ -179,6 +179,7 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
         body: productForm,
         method: "POST",
       });
+      mutation.mutate(productForm);
       console.log(await response.json());
     } catch (err) {
       console.log(err);
@@ -195,11 +196,12 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
       }));
     const newVarient: TVariant = {
       attributes: [],
-      imageNames: [],
+      images: [],
       isActive: true,
       sku: "",
       stockQuantity: 0,
-      variantSpecificPrice: 0,
+      price: 0,
+      sellingPrice: 0,
       predefinedAttributes,
       imageFiles: [],
     };
@@ -620,9 +622,9 @@ export default function ProductForm({ categoryList }: { categoryList: TCategory[
                             <Input
                               id="stock-2"
                               type="number"
-                              value={varient.variantSpecificPrice}
+                              value={varient.price}
                               onChange={(e) => {
-                                varient.variantSpecificPrice = Number.parseInt(e.target.value);
+                                varient.price = Number.parseInt(e.target.value);
                                 setVarients([...varients]);
                               }}
                             />

@@ -42,10 +42,13 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { PaginateOptions, PaginateResult } from "mongoose";
 import { useQuery } from "@tanstack/react-query";
-import { FetchDataParams, FilterRule, FilterState, getDataFromServer } from "@/util/dataAPI";
+// import { FetchDataParams, FilterRule, FilterState, getDataFromServer } from "@/util/dataAPI";
 import { DataSourceMap } from "@/model/DataSourceMap";
+import { tDataModels, tFilter } from "@/util/util-type";
+import DataClientAPI from "@/util/client/data-client-api";
+import FilterBuilder from "./filter-builder";
+import { TCategory } from "@/schema/Category";
 
 // Data types that the table can detect
 type DataType = "string" | "number" | "date" | "boolean" | "array" | "object" | "unknown";
@@ -67,7 +70,7 @@ interface DynamicTableProps {
   sortable?: boolean;
   filterable?: boolean;
   groupable?: boolean;
-  model: string;
+  model: tDataModels;
 }
 
 export default function DynamicTable({
@@ -86,13 +89,13 @@ export default function DynamicTable({
     sortby: string;
     direction: "asc" | "desc";
   } | null>(null);
-  const [filterState, setFilterState] = useState<FilterState>({
-    logicalOperator: "AND",
-    rules: [],
+  const [filterState, setFilterState] = useState<tFilter<TCategory>>({
+    logic: "and",
+    criteria: [],
   });
-  const [activeFilters, setActiveFilters] = useState<FilterState>({
-    logicalOperator: "AND",
-    rules: [],
+  const [activeFilters, setActiveFilters] = useState<tFilter<TCategory>>({
+    logic: "and",
+    criteria: [],
   });
   const [groupByField, setGroupByField] = useState<string | null>(null);
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
@@ -105,14 +108,18 @@ export default function DynamicTable({
   });
 
   async function fetchData() {
-    const options: FetchDataParams = {
+    const options = {
       page: currentPage,
       limit: currentPageSize,
       sort: sortConfig ? { [sortConfig.sortby]: sortConfig.direction } : undefined,
-      filter: activeFilters.rules.length > 0 ? activeFilters : undefined,
+      filter: activeFilters.criteria.length > 0 ? activeFilters : undefined,
       select: DataSourceMap[model]?.columns,
     };
-    const tableData = await getDataFromServer(DataSourceMap[model], "GET_TABLE_DATA", options);
+    const tableData = await DataClientAPI.getData({
+      modelName: model,
+      operation: "GET_DATA",
+      request: { options },
+    });
     console.log("Fetched tableData:", tableData);
     return tableData.docs as Record<string, any>[];
   }
@@ -124,8 +131,7 @@ export default function DynamicTable({
 
     // Extract all unique keys from the tableData
     const keys = Array.from(new Set(tableData.flatMap((item) => Object.keys(item))));
-
-    return keys.map((key) => {
+    const updatedKeys = keys.map((key) => {
       // Detect tableData type for this column
       const type = detectDataType(tableData.find((item) => item[key] !== undefined)?.[key]);
 
@@ -137,6 +143,7 @@ export default function DynamicTable({
         format: undefined,
       };
     });
+    return updatedKeys;
   }, [tableData, columns]);
 
   // Function to detect tableData type
@@ -170,16 +177,16 @@ export default function DynamicTable({
     setActiveFilters(filterState);
 
     // Extract tags to show applied filters
-    const tags = filterState.rules.map((rule) => `${rule.field} ${rule.operator} ${rule.value}`);
-    setAppliedTags(tags);
+    // const tags = filterState.criteria.map((rule) => `${rule.f} ${rule.operator} ${rule.value}`);
+    // setAppliedTags(tags);
     //fetchData(filterState);
   };
 
   // Function to remove a specific filter
   const removeFilter = (index: number) => {
-    const newRules = [...filterState.rules];
+    const newRules = [...filterState.criteria];
     newRules.splice(index, 1);
-    const newFilterState = { ...filterState, rules: newRules };
+    const newFilterState = { ...filterState, criteria: newRules };
     setFilterState(newFilterState);
     setActiveFilters(newFilterState);
 
@@ -192,24 +199,24 @@ export default function DynamicTable({
   const addFilterRule = () => {
     if (autoDetectedColumns.length === 0) return;
 
-    setFilterState((prev) => ({
-      ...prev,
-      rules: [
-        ...prev.rules,
-        {
-          field: autoDetectedColumns[0].key,
-          operator: "=",
-          value: "",
-        },
-      ],
-    }));
+    // setFilterState((prev) => ({
+    //   ...prev,
+    //   criteria: [
+    //     ...prev.criteria,
+    //     {
+    //       field: autoDetectedColumns[0].key,
+    //       operator: "=",
+    //       value: "",
+    //     },
+    //   ],
+    // }));
   };
 
   // Function to update a filter rule
   const updateFilterRule = (index: number, field: string, value: any) => {
-    const newRules = [...filterState.rules];
+    const newRules = [...filterState.criteria];
     newRules[index] = { ...newRules[index], [field]: value };
-    setFilterState({ ...filterState, rules: newRules });
+    setFilterState({ ...filterState, criteria: newRules });
   };
 
   // Function to get operators based on tableData type
@@ -247,55 +254,55 @@ export default function DynamicTable({
   };
 
   // Function to evaluate if a value meets a filter rule
-  const evaluateFilterRule = (value: any, rule: FilterRule, type: DataType) => {
-    if (value === null || value === undefined) return false;
+  // const evaluateFilterRule = (value: any, rule: FilterRule, type: DataType) => {
+  //   if (value === null || value === undefined) return false;
 
-    const strValue = String(value).toLowerCase();
-    const filterValue = rule.value.toLowerCase();
+  //   const strValue = String(value).toLowerCase();
+  //   const filterValue = rule.value.toLowerCase();
 
-    switch (rule.operator) {
-      case "=":
-        if (type === "boolean") {
-          return (
-            (value === true && filterValue === "true") ||
-            (value === false && filterValue === "false")
-          );
-        }
-        return type === "string" ? strValue === filterValue : value == rule.value;
-      case "!=":
-        if (type === "boolean") {
-          return (
-            (value === true && filterValue !== "true") ||
-            (value === false && filterValue !== "false")
-          );
-        }
-        return type === "string" ? strValue !== filterValue : value != rule.value;
-      case ">":
-        return type === "date"
-          ? new Date(value) > new Date(rule.value)
-          : Number(value) > Number(rule.value);
-      case "<":
-        return type === "date"
-          ? new Date(value) < new Date(rule.value)
-          : Number(value) < Number(rule.value);
-      case ">=":
-        return type === "date"
-          ? new Date(value) >= new Date(rule.value)
-          : Number(value) >= Number(rule.value);
-      case "<=":
-        return type === "date"
-          ? new Date(value) <= new Date(rule.value)
-          : Number(value) <= Number(rule.value);
-      case "contains":
-        return strValue.includes(filterValue);
-      case "startsWith":
-        return strValue.startsWith(filterValue);
-      case "endsWith":
-        return strValue.endsWith(filterValue);
-      default:
-        return false;
-    }
-  };
+  //   switch (rule.operator) {
+  //     case "=":
+  //       if (type === "boolean") {
+  //         return (
+  //           (value === true && filterValue === "true") ||
+  //           (value === false && filterValue === "false")
+  //         );
+  //       }
+  //       return type === "string" ? strValue === filterValue : value == rule.value;
+  //     case "!=":
+  //       if (type === "boolean") {
+  //         return (
+  //           (value === true && filterValue !== "true") ||
+  //           (value === false && filterValue !== "false")
+  //         );
+  //       }
+  //       return type === "string" ? strValue !== filterValue : value != rule.value;
+  //     case ">":
+  //       return type === "date"
+  //         ? new Date(value) > new Date(rule.value)
+  //         : Number(value) > Number(rule.value);
+  //     case "<":
+  //       return type === "date"
+  //         ? new Date(value) < new Date(rule.value)
+  //         : Number(value) < Number(rule.value);
+  //     case ">=":
+  //       return type === "date"
+  //         ? new Date(value) >= new Date(rule.value)
+  //         : Number(value) >= Number(rule.value);
+  //     case "<=":
+  //       return type === "date"
+  //         ? new Date(value) <= new Date(rule.value)
+  //         : Number(value) <= Number(rule.value);
+  //     case "contains":
+  //       return strValue.includes(filterValue);
+  //     case "startsWith":
+  //       return strValue.startsWith(filterValue);
+  //     case "endsWith":
+  //       return strValue.endsWith(filterValue);
+  //     default:
+  //       return false;
+  //   }
+  // };
 
   // Format value based on its type
   function formatValue(value: any, type: DataType): string {
@@ -334,22 +341,19 @@ export default function DynamicTable({
     }
 
     // Apply advanced filters
-    if (activeFilters.rules.length > 0) {
-      result = result.filter((row) => {
-        const results = activeFilters.rules.map((rule) => {
-          const column = autoDetectedColumns.find((col) => col.key === rule.field);
-          if (!column) return false;
-
-          const value = row[rule.field];
-          const type = column.type || detectDataType(value);
-
-          return evaluateFilterRule(value, rule, type);
-        });
-
-        return activeFilters.logicalOperator === "AND"
-          ? results.every(Boolean)
-          : results.some(Boolean);
-      });
+    if (activeFilters.criteria.length > 0) {
+      // result = result.filter((row) => {
+      //   const results = activeFilters.criteria.map((rule) => {
+      //     const column = autoDetectedColumns.find((col) => col.key === rule.field);
+      //     if (!column) return false;
+      //     const value = row[rule.field];
+      //     const type = column.type || detectDataType(value);
+      //     return evaluateFilterRule(value, rule, type);
+      //   });
+      //   return activeFilters.logic === "and"
+      //     ? results.every(Boolean)
+      //     : results.some(Boolean);
+      // });
     }
 
     return result;
@@ -549,8 +553,8 @@ export default function DynamicTable({
           size="sm"
           className="mt-2"
           onClick={() => {
-            setFilterState({ logicalOperator: "AND", rules: [] });
-            setActiveFilters({ logicalOperator: "AND", rules: [] });
+            // setFilterState({ logicalOperator: "AND", criteria: [] });
+            // setActiveFilters({ logicalOperator: "AND", criteria: [] });
             setAppliedTags([]);
             setGroupByField(null);
             setSearchQuery("");
@@ -561,288 +565,118 @@ export default function DynamicTable({
       )}
 
       {/* Filter and grouping buttons */}
-      <div className="flex flex-wrap gap-2">
-        {filterable && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Advanced Filters</DialogTitle>
-              </DialogHeader>
-
-              <div className="py-4 space-y-4">
-                {/* Logic operator selector */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={filterState.logicalOperator === "AND" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterState({ ...filterState, logicalOperator: "AND" })}
-                  >
-                    AND
-                  </Button>
-                  <Button
-                    variant={filterState.logicalOperator === "OR" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterState({ ...filterState, logicalOperator: "OR" })}
-                  >
-                    OR
-                  </Button>
-
-                  <div className="ml-auto">
-                    <Button variant="outline" size="sm" onClick={addFilterRule}>
-                      <Plus className="h-4 w-4 mr-1" /> Rule
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Filter rules */}
-                <div className="space-y-3">
-                  {filterState.rules.map((rule, index) => {
-                    const column = autoDetectedColumns.find((col) => col.key === rule.field);
-                    const dataType = column?.type || "string";
-                    const operators = getOperatorsForType(dataType);
-
-                    return (
-                      <div key={index} className="flex items-center gap-2">
-                        {/* Field selector */}
-                        <Select
-                          value={rule.field}
-                          onValueChange={(value) => updateFilterRule(index, "field", value)}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select field" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {autoDetectedColumns.map((column) => (
-                              <SelectItem key={column.key} value={column.key}>
-                                {column.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        {/* Operator selector */}
-                        <Select
-                          value={rule.operator}
-                          onValueChange={(value) => updateFilterRule(index, "operator", value)}
-                        >
-                          <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="Operator" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {operators.map((op) => (
-                              <SelectItem key={op.value} value={op.value}>
-                                {op.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        {/* Value input */}
-                        <Input
-                          value={rule.value}
-                          onChange={(e) => updateFilterRule(index, "value", e.target.value)}
-                          className="flex-1"
-                          placeholder="Value"
-                        />
-
-                        {/* Button to remove rule */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newRules = [...filterState.rules];
-                            newRules.splice(index, 1);
-                            setFilterState({ ...filterState, rules: newRules });
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-
-                  {filterState.rules.length === 0 && (
-                    <div className="text-center text-muted-foreground py-4">
-                      No filter rules. Click &quot;Rule&quot; to add one.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setFilterState({ logicalOperator: "AND", rules: [] });
-                    setActiveFilters({ logicalOperator: "AND", rules: [] });
-                    setAppliedTags([]);
-                  }}
-                >
-                  Clear
-                </Button>
-                <Button onClick={applyFilter}>Apply</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {groupable && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Group className="h-4 w-4 mr-2" />
-                Group by
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <div className="p-2">
-                <div className="space-y-2">
-                  {autoDetectedColumns.map((column) => (
-                    <Button
-                      key={column.key}
-                      variant={groupByField === column.key ? "default" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() =>
-                        setGroupByField(groupByField === column.key ? null : column.key)
-                      }
-                    >
-                      {column.label}
-                    </Button>
-                  ))}
-
-                  {groupByField && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full mt-2"
-                      onClick={() => setGroupByField(null)}
-                    >
-                      Remove grouping
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
+      {autoDetectedColumns && <FilterBuilder columns={autoDetectedColumns} />}
 
       {/* Table */}
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {autoDetectedColumns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={column.sortable && sortable ? "cursor-pointer select-none" : ""}
-                  onClick={() => column.sortable && sortable && handleSort(column.key)}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>{column.label}</span>
-                    {sortable &&
-                      column.sortable &&
-                      sortConfig?.sortby === column.key &&
-                      (sortConfig.direction === "asc" ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      ))}
-                    {groupByField === column.key && (
-                      <Badge variant="outline" className="ml-2 h-5 px-1.5">
-                        Grouped
-                      </Badge>
-                    )}
+        {status === "pending" ? (
+          "Loading..."
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {autoDetectedColumns.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    className={column.sortable && sortable ? "cursor-pointer select-none" : ""}
+                    onClick={() => column.sortable && sortable && handleSort(column.key)}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>{column.label}</span>
+                      {sortable &&
+                        column.sortable &&
+                        sortConfig?.sortby === column.key &&
+                        (sortConfig.direction === "asc" ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        ))}
+                      {groupByField === column.key && (
+                        <Badge variant="outline" className="ml-2 h-5 px-1.5">
+                          Grouped
+                        </Badge>
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
+                <TableHead className="w-12">
+                  <div className="flex justify-center">
+                    <span className="text-muted-foreground">Actions</span>
                   </div>
                 </TableHead>
-              ))}
-              <TableHead className="w-12">
-                <div className="flex justify-center">
-                  <span className="text-muted-foreground">Actions</span>
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {status === "pending"
-              ? "Loading..."
-              : paginatedData.map((row, rowIndex) =>
-                  row.__isGroupRow ? (
-                    <TableRow key={`group-${rowIndex}`} className="bg-muted">
-                      <TableCell colSpan={autoDetectedColumns.length}>
-                        <Collapsible
-                          open={expandedGroups.includes(row.__groupKey)}
-                          onOpenChange={(isOpen) => {
-                            setExpandedGroups((prev) =>
-                              isOpen
-                                ? [...prev, row.__groupKey]
-                                : prev.filter((key) => key !== row.__groupKey)
-                            );
-                          }}
-                        >
-                          <CollapsibleTrigger className="flex items-center w-full">
-                            <ChevronRight
-                              className={`h-4 w-4 mr-2 transition-transform ${
-                                expandedGroups.includes(row.__groupKey) ? "transform rotate-90" : ""
-                              }`}
-                            />
-                            <span className="font-medium">
-                              {row.__groupField}: {row.__groupKey} ({row.__itemCount} items)
-                            </span>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="mt-2">
-                              <Table>
-                                <TableBody>
-                                  {row.__items.map((item: any, itemIndex: number) => (
-                                    <TableRow key={`${rowIndex}-${itemIndex}`}>
-                                      {autoDetectedColumns.map((column) => {
-                                        const type =
-                                          column.type || detectDataType(item[column.key]);
-                                        return (
-                                          <TableCell key={`${rowIndex}-${itemIndex}-${column.key}`}>
-                                            {column.format
-                                              ? column.format(item[column.key])
-                                              : renderCellValue(item, column.key, type)}
-                                          </TableCell>
-                                        );
-                                      })}
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <TableRow key={rowIndex}>
-                      {autoDetectedColumns.map((column) => {
-                        const type = column.type || detectDataType(row[column.key]);
-                        return (
-                          <TableCell key={`${rowIndex}-${column.key}`}>
-                            {column.format
-                              ? column.format(row[column.key])
-                              : renderCellValue(row, column.key, type)}
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell colSpan={autoDetectedColumns.length} className="text-center">
-                        {"Delete | Edit | View"}
-                      </TableCell>
-                    </TableRow>
-                  )
-                )}
-          </TableBody>
-        </Table>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedData.map((row, rowIndex) =>
+                row.__isGroupRow ? (
+                  <TableRow key={`group-${rowIndex}`} className="bg-muted">
+                    <TableCell colSpan={autoDetectedColumns.length}>
+                      <Collapsible
+                        open={expandedGroups.includes(row.__groupKey)}
+                        onOpenChange={(isOpen) => {
+                          setExpandedGroups((prev) =>
+                            isOpen
+                              ? [...prev, row.__groupKey]
+                              : prev.filter((key) => key !== row.__groupKey)
+                          );
+                        }}
+                      >
+                        <CollapsibleTrigger className="flex items-center w-full">
+                          <ChevronRight
+                            className={`h-4 w-4 mr-2 transition-transform ${
+                              expandedGroups.includes(row.__groupKey) ? "transform rotate-90" : ""
+                            }`}
+                          />
+                          <span className="font-medium">
+                            {row.__groupField}: {row.__groupKey} ({row.__itemCount} items)
+                          </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2">
+                            <Table>
+                              <TableBody>
+                                {row.__items.map((item: any, itemIndex: number) => (
+                                  <TableRow key={`${rowIndex}-${itemIndex}`}>
+                                    {autoDetectedColumns.map((column) => {
+                                      const type = column.type || detectDataType(item[column.key]);
+                                      return (
+                                        <TableCell key={`${rowIndex}-${itemIndex}-${column.key}`}>
+                                          {column.format
+                                            ? column.format(item[column.key])
+                                            : renderCellValue(item, column.key, type)}
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow key={rowIndex}>
+                    {autoDetectedColumns.map((column) => {
+                      const type = column.type || detectDataType(row[column.key]);
+                      return (
+                        <TableCell key={`${rowIndex}-${column.key}`}>
+                          {column.format
+                            ? column.format(row[column.key])
+                            : renderCellValue(row, column.key, type)}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell colSpan={autoDetectedColumns.length} className="text-center">
+                      {"Delete | Edit | View"}
+                    </TableCell>
+                  </TableRow>
+                )
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* Pagination */}

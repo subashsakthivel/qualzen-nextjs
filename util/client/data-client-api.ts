@@ -50,7 +50,6 @@ class DataServiceClass {
         debugger;
         throw new Error("Request failed");
       }
-      debugger;
 
       return resJson.data;
     } catch (err) {
@@ -88,7 +87,7 @@ class DataServiceClass {
     try {
       const { url } = DataSourceMap[modelName];
 
-      const response = await fetch(url, request);
+      const response = await fetch(url, { body: request, method: "POST" });
 
       const resJson = await response.json();
 

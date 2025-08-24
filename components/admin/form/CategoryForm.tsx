@@ -76,13 +76,14 @@ const CategoryForm = () => {
     const formData = new FormData(event.currentTarget);
     const imageName = uuidv4();
     const parentCategory = formData.get("parentCategory") as string;
+    const productAttributes = attributes.map((attr) => (attr._id ? attr._id : attr));
 
     const data: TCategory = {
       name: formData.get("name") as string,
       image: imageName,
       description: formData.get("description") as string,
       parentCategory: !parentCategory || parentCategory === "none" ? null : parentCategory,
-      attributes,
+      attributes: productAttributes,
     };
 
     const fileOperation = [{ path: "image", multi: false }];
@@ -91,7 +92,7 @@ const CategoryForm = () => {
     request.append("fileOperation", JSON.stringify(fileOperation));
     request.append("data", JSON.stringify(data));
     request.append(imageName, imageFile);
-
+    debugger;
     mutation.mutate(request);
   };
 
@@ -106,9 +107,9 @@ const CategoryForm = () => {
   };
 
   return (
-    <div className="m-10 mb-52 space-y-24">
+    <div className="m-10 mb-52 space-y-24 p-10">
       <form
-        className="grid max-w-[59rem] flex-1 auto-rows-max gap-4"
+        className="grid flex-1 auto-rows-max gap-4"
         autoComplete="off"
         onSubmit={handleCreatePost}
         onKeyDown={handleKeyDown}
@@ -208,6 +209,7 @@ const CategoryForm = () => {
                     <TableRow>
                       <TableHead></TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Allowed Values</TableHead>
                       <TableHead>Mandatory For Product</TableHead>
                       <TableHead>Mandatory For Variant</TableHead>
@@ -232,6 +234,28 @@ const CategoryForm = () => {
                             }}
                             disabled={!!attr._id}
                           />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={attr.attributeType}
+                            onValueChange={(v) => {
+                              attr.attributeType =
+                                v as TCategorySpecificAttributes["attributeType"];
+                              setAttributes([...attributes]);
+                            }}
+                            disabled={!!attr._id}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["text", "number", "select", "checkbox", "radio"].map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type.toUpperCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <TagInput

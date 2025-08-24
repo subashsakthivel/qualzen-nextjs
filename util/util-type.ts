@@ -50,6 +50,25 @@ export const zUpdateQuerySchema = z.array(
   })
 );
 
+export type tFilterCriteria = {
+  field: string;
+  value: string | number | boolean | Array<string | number | boolean>;
+  operator: TFilterOperator;
+};
+
+export type tFilter<T> = {
+  logic: "and" | "or";
+  criteria: TFilter<T>[];
+};
+
+export type tFilterNode = tFilterCriteria | tFilterGroup;
+
+export type tFilterGroup = {
+  left: tFilterNode;
+  operator: "and" | "or";
+  right: tFilterNode;
+};
+
 export type TFilter<T> =
   | TCriteria<T>
   | {
