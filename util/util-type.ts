@@ -3,7 +3,7 @@ import z from "zod";
 
 export type GetOperation = "GET_TABLE_DATA" | "GET_CHART_DATA" | "GET_DATA" | "GET";
 
-type TFilterOperator =
+export type TFilterOperator =
   | "equals"
   | "notEquals"
   | "contains"

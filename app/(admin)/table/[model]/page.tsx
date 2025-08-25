@@ -1,5 +1,5 @@
-import QueryClientHook from "@/components/queryClientHook";
 import TableLayout from "@/components/TableLayout";
+import { tDataModels } from "@/util/util-type";
 import React from "react";
 
 export default async function DataTable({
@@ -9,5 +9,5 @@ export default async function DataTable({
 }): Promise<JSX.Element> {
   const { model } = await params;
 
-  return <TableLayout model={model} />;
+  return <TableLayout model={model as tDataModels} />;
 }

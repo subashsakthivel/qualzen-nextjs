@@ -102,6 +102,7 @@ export default function DynamicTable({
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [pageSizeOptions] = useState([5, 10, 20, 50, 100]);
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
+  const [filter, setFilter] = useState<string>();
   const { data: tableData = [], status } = useQuery({
     queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize],
     queryFn: () => fetchData(),
@@ -565,7 +566,7 @@ export default function DynamicTable({
       )}
 
       {/* Filter and grouping buttons */}
-      {autoDetectedColumns && <FilterBuilder columns={autoDetectedColumns} />}
+      <Input type="text" name="filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
 
       {/* Table */}
       <div className="rounded-md border">

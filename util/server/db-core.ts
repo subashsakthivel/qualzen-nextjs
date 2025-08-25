@@ -141,6 +141,7 @@ class DBUtil {
       }
       return this.execute(execution);
     } catch (err) {
+      if (execution.onFailure) await execution.onFailure();
       throw new Error("Data saving failed");
     }
   }

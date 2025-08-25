@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, X } from "lucide-react";
 import { ColumnConfig } from "./dynamic-table";
-import { tFilterCriteria, tFilterGroup, tFilterNode } from "@/util/util-type";
+import { tFilterCriteria, tFilterGroup, tFilterNode, TFilterOperator } from "@/util/util-type";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
-const OPERATORS = {
+type OPERATORS_TYPE = "string" | "number" | "date" | "boolean";
+const OPERATORS: Record<OPERATORS_TYPE, any> = {
   string: [
     { value: "=", label: "Equals" },
     { value: "!=", label: "Not Equals" },
@@ -119,7 +121,7 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
     const charAtCursor = value[position - 1];
     const textBeforeCursor = value.substring(0, position);
 
-    if (charAtCursor === "(") {
+    if (value.endsWith("(")) {
       // Show field dropdown
       setDropdown({
         show: true,
@@ -128,38 +130,41 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
         options: columns,
       });
       setCurrentField(null);
-    } else {
-      // Check if we just completed a field selection and need operator
-      const fieldMatch = textBeforeCursor.match(/\((\w+)\s*$/);
-      if (fieldMatch) {
-        const fieldName = fieldMatch[1];
-        const field = columns.find((f) => f.key === fieldName);
-
-        if (field && fieldName !== currentField) {
-          setCurrentField(fieldName);
-          setDropdown({
-            show: true,
-            type: "operator",
-            position,
-            options: OPERATORS[field.type as keyof typeof OPERATORS] || [],
-            fieldType: field.type,
-          });
-        }
-      }
-      // Check if we need logical operator dropdown after completed conditions
-      else if (textBeforeCursor.match(/\)\s*$/) || textBeforeCursor.match(/['"][^'"]*['"]\s*$/)) {
-        setDropdown({
-          show: true,
-          type: "logical",
-          position,
-          options: LOGICAL_OPERATORS,
-        });
-        setCurrentField(null);
-      } else {
-        // Hide dropdown if none of the conditions match
-        setDropdown((prev) => ({ ...prev, show: false }));
-      }
+    } else if (value.endsWith(") ")) {
     }
+
+    // else {
+    //   // Check if we just completed a field selection and need operator
+    //   const fieldMatch = textBeforeCursor.match(/\((\w+)\s*$/);
+    //   if (fieldMatch) {
+    //     const fieldName = fieldMatch[1];
+    //     const field = columns.find((f) => f.key === fieldName);
+
+    //     if (field && fieldName !== currentField) {
+    //       setCurrentField(fieldName);
+    //       setDropdown({
+    //         show: true,
+    //         type: "operator",
+    //         position,
+    //         options: OPERATORS[field.type as keyof typeof OPERATORS] || [],
+    //         fieldType: field.type,
+    //       });
+    //     }
+    //   }
+    //   // Check if we need logical operator dropdown after completed conditions
+    //   else if (textBeforeCursor.match(/\)\s*$/) || textBeforeCursor.match(/['"][^'"]*['"]\s*$/)) {
+    //     setDropdown({
+    //       show: true,
+    //       type: "logical",
+    //       position,
+    //       options: LOGICAL_OPERATORS,
+    //     });
+    //     setCurrentField(null);
+    //   } else {
+    //     // Hide dropdown if none of the conditions match
+    //     setDropdown((prev) => ({ ...prev, show: false }));
+    //   }
+    // }
 
     // Validate brackets
     if (!validateBrackets(value)) {
@@ -172,7 +177,7 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
   };
 
   // Handle dropdown selection
-  const handleDropdownSelect = (option: any) => {
+  const handleDropdownSelect = (option: any, index: number) => {
     debugger;
     const beforeCursor = input.substring(0, cursorPosition);
     const afterCursor = input.substring(cursorPosition);
@@ -181,7 +186,9 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
     let newCursorPosition = cursorPosition;
 
     if (dropdown.type === "field") {
-      newInput = beforeCursor + option.key + " " + afterCursor;
+      const field = dropdown.options[index];
+      newInput = input + " " + field;
+      currentFilterCriteria.field = field;
       newCursorPosition = cursorPosition + option.key.length + 1;
       setDropdown({
         show: true,
@@ -190,7 +197,9 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
         options: LOGICAL_OPERATORS,
       });
     } else if (dropdown.type === "operator") {
-      newInput = beforeCursor + option.value + ' "' + afterCursor;
+      const operator = dropdown.options[index];
+      newInput = input + " " + operator + " ";
+      currentFilterCriteria.operator = operator;
       newCursorPosition = cursorPosition + option.value.length + 2;
       setDropdown((prev) => ({
         ...prev,
@@ -260,7 +269,7 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
                   <button
                     key={index}
                     className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground text-sm"
-                    onClick={() => handleDropdownSelect(option)}
+                    onClick={() => handleDropdownSelect(option, index)}
                   >
                     <div className="font-medium">{option.label || option.key}</div>
                     {option.type && (
@@ -274,6 +283,46 @@ function FilterBuilder({ columns }: { columns: ColumnConfig[] }) {
               </div>
             )}
           </div>
+
+          {input.startsWith("(") && input.endsWith(")") && (
+            <div className="flex">
+              {filterCritreia.map((criteria, index) => (
+                <div key={index} className="grid grid-cols-3">
+                  <Select
+                    value={criteria.field}
+                    onValueChange={(value) => {
+                      criteria.field = value;
+                      setFilterCriteria([...filterCritreia]);
+                    }}
+                  >
+                    <SelectContent>
+                      {columns.map((column, index) => (
+                        <SelectItem key={index} value={column.key} />
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {criteria.field && (
+                    <Select
+                      value={criteria.operator}
+                      onValueChange={(value) => {
+                        criteria.operator = value as TFilterOperator;
+                        setFilterCriteria([...filterCritreia]);
+                      }}
+                    >
+                      {OPERATORS[
+                        columns.find((col) => col.key === criteria.field)!.type as OPERATORS_TYPE
+                      ].map((op: any, idx: number) => (
+                        <SelectItem key={idx} value={op.value}>
+                          {op.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  )}
+                  {criteria.operator && <Input value={criteria.value as string} />}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Error message */}
           {error && (
