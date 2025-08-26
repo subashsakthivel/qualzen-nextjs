@@ -9,7 +9,13 @@ import { useQuery } from "@tanstack/react-query";
 import { DataSourceMap } from "@/model/DataSourceMap";
 import { tDataModels } from "@/util/util-type";
 
-export default function TableLayout({ model }: { model: tDataModels }) {
+export default function TableLayout({
+  model,
+  formElement,
+}: {
+  model: tDataModels;
+  formElement?: JSX.Element;
+}) {
   return (
     <div className="container mx-auto py-8 space-y-8">
       <Card>
@@ -34,7 +40,7 @@ export default function TableLayout({ model }: { model: tDataModels }) {
             </TabsContent>
 
             <TabsContent value="data" className="space-y-4">
-              {/** Add Data*/}
+              {formElement}
             </TabsContent>
           </Tabs>
         </CardContent>

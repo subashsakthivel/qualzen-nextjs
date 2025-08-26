@@ -1,10 +1,7 @@
-import SessionProviderClientComponent from "@/app/(auth)/SessionProviderClientComponent";
 import { authOptions } from "@/lib/authOptions";
 import "../globals.css";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
-import { GalleryVerticalEnd } from "lucide-react";
-import AppConfig from "@/config/app-config";
 import { Noto_Sans } from "next/font/google";
 
 export const metadata: Metadata = {

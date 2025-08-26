@@ -5,7 +5,7 @@ import DataAPI from "@/util/server/data-util";
 import React from "react";
 
 const CategoryFormPage = async () => {
-  return <CategoryForm />;
+  return <CategoryForm categoryListStr="" />;
 };
 
 export default CategoryFormPage;

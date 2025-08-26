@@ -52,6 +52,8 @@ import { tDataModels, tFilter } from "@/util/util-type";
 import DataClientAPI from "@/util/client/data-client-api";
 import FilterBuilder from "./filter-builder";
 import { TCategory } from "@/schema/Category";
+import FormatUtil from "@/util/formetUtil";
+import Link from "next/link";
 
 // Data types that the table can detect
 type DataType = "string" | "number" | "date" | "boolean" | "array" | "object" | "unknown";
@@ -309,9 +311,13 @@ export default function DynamicTable({
   // };
 
   // Format value based on its type
-  function formatValue(value: any, type: DataType): string {
+  function formatValue(value: any, type: DataType) {
     if (value === null || value === undefined) return "";
-
+    debugger;
+    const format = FormatUtil.getFormat(value);
+    if (format === "url") {
+      return <Link href={value}>link</Link>;
+    }
     switch (type) {
       case "date":
         const date = value instanceof Date ? value : new Date(value);

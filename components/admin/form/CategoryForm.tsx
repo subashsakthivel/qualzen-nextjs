@@ -33,7 +33,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const model = "category";
 
-const CategoryForm = () => {
+const CategoryForm = ({ categoryListStr }: { categoryListStr: string }) => {
   const router = useRouter();
   const [attributes, setAttributes] = React.useState<TCategorySpecificAttributes[]>([]);
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
