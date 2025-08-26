@@ -16,8 +16,7 @@ class DataAPIclass {
     try {
       const { options } = request;
       const { cacheKey } = DataModelMap[modelName];
-      const operationCacheKey =
-        cacheKey + "-" + operation + "-" + JSON.stringify(encodeURIComponent(request));
+      const operationCacheKey = cacheKey + "-" + operation;
       if (localcache.has(operationCacheKey)) {
         return localcache.get(operationCacheKey);
       }

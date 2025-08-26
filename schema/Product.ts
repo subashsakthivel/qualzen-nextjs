@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CategorySchema } from "./Category";
 import { ProductVariantSchema, TProductVariant } from "./ProductVarient";
+import { ObjectIdSchema } from "./Common";
 
 export const ProductAttributeSchema = z.object({
   name: z.string(),
@@ -9,7 +10,7 @@ export const ProductAttributeSchema = z.object({
 });
 
 export const ProductSchema = z.object({
-  _id: z.string().optional(),
+  _id: z.union([z.string(), ObjectIdSchema]).optional(),
   category: z.union([z.string(), CategorySchema]),
   name: z.string(),
   description: z.string(),

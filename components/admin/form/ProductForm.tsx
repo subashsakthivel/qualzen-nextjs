@@ -148,6 +148,9 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
             variant.images.push(name);
             productForm.append(name, imageFile);
           });
+          if (variant.sellingPrice == 0) {
+            variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
+          }
         });
         const fileOperation = [{ path: "images", multi: true }];
 
@@ -174,12 +177,14 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
           attributes: [...attributes],
           variants: varients.map(({ imageFiles, predefinedAttributes, ...variant }) => ({
             ...variant,
-            attributes: [...variant.attributes, ...predefinedAttributes],
+            attributes: [...variant.attributes, ...predefinedAttributes].filter(
+              (att) => att.value && att.value !== ""
+            ),
           })),
           images: imageNames,
           isActive: formData.get("status") === "active",
         };
-        productForm.append("fileOperation", JSON.stringify(fileOperation));
+        //productForm.append("fileOperation", JSON.stringify(fileOperation));
         productForm.append("data", JSON.stringify(product));
         productForm.append("operation", "SAVE_DATA");
         debugger;
@@ -251,7 +256,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
     <QueryClientHook>
       <main className="grid flex-1 items-start gap-4 sm:px-6 sm:py-0 md:gap-8 p-10">
         <form
-          className="mx-auto grid flex-1 auto-rows-max gap-4 m-10 "
+          className="grid flex-1  gap-4 m-16 mx-28"
           action={saveProduct}
           onKeyDown={handleKeyDown}
         >
@@ -262,21 +267,16 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
             >
               Product Form
             </h1>
-            <div className="hidden items-center gap-2 md:ml-auto md:flex">
-              <Button size="sm" type="button" onClick={addNewVarient}>
-                Add Varient
-              </Button>
-            </div>
+
             {varients.map((varient, idx) => (
-              <div className="hidden items-center gap-2 md:ml-auto md:flex relative" key={idx}>
+              <div className="hidden items-center gap-2 md:ml-auto md:flex relative " key={idx}>
                 <Button
                   size="sm"
                   type="button"
-                  className="p-5"
+                  className={"p-5" + (idx === curVarient ? "border font-bold" : "")}
                   onClick={() => setCurentVarient(idx)}
                 >
-                  Varient
-                  {" " + (idx + 1)}
+                  <span>Varient {" " + (idx + 1)}</span>
                 </Button>
                 <X
                   className="absolute top-0 right-0 rounded-full size-4 text-white"
@@ -288,16 +288,18 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
               </div>
             ))}
             <div className="hidden items-center gap-2 md:ml-auto md:flex">
+              <Button size="sm" type="button" onClick={addNewVarient}>
+                Add Varient
+              </Button>
+            </div>
+            <div className="hidden items-center gap-2 md:ml-auto md:flex">
               <Button size="sm" type="submit">
                 Save Product
               </Button>
             </div>
           </div>
           <div
-            className={
-              "grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8 " +
-              (curVarient !== -1 ? "hidden" : "")
-            }
+            className={"grid gap-4 lg:grid-cols-3 lg:gap-8 " + (curVarient !== -1 ? "hidden" : "")}
           >
             <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
               <Card x-chunk="dashboard-07-chunk-2">
@@ -571,7 +573,11 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                       </div>
                     )}
 
-                    <div className={`grid grid-flow-* gap-2 ${imageFiles ? "grid-cols-2" : ""}`}>
+                    <div
+                      className={`grid grid-flow-* gap-2 ${
+                        (imageFiles?.length ?? 0) > 0 ? "grid-cols-2" : ""
+                      }`}
+                    >
                       {imageFiles &&
                         imageFiles.slice(1).map((imageFile, index) => (
                           <div key={index} className="relative">
@@ -592,7 +598,9 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                       <div className="flex justify-center relative ">
                         <label
                           className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                            imageFiles ? "relative shadow-lg min-w-20" : "shadow-sm min-h-80"
+                            (imageFiles?.length ?? 0) > 0
+                              ? "relative shadow-lg min-w-20"
+                              : "shadow-sm min-h-80"
                           }`}
                         >
                           <Upload className="h-4 w-4 text-muted-foreground" />
@@ -615,9 +623,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
 
           {varients.map((varient, idx) => (
             <div
-              className={`grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8 ${
-                idx !== curVarient ? "hidden" : ""
-              }`}
+              className={`grid gap-4 lg:grid-cols-3 lg:gap-8 ${idx !== curVarient ? "hidden" : ""}`}
               key={idx}
             >
               <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
@@ -855,7 +861,11 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                         </div>
                       )}
 
-                      <div className={`grid grid-flow-* gap-2 ${imageFiles ? "grid-cols-2" : ""}`}>
+                      <div
+                        className={`grid grid-flow-* gap-2 ${
+                          varient.imageFiles.length > 0 ? "grid-cols-2 h-20" : ""
+                        }`}
+                      >
                         {varient.imageFiles &&
                           varient.imageFiles.slice(1).map((imageFile, index) => (
                             <div key={index} className="relative">
@@ -873,10 +883,10 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                             </div>
                           ))}
 
-                        <div className="flex justify-center relative ">
+                        <div className="flex justify-center relative">
                           <label
                             className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                              varient.imageFiles
+                              varient.imageFiles.length > 0
                                 ? "relative shadow-lg min-w-20"
                                 : "shadow-sm min-h-80"
                             }`}

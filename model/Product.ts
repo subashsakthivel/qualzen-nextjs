@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import { ProductSchema, TProduct } from "@/schema/Product";
+import { TProduct } from "@/schema/Product";
 import mongoosePaginate from "mongoose-paginate-v2";
 import { ProductVariantModel } from "./ProductVarient";
 import R2Util from "@/util/S3Util";
-import PersistanceUtil from "@/util/dbUtil";
 
 const ProductDBSchema = new mongoose.Schema<TProduct>({
   name: {
@@ -92,18 +91,6 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
   },
 });
 
-ProductDBSchema.pre("save", async function (next) {
-  try {
-    const product = this;
-    if (this.isNew) {
-      ProductSchema.parse(product.toObject());
-      product._id = await PersistanceUtil.getSeq({ _id: "product" });
-    }
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
-});
 ProductDBSchema.post("save", async function (doc, next) {
   try {
     next();
@@ -115,9 +102,11 @@ ProductDBSchema.post("save", async function (doc, next) {
 ProductDBSchema.post("find", async function (docs: TProduct[] | null, next) {
   if (docs) {
     docs.map(async (doc) => {
-      doc.images = await R2Util.getObjectUrls(doc.images);
-      doc.variants.forEach(async (variant) => {
-        variant.images = await R2Util.getObjectUrls(variant.images);
+      doc.images =
+        doc.images && doc.images.length > 0 ? await R2Util.getObjectUrls(doc.images) : [];
+      doc.variants?.forEach(async (variant) => {
+        variant.images =
+          variant.images && variant.images.length ? await R2Util.getObjectUrls(variant.images) : [];
       });
     });
   }
@@ -125,9 +114,10 @@ ProductDBSchema.post("find", async function (docs: TProduct[] | null, next) {
 });
 ProductDBSchema.post("findOne", async function (doc: TProduct | null, next) {
   if (doc) {
-    doc.images = await R2Util.getObjectUrls(doc.images);
-    doc.variants.forEach(async (variant) => {
-      variant.images = await R2Util.getObjectUrls(variant.images);
+    doc.images = doc.images && doc.images.length > 0 ? await R2Util.getObjectUrls(doc.images) : [];
+    doc.variants?.forEach(async (variant) => {
+      variant.images =
+        variant.images && variant.images.length ? await R2Util.getObjectUrls(variant.images) : [];
     });
   }
   next();

@@ -23,6 +23,9 @@ import {
   Group,
   X,
   Plus,
+  Trash2Icon,
+  EditIcon,
+  EyeIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -570,114 +573,136 @@ export default function DynamicTable({
 
       {/* Table */}
       <div className="rounded-md border">
-        {status === "pending" ? (
-          "Loading..."
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {autoDetectedColumns.map((column) => (
-                  <TableHead
-                    key={column.key}
-                    className={column.sortable && sortable ? "cursor-pointer select-none" : ""}
-                    onClick={() => column.sortable && sortable && handleSort(column.key)}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>{column.label}</span>
-                      {sortable &&
-                        column.sortable &&
-                        sortConfig?.sortby === column.key &&
-                        (sortConfig.direction === "asc" ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        ))}
-                      {groupByField === column.key && (
-                        <Badge variant="outline" className="ml-2 h-5 px-1.5">
-                          Grouped
-                        </Badge>
-                      )}
-                    </div>
-                  </TableHead>
-                ))}
-                <TableHead className="w-12">
-                  <div className="flex justify-center">
-                    <span className="text-muted-foreground">Actions</span>
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedData.map((row, rowIndex) =>
-                row.__isGroupRow ? (
-                  <TableRow key={`group-${rowIndex}`} className="bg-muted">
-                    <TableCell colSpan={autoDetectedColumns.length}>
-                      <Collapsible
-                        open={expandedGroups.includes(row.__groupKey)}
-                        onOpenChange={(isOpen) => {
-                          setExpandedGroups((prev) =>
-                            isOpen
-                              ? [...prev, row.__groupKey]
-                              : prev.filter((key) => key !== row.__groupKey)
-                          );
-                        }}
+        {status === "pending"
+          ? "Loading..."
+          : autoDetectedColumns.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {autoDetectedColumns.map((column) => (
+                      <TableHead
+                        key={column.key}
+                        className={
+                          "border" +
+                          (column.sortable && sortable ? "cursor-pointer select-none" : "")
+                        }
+                        onClick={() => column.sortable && sortable && handleSort(column.key)}
                       >
-                        <CollapsibleTrigger className="flex items-center w-full">
-                          <ChevronRight
-                            className={`h-4 w-4 mr-2 transition-transform ${
-                              expandedGroups.includes(row.__groupKey) ? "transform rotate-90" : ""
-                            }`}
-                          />
-                          <span className="font-medium">
-                            {row.__groupField}: {row.__groupKey} ({row.__itemCount} items)
-                          </span>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="mt-2">
-                            <Table>
-                              <TableBody>
-                                {row.__items.map((item: any, itemIndex: number) => (
-                                  <TableRow key={`${rowIndex}-${itemIndex}`}>
-                                    {autoDetectedColumns.map((column) => {
-                                      const type = column.type || detectDataType(item[column.key]);
-                                      return (
-                                        <TableCell key={`${rowIndex}-${itemIndex}-${column.key}`}>
-                                          {column.format
-                                            ? column.format(item[column.key])
-                                            : renderCellValue(item, column.key, type)}
-                                        </TableCell>
-                                      );
-                                    })}
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </TableCell>
+                        <div className="flex items-center space-x-1 text-center w-full">
+                          <span>{column.label}</span>
+                          {sortable &&
+                            column.sortable &&
+                            sortConfig?.sortby === column.key &&
+                            (sortConfig.direction === "asc" ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            ))}
+                          {groupByField === column.key && (
+                            <Badge variant="outline" className="ml-2 h-5 px-1.5">
+                              Grouped
+                            </Badge>
+                          )}
+                        </div>
+                      </TableHead>
+                    ))}
+                    <TableHead className="w-12">
+                      <div className="flex justify-center">
+                        <span className="text-muted-foreground">Actions</span>
+                      </div>
+                    </TableHead>
                   </TableRow>
-                ) : (
-                  <TableRow key={rowIndex}>
-                    {autoDetectedColumns.map((column) => {
-                      const type = column.type || detectDataType(row[column.key]);
-                      return (
-                        <TableCell key={`${rowIndex}-${column.key}`}>
-                          {column.format
-                            ? column.format(row[column.key])
-                            : renderCellValue(row, column.key, type)}
+                </TableHeader>
+                <TableBody>
+                  {paginatedData.map((row, rowIndex) =>
+                    row.__isGroupRow ? (
+                      <TableRow key={`group-${rowIndex}`} className="bg-muted">
+                        <TableCell colSpan={autoDetectedColumns.length}>
+                          <Collapsible
+                            open={expandedGroups.includes(row.__groupKey)}
+                            onOpenChange={(isOpen) => {
+                              setExpandedGroups((prev) =>
+                                isOpen
+                                  ? [...prev, row.__groupKey]
+                                  : prev.filter((key) => key !== row.__groupKey)
+                              );
+                            }}
+                          >
+                            <CollapsibleTrigger className="flex items-center w-full">
+                              <ChevronRight
+                                className={`h-4 w-4 mr-2 transition-transform ${
+                                  expandedGroups.includes(row.__groupKey)
+                                    ? "transform rotate-90"
+                                    : ""
+                                }`}
+                              />
+                              <span className="font-medium">
+                                {row.__groupField}: {row.__groupKey} ({row.__itemCount} items)
+                              </span>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="mt-2">
+                                <Table>
+                                  <TableBody>
+                                    {row.__items.map((item: any, itemIndex: number) => (
+                                      <TableRow key={`${rowIndex}-${itemIndex}`}>
+                                        {autoDetectedColumns.map((column) => {
+                                          const type =
+                                            column.type || detectDataType(item[column.key]);
+                                          return (
+                                            <TableCell
+                                              key={`${rowIndex}-${itemIndex}-${column.key}`}
+                                            >
+                                              {column.format
+                                                ? column.format(item[column.key])
+                                                : renderCellValue(item, column.key, type)}
+                                            </TableCell>
+                                          );
+                                        })}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
                         </TableCell>
-                      );
-                    })}
-                    <TableCell colSpan={autoDetectedColumns.length} className="text-center">
-                      {"Delete | Edit | View"}
-                    </TableCell>
-                  </TableRow>
-                )
-              )}
-            </TableBody>
-          </Table>
-        )}
+                      </TableRow>
+                    ) : (
+                      <TableRow key={rowIndex} className="bg-muted ">
+                        {autoDetectedColumns.map((column) => {
+                          const type = column.type || detectDataType(row[column.key]);
+                          return (
+                            <TableCell
+                              key={`${rowIndex}-${column.key}`}
+                              className="max-w-10 break-all text-center border"
+                            >
+                              {column.format
+                                ? column.format(row[column.key])
+                                : renderCellValue(row, column.key, type)}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell
+                          colSpan={autoDetectedColumns.length}
+                          className="text-center break-all grid grid-rows-3 grid-cols-1 gap-2"
+                        >
+                          <Button variant={"destructive"}>
+                            <Trash2Icon />
+                          </Button>
+                          <Button variant={"outline"}>
+                            <EditIcon />
+                          </Button>
+                          <Button>
+                            <EyeIcon />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
+                </TableBody>
+              </Table>
+            )}
       </div>
 
       {/* Pagination */}
