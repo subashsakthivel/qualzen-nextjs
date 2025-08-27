@@ -119,7 +119,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ m
       throw new Error("Invalid request");
     }
     const { operation, request } = await req.json();
-    const responseData = DataAPI.deleteData({
+    const responseData = await DataAPI.deleteData({
       modelName: modelName as tDataModels,
       operation,
       request,

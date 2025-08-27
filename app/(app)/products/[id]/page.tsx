@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCart } from "@/components/cart-provider";
-import { getDataFromServer } from "@/util/dataAPI";
-import { DataSourceMap } from "@/model/DataSourceMap";
-import { TProduct, TProductRes } from "@/schema/Product";
+
 import { TProductVariant } from "@/schema/ProductVarient";
 import { PaginateResult } from "mongoose";
+import { TProduct } from "@/schema/Product";
 
 // Mock product data - in a real app, you would fetch this from an API
 type TAtttributes = {
@@ -27,12 +26,12 @@ type TAtttributes = {
 };
 
 type TProductInfo = {
-  product: TProductRes;
+  product: TProduct;
   attributes: TAtttributes[];
   sellingPrice: number;
 };
 
-const products: TProductRes[] = [
+const products: TProduct[] = [
   {
     category: "ssa",
     description: "fewf",
@@ -87,7 +86,7 @@ const products: TProductRes[] = [
   },
 ];
 
-const productsTest: PaginateResult<TProductRes> = {
+const productsTest: PaginateResult<TProduct> = {
   docs: products,
   hasNextPage: false,
   hasPrevPage: false,
@@ -113,7 +112,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     async function loadProduct() {
-      const fetchProduct = async (): Promise<TProductRes | undefined> => {
+      const fetchProduct = async (): Promise<TProduct | undefined> => {
         // const resultData = await getDataFromServer(DataSourceMap["product"], "GET_DATA", {
         //   filter: {
         //     logicalOperator: "AND",
@@ -123,7 +122,7 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
         // });
         const resultData = productsTest;
         if (resultData && resultData.docs && resultData.docs.length == 1) {
-          return resultData.docs[0] as TProductRes;
+          return resultData.docs[0] as TProduct;
         }
         return undefined;
       };
@@ -216,18 +215,6 @@ export default function ProductView({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="container px-4 py-12 mx-auto">
-      <div className="flex items-center gap-1 text-sm text-muted-foreground mb-8">
-        <Link href="/" className="hover:text-foreground">
-          Home
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <Link href="/products" className="hover:text-foreground">
-          Products
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground">{productInfo.product.name}</span>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg border">

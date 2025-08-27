@@ -1,15 +1,14 @@
 "use client";
 import InfiniteScroll from "@/components/ui/infinitescroll";
-import { DataSourceMap } from "@/model/DataSourceMap";
-import { TProduct, TProductRes } from "@/schema/Product";
-import { getDataFromServer } from "@/util/dataAPI";
+import { TProduct } from "@/schema/Product";
 import { Loader2 } from "lucide-react";
 import { PaginateResult } from "mongoose";
 import React, { useState } from "react";
 import { ProductGrid } from "./product-grid";
+import DataClientAPI from "@/util/client/data-client-api";
 
-function ProductGallery({ initialProducts }: { initialProducts: PaginateResult<TProductRes> }) {
-  const [products, setProducts] = useState<TProductRes[]>(initialProducts.docs);
+function ProductGallery({ initialProducts }: { initialProducts: PaginateResult<TProduct> }) {
+  const [products, setProducts] = useState<TProduct[]>(initialProducts.docs);
   const [hasMoreData, setHasMoreData] = useState(initialProducts.hasNextPage);
   const [page, setPage] = useState<number>(initialProducts.page ?? 1);
 
@@ -17,15 +16,16 @@ function ProductGallery({ initialProducts }: { initialProducts: PaginateResult<T
     if (hasMoreData) {
       debugger;
       console.log("load more products");
-      // const resultData = await getDataFromServer(DataSourceMap.product, "GET_DATA", {
-      //   limit: 20,
-      //   page: page + 1,
-      //   populate: [{ path: "variants" }],
-      // });
-      // console.log(resultData);
-      // setHasMoreData(resultData.hasNextPage);
-      // setProducts((prevProducts) => [...prevProducts, ...(resultData.docs as TProductRes[])]);
-      // setPage(resultData.page ?? page + 1);
+      const result = await DataClientAPI.getData({
+        modelName: "product",
+        operation: "GET_DATA",
+        request: { options: { limit: 20, page } },
+      });
+      if (result) {
+        setProducts(result.docs);
+        setPage(result.page);
+      }
+      setHasMoreData(result?.hasNextPage ?? false);
     }
   };
 

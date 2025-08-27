@@ -16,12 +16,12 @@ class DataAPIclass {
     try {
       const { options } = request;
       const { cacheKey } = DataModelMap[modelName];
-      const operationCacheKey = cacheKey + "-" + operation;
-      if (localcache.has(operationCacheKey)) {
-        return localcache.get(operationCacheKey);
-      }
+      // const operationCacheKey = cacheKey + "-" + operation;
+      // if (localcache.has(operationCacheKey)) {
+      //   return localcache.get(operationCacheKey);
+      // }
       const response = await Persistance.getData({ modelName, operation, options: { ...options } });
-      localcache.set(operationCacheKey, response);
+      //localcache.set(operationCacheKey, response);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
@@ -64,8 +64,13 @@ class DataAPIclass {
   }): Promise<any> {
     try {
       const { cacheKey } = DataModelMap[modelName];
-      const { filter, id } = request;
-      const response = Persistance.deleteData({ modelName, operation, filter, id });
+
+      const response = await Persistance.deleteData({
+        modelName,
+        operation,
+        filter: request.filter,
+        id: request.id,
+      });
       localcache.delete(cacheKey);
       return response;
     } catch (err) {

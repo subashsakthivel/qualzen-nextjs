@@ -129,6 +129,18 @@ export default function DynamicTable({
     console.log("Fetched tableData:", tableData);
     return tableData.docs as Record<string, any>[];
   }
+
+  async function deleteEntry(id: string) {
+    const response = await DataClientAPI.deleteData({
+      modelName: model,
+      request: {
+        operation: "DELETE_DATA",
+        id,
+        data: { id },
+      },
+    });
+    debugger;
+  }
   // Auto-detect columns if not provided
   const autoDetectedColumns = useMemo(() => {
     if (columns) return columns;
@@ -693,7 +705,7 @@ export default function DynamicTable({
                           colSpan={autoDetectedColumns.length}
                           className="text-center break-all grid grid-rows-3 grid-cols-1 gap-2"
                         >
-                          <Button variant={"destructive"}>
+                          <Button variant={"destructive"} onClick={() => deleteEntry(row._id)}>
                             <Trash2Icon />
                           </Button>
                           <Button variant={"outline"}>

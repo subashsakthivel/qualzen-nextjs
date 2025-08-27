@@ -27,7 +27,7 @@ export const ProductSchema = z.object({
   instructions: z.string().optional(),
   otherdetails: z.string().optional(),
   relatedLinks: z.array(z.string()).optional(),
-  createdAt: z.date().optional(),
+  createdAt: z.union([z.number(), z.date()]).optional(),
   updatedAt: z.date().optional(),
 });
 

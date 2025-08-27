@@ -253,6 +253,7 @@ class DBUtil {
           execution.callback = async () => await dbModel.deleteMany(queryFilter).lean();
           break;
         case "DELETE_DATA":
+          break;
         default:
           throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }

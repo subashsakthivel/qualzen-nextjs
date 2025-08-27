@@ -107,6 +107,32 @@ class DataServiceClass {
       };
     }
   }
+
+  async deleteData({ modelName, request }: { modelName: tDataModels; request: any }) {
+    try {
+      const { url } = DataSourceMap[modelName];
+
+      const response = await fetch(url, {
+        body: JSON.stringify({ request: { ...request } }),
+        method: "DELETE",
+      });
+
+      const resJson = await response.json();
+
+      debugger;
+      if (!response.ok) {
+        throw new Error(resJson.message || "Request failed");
+      }
+    } catch (err) {
+      debugger;
+      console.error("Error posting data:", err);
+      return {
+        success: false,
+        data: null,
+        message: err instanceof Error ? err.message : "Unknown error",
+      };
+    }
+  }
 }
 const DataClientAPI = new DataServiceClass();
 

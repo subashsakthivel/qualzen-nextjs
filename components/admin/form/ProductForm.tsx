@@ -51,7 +51,7 @@ type TVariant = TProductVariant & {
   predefinedAttributes: TProductVariant["attributes"];
   imageFiles: File[];
 };
-export default function ProductForm({ categoryListStr }: { categoryListStr: string }) {
+export default function ProductForm({ categories }: { categories: TCategory[] }) {
   const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>([]);
   const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
   const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<
@@ -61,7 +61,6 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
   const [tags, setTags] = useState<string[]>([]);
   const [varients, setVarients] = useState<TVariant[]>([]);
   const [curVarient, setCurentVarient] = useState<number>(-1);
-  const categoryList = JSON.parse(categoryListStr) as TCategory[];
 
   const mutation = useMutation({
     mutationFn: async (request: FormData) =>
@@ -108,7 +107,9 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
       if (imageFiles && imageFiles.length > 9) {
         throw new Error("You can only upload a maximum of 9 images.");
       }
+      debugger;
       const productForm = new FormData();
+      const fileOperation = [{ path: "images", multi: true }];
       if (varients.length == 0) {
         const imageNames: string[] = [];
         imageFiles.forEach((imageFile) => {
@@ -116,6 +117,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
           imageNames.push(name);
           productForm.append(name, imageFile);
         });
+
         const product: TProductFormData = {
           name: formData.get("name") as string,
           category: formData.get("category") as string,
@@ -132,6 +134,8 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
           isActive: formData.get("status") === "active",
         };
 
+        productForm.append("fileOperation", JSON.stringify(fileOperation));
+        productForm.append("operation", "SAVE_DATA");
         productForm.append("data", JSON.stringify(product));
         debugger;
       } else {
@@ -152,7 +156,6 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
             variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
           }
         });
-        const fileOperation = [{ path: "images", multi: true }];
 
         varients.map((varaint, index) => {
           if (varaint.images.length > 0) {
@@ -184,7 +187,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
           images: imageNames,
           isActive: formData.get("status") === "active",
         };
-        //productForm.append("fileOperation", JSON.stringify(fileOperation));
+        productForm.append("fileOperation", JSON.stringify(fileOperation));
         productForm.append("data", JSON.stringify(product));
         productForm.append("operation", "SAVE_DATA");
         debugger;
@@ -227,7 +230,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
   }
 
   function onCategoryChange(categoryId: string) {
-    const attributes = categoryList.find((category) => category._id === categoryId)!.attributes;
+    const attributes = categories.find((category) => category._id === categoryId)!.attributes;
     const predefinedAttr: TProduct["attributes"] = attributes
       .filter((attr) => typeof attr !== "string")
       .map((attribute) => {
@@ -293,7 +296,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
               </Button>
             </div>
             <div className="hidden items-center gap-2 md:ml-auto md:flex">
-              <Button size="sm" type="submit">
+              <Button size="sm" type="submit" disabled={mutation.isPending}>
                 Save Product
               </Button>
             </div>
@@ -315,7 +318,7 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                           <SelectValue placeholder="Select subcategory" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categoryList.map((category: TCategory, i: number) => (
+                          {categories.map((category: TCategory, i: number) => (
                             <SelectItem key={i} value={category._id!}>
                               {category.name}
                             </SelectItem>
@@ -369,14 +372,14 @@ export default function ProductForm({ categoryListStr }: { categoryListStr: stri
                     <Input id="sellingPrice" name="sellingPrice" type="number" className="w-full" />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">SKU</Label>
+                    <Label htmlFor="sku">SKU</Label>
                     <Input id="sku" name="sku" type="text" className="w-full" />
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="stockQuantity">Stock</Label>
                     <Input
                       id="stockQuantity"
-                      name="stockuantity"
+                      name="stockQuantity"
                       type="number"
                       className="w-full"
                     />

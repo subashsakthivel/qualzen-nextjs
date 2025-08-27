@@ -87,6 +87,8 @@ const ProductShowcase = ({ params }: { params: Promise<{ id: string }> }) => {
             <Image
               src={product.images[selectedImage]}
               alt={product.name}
+              width={200}
+              height={400}
               className="w-full h-full object-cover"
             />
           </div>
@@ -102,6 +104,8 @@ const ProductShowcase = ({ params }: { params: Promise<{ id: string }> }) => {
                 <Image
                   src={image}
                   alt={`${product.name} view ${index + 1}`}
+                  width={200}
+                  height={400}
                   className="w-full h-full object-cover"
                 />
               </button>

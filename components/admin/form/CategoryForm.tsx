@@ -33,36 +33,21 @@ import { v4 as uuidv4 } from "uuid";
 
 const model = "category";
 
-const CategoryForm = ({ categoryListStr }: { categoryListStr: string }) => {
+const CategoryForm = ({
+  categories,
+  existingAttributes,
+}: {
+  categories: TCategory[];
+  existingAttributes: TCategorySpecificAttributes[];
+}) => {
   const router = useRouter();
   const [attributes, setAttributes] = React.useState<TCategorySpecificAttributes[]>([]);
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
-  const [categories, setCategories] = React.useState<TCategory[]>([]);
-  const [existingAttributes, setExistingAttributes] = React.useState<TCategorySpecificAttributes[]>(
-    []
-  );
 
   const mutation = useMutation({
     mutationFn: (request: FormData) => DataClientAPI.saveData({ modelName: model, request }),
     onSuccess: () => router.push("/table/category"),
   });
-
-  React.useEffect(() => {
-    (async () => {
-      const cats = await DataClientAPI.getData({
-        modelName: "category",
-        operation: "GET_DATA",
-        request: {},
-      });
-      const attrs = await DataClientAPI.getData({
-        modelName: "categoryspecificattributes",
-        operation: "GET_DATA_MANY",
-        request: {},
-      });
-      setCategories(cats.docs as TCategory[]);
-      setExistingAttributes(attrs as TCategorySpecificAttributes[]);
-    })();
-  }, []);
 
   const onImageFileChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
     if (!ev.target.files?.length) return;
