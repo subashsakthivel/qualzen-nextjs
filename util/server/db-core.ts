@@ -69,11 +69,11 @@ class DBUtil {
     // todo : operation invalid error
     try {
       const { dbModel } = DataModelMap[modelName];
+      const queryFilter = this.parseFilterQuery(filter);
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
         userId: "",
       };
-      const queryFilter = this.parseFilterQuery(filter);
       if (operation === "GET_DATA_MANY") {
         execution.callback = async () => await dbModel.find(queryFilter, undefined, options);
       } else if (operation === "GET_DATA_ONE") {

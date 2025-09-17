@@ -48,7 +48,7 @@ const Contact = () => {
     {
       icon: <Clock className="h-5 w-5 text-primary" />,
       title: "Business Hours",
-      details: "Mon-Fri: 8AM-12PM IST",
+      details: "Mon-SAT: 8AM-12PM , SUN: 8AM-12AM",
     },
   ];
 
@@ -155,10 +155,11 @@ const Contact = () => {
               </CardHeader>
               <CardContent className="space-x-2 flex justify-center items-center flex-wrap">
                 {socialMedia.map((media) => (
-                  <div key={media.name} className="flex justify-center items-center border p-5">
-                    <Link href={media.href}>
-                      {media.icon} <div>{media.name}</div>
-                    </Link>
+                  <div
+                    key={media.name}
+                    className="flex justify-center items-center border p-5 rounded-sm"
+                  >
+                    <Link href={media.href}>{media.icon}</Link>
                   </div>
                 ))}
               </CardContent>

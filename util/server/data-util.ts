@@ -14,18 +14,23 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const { options } = request;
+      const { id, options } = request;
       const { cacheKey } = DataModelMap[modelName];
       // const operationCacheKey = cacheKey + "-" + operation;
       // if (localcache.has(operationCacheKey)) {
       //   return localcache.get(operationCacheKey);
       // }
-      const response = await Persistance.getData({ modelName, operation, options: { ...options } });
+      const response = await Persistance.getData({
+        modelName,
+        operation,
+        options: { ...options },
+        id,
+      });
       //localcache.set(operationCacheKey, response);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
-      throw new Error("Failed to fetch data");
+      //throw new Error("Failed to fetch data");
     }
   }
 

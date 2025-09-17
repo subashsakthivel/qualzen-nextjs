@@ -13,7 +13,10 @@ export default function CartPage() {
   debugger;
   const cartItemInfo = cartItems.map((item) => ({
     id: item.variant ? item.product._id + " " + item.variant._id : item.product._id,
-    image: item.variant ? item.variant.images[0] : item.product.images[0],
+    image:
+      item.variant && item.variant.images.length > 0
+        ? item.variant.images[0]
+        : item.product.images[0],
     name: item.product.name,
     price: item.variant ? item.variant.sellingPrice : item.product.sellingPrice,
     product: item.product,
@@ -124,7 +127,7 @@ export default function CartPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -132,12 +135,12 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <span>Calculated at checkout</span>
+                <span>Included</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₹{subtotal.toFixed(2)}</span>
               </div>
             </CardContent>
             <CardFooter>

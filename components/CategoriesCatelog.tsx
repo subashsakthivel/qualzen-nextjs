@@ -22,7 +22,7 @@ const CategoriesCatelog = async () => {
   return (
     <div className={"grid gap-2 md:m-10 items-center " + grid_col_range}>
       {categories.map((category, index) => (
-        <Link key={category.name} href={`/category/${category._id}/products/`}>
+        <Link key={category.name} href={`/products/category/${category._id}`}>
           <div key={index} className="relative group overflow-hidden aspect-square">
             <Image src={category.image} alt={category.name} fill className=" object-cover " />
             <div className="absolute inset-0 bg-black bg-opacity-25 flex items-center justify-center transition-opacity duration-300 group-hover:opacity-50">

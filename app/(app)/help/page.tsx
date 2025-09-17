@@ -91,7 +91,7 @@ const Help = () => {
             <CardContent className="p-6 text-center">
               <Phone className="h-8 w-8 mx-auto mb-4 text-primary" />
               <h3 className="font-semibold mb-2">Phone Support</h3>
-              <p className="text-sm text-muted-foreground mb-4">Call us Mon-Fri, 9AM-6PM EST</p>
+              <p className="text-sm text-muted-foreground mb-4">Call us Mon-SAT, 8AM-11PM </p>
               <Button variant="outline" size="sm">
                 <Link href={"tel:+919876543210"}>Call Now</Link>
               </Button>

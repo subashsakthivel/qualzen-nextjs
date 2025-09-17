@@ -5,16 +5,28 @@ import { TProductVariant } from "@/schema/ProductVarient";
 import type React from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
-export type TCartItem = { product: TProduct; variant?: TProductVariant; quantity: number };
+export type TCartItem = { product: TProductInfo; variant?: TProductVariant; quantity: number };
 type CartContextType = {
   cartItems: TCartItem[];
-  addToCart: (product: TProduct, variant?: TProductVariant) => void;
-  removeFromCart: (product: TProduct, variant?: TProductVariant) => void;
-  updateQuantity: (product: TProduct, quantity: number, variant?: TProductVariant) => void;
+  addToCart: (product: TProductInfo, variant?: TProductVariant) => void;
+  removeFromCart: (product: TProductInfo, variant?: TProductVariant) => void;
+  updateQuantity: (product: TProductInfo, quantity: number, variant?: TProductVariant) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
   total: number;
+};
+export type TProductInfo = TProduct & {
+  selectedVaraint?: TProductVariant;
+  varaintAttributes?: Map<
+    string,
+    {
+      values: Set<string>;
+      id: string;
+      name: string;
+      sortOrder: number;
+    }
+  >;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -41,7 +53,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cartItems]);
 
-  const addToCart = (product: TProduct, variant?: TProductVariant) => {
+  const addToCart = (product: TProductInfo, variant?: TProductVariant) => {
     debugger;
     const existingItem = cartItems.find(
       (item) => item.product._id === product._id && item.variant?._id === variant?._id
@@ -70,7 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const removeFromCart = (product: TProduct, variant?: TProductVariant) => {
+  const removeFromCart = (product: TProductInfo, variant?: TProductVariant) => {
     setCartItems((prevItems) =>
       prevItems.filter(
         (item) => item.product._id !== product._id && item.variant?._id !== variant?._id
@@ -82,13 +94,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateQuantity = (product: TProduct, quantity: number, variant?: TProductVariant) => {
+  const updateQuantity = (product: TProductInfo, quantity: number, variant?: TProductVariant) => {
+    debugger;
     const updatedItem = cartItems.find(
       (item) => item.product._id === product._id && item.variant?._id === variant?._id
     );
     if (!updatedItem) {
       //todo : show toeast
     } else {
+      if (quantity <= 0) {
+        removeFromCart(product, variant);
+        return;
+      }
       const productQuantity = variant ? variant.stockQuantity : product.stockQuantity;
       if (productQuantity < quantity) {
         // todo : show dont have stock tast

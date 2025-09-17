@@ -1,8 +1,9 @@
 "use client";
 import { IProperty } from "@/model/Product";
+import { TProduct } from "@/schema/Product";
 import { IProductRes } from "@/utils/fetchData";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 const specialFields = ["color", "size"];
 
@@ -11,6 +12,8 @@ export interface ProductDetailInterface extends IProductRes {
 }
 
 const ProductDetail = ({ specialFieldsValues, ...productData }: ProductDetailInterface) => {
+
+
   return (
     <div className="grid grid-flow-row gap-5 ">
       <div>

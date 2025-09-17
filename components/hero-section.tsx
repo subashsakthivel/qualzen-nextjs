@@ -15,6 +15,21 @@ import Autoplay from "embla-carousel-autoplay";
 
 import Image from "next/image";
 
+type banners = {
+  title : string,
+  title_link: string,
+  style : string,
+  unique_key : string,
+  type : string,
+  customComponent : {
+    style : string,
+    component: string,
+  },
+  background_img : string,
+  backgroud_link : string,
+  data : object
+}
+
 const heroSlides = [
   {
     id: 1,
