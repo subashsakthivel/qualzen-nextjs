@@ -2,11 +2,15 @@
 import React from "react";
 
 interface ErrorProps {
-  error: Error;
-  reset: () => void;
+  error?: { message: string };
+  reset?: () => void;
 }
 
-const ErrorPage: React.FC<ErrorProps> = ({ error, reset }) => {
+const ErrorPage: React.FC<ErrorProps> = ({
+  error = { message: "" },
+  reset = () => {},
+}: ErrorProps) => {
+  // todo : reset should referesh page
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <h1 className="text-2xl font-bold">Something went wrong!</h1>

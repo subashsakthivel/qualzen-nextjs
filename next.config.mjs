@@ -4,6 +4,14 @@ import { hostname } from "os";
 
 const nextConfig = {
   reactStrictMode: false,
+  async rewrites() {
+    return [
+      {
+        source: "/login",
+        destination: "/signin",
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

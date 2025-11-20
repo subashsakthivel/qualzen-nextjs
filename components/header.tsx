@@ -93,7 +93,7 @@ export const Header = () => {
               <Link
                 key={link.to}
                 href={link.to}
-                className="text-sm font-medium transition-colors hover:text-primary text-shadow-lg"
+                className="text-sm font-medium transition-colors hover:text-primary text-shadow-lg text-white [text-stroke:1px_white]"
               >
                 {link.label}
               </Link>
@@ -105,7 +105,7 @@ export const Header = () => {
             <Button variant="ghost" size="icon">
               <Search className="h-4 w-4" />
             </Button>
-            <Link href="/signin">
+            <Link href="/profile">
               <Button variant="ghost" size="icon">
                 <User className="h-4 w-4" />
               </Button>

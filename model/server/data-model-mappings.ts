@@ -14,7 +14,6 @@ import { AddressModel } from "../Address";
 import { AddressSchema } from "@/schema/Address";
 import { OrderSchema } from "@/schema/Order";
 import { OrderModel } from "../Order";
-import { ContentSchema } from "@/schema/Content";
 import { ContentModel } from "../Content";
 import { cache } from "react";
 import { tDataModels } from "@/util/util-type";
@@ -70,13 +69,13 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
     cacheKey: "order",
   },
   content: {
-    schema: ContentSchema,
+    schema: ProductVariantSchema, // todo : need to remove
     dbModel: ContentModel,
     url: "/api/dataAPI/content",
     cacheKey: "content",
   },
   productVariant: {
-    schema: ContentSchema,
+    schema: ProductVariantSchema,
     dbModel: ContentModel,
     url: "/api/dataAPI/content",
     cacheKey: "productVariant",

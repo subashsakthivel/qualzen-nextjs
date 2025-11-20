@@ -7,7 +7,6 @@ import { GoogleProfile } from "next-auth/providers/google";
 import { AppleProfile } from "next-auth/providers/apple";
 import clientPromise from "./mongodb";
 import { Adapter } from "next-auth/adapters";
-import { getUserByEmail, verifyEmailAndPassword } from "@/util/dbUtil";
 import { UserInfoModel } from "@/model/UserInfo";
 import { CommonUtil } from "@/util/util";
 import dbConnect from "./mongoose";
@@ -29,33 +28,7 @@ async function checkAndAddUser(user: TUserInfo): Promise<TUserInfo> {
 }
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID as string,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
-      allowDangerousEmailAccountLinking: true,
-      profile(profile: GoogleProfile) {
-        return {
-          ...profile,
-          id: profile.sub,
-          role: "user",
-          image: profile.picture,
-          firstName: profile.name,
-        };
-      },
-    }),
-    AppleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID as string,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
-      profile(profile: AppleProfile) {
-        console.log("Apple Profile : ", profile.data);
-        return {
-          ...profile,
-          role: profile.role ?? "user",
-          id: "dd",
-          image: profile.picture,
-        };
-      },
-    }),
+
     // CredentialsProvider({
     //   name: "Credentials",
     //   credentials: {
