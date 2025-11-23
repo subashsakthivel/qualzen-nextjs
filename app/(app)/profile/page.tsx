@@ -2,8 +2,18 @@ import ProfileHeader from "@/components/profile-header"
 import OrderHistory from "@/components/order-history"
 import SavedAddresses from "@/components/saved-addresses"
 import AccountSettings from "@/components/account-settings"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
-export default function CustomerProfilePage() {
+export default async function CustomerProfilePage() {
+  const session = await auth.api.getSession({
+      headers: await headers()
+  })
+  if(!session) {
+      redirect("/sign-in")
+  }
+ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header with gradient */}

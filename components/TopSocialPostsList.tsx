@@ -7,7 +7,6 @@ import {
   CarouselPrevious,
 } from "./ui/carousel";
 import Image from "next/image";
-import { Card, CardContent } from "./ui/card";
 import Link from "next/link";
 import {
   FaFacebook,
@@ -100,7 +99,7 @@ const TopSocialPostsList = () => {
               key={index}
               className="md:basis-1/2 lg:basis-1/4 aspect-square relative  group overflow-hidden mx-2"
             >
-              <Image src={post.image} alt={post.title} fill className="object-cover" />
+              <Image src={post.image} alt={post.title} fill className="object-cover"/>
               <div className="absolute inset-0 bg-black bg-opacity-25 flex items-center justify-center transition-opacity opacity-0 duration-300 group-hover:opacity-100">
                 <h3 className="text-white text-3xl font-semibold">
                   <Link href={"/"}>

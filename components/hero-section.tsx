@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
@@ -64,7 +64,6 @@ const heroSlides = [
 export default function HeroCarousel() {
   const [api, setApi] = useState<CarouselApi>();
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const AUTOPLAY_DELAY = 10000; // 10 seconds per slide
   useEffect(() => {
     if (api) {
@@ -89,14 +88,15 @@ export default function HeroCarousel() {
               stopOnInteraction: true,
             }),
           ]}
+          
         >
           <CarouselContent>
             {heroSlides.map((slide, index) => (
-              <CarouselItem key={slide.id} className="pl-0">
+              <CarouselItem key={slide.id} className="pl-0" >
                 <Card className="border-0 rounded-none">
                   <CardContent className="relative p-0 h-screen overflow-hidden">
                     <Image
-                      src={slide.image || "/placeholder.svg"}
+                      src={slide.image  || "/placeholder.svg"}
                       alt={slide.title}
                       fill
                       className="object-cover"

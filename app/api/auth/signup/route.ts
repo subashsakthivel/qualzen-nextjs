@@ -10,3 +10,5 @@ export async function GET(request: NextRequest) {
   const res = await getServerSession();
   console.log("GET res session", res);
 }
+
+// todo : delete this one later
