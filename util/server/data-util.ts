@@ -58,6 +58,30 @@ class DataAPIclass {
     }
   }
 
+  async updateData({
+    modelName,
+    operation,
+    request,
+  }: {
+    modelName: tDataModels;
+    operation: string;
+    request: any;
+  }): Promise<any> {
+    try {
+      const { cacheKey } = DataModelMap[modelName];
+      const response = await Persistance.updateData({ modelName, operation, id : request.id , data : request , updateQuery : request.updateQuery , queryFilter : request.queryFilter });
+      localcache.entries().forEach(([key]) => {
+        if (key.startsWith(cacheKey)) {
+          localcache.delete(key);
+        }
+      });
+      return response;
+    } catch (err) {
+      console.error("Error in getData:", err);
+      throw new Error("Failed to fetch data");
+    }
+  }
+
   async deleteData({
     modelName,
     operation,

@@ -111,6 +111,47 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
 //   }
 // }
 
+
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
+  try {
+    const { model: modelName } = await params;
+    const dataModel = DataModelMap[modelName as tDataModels];
+    if (!dataModel) {
+      throw new Error("Invalid request");
+    }
+    const dataReq = {
+      modelName: modelName as tDataModels,
+      operation: "",
+      request: {},
+      id: "",
+      query: "",
+    };
+
+    if (req.headers.get("Content-Type")?.includes("application/json")) {
+      const { data, operation } = await req.json();
+      dataReq.operation = operation;
+      dataReq.request = data;
+    } else if (req.headers.get("Content-Type")?.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const operation = formData.get("operation") as string;
+      dataReq.operation = operation;
+      dataReq.request = formData;
+      dataReq.id = formData.get("id") as string;
+      dataReq.query = formData.get("query") as string;
+    } else {
+      throw new Error("Unsupported content type");
+    }
+    //todo : check if request and operation and modelName are valid
+    const responseData = await DataAPI.updateData(dataReq);
+    return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
+  } catch (err) {
+    console.error("Patch request Error :", err);
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
   try {
     const { model: modelName } = await params;

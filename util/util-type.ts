@@ -1,3 +1,4 @@
+import { DataSourceMap } from "@/model/DataSourceMap";
 import { DeleteResult, FlattenMaps, PaginateOptions, PaginateResult } from "mongoose";
 import z from "zod";
 
@@ -28,6 +29,7 @@ const zUpdateOperator = z.enum([
   "setOnInsert",
   "currentDate",
 ]);
+
 type TUpdateOperator = z.infer<typeof zUpdateOperator>;
 
 export type TCriteria<T> = {
@@ -37,18 +39,31 @@ export type TCriteria<T> = {
 };
 
 export type TUpdate<T> = {
-  field: keyof T;
-  operator: TUpdateOperator;
-  value: any;
-}[];
+  [K in TUpdateOperator] : {
+       [U in keyof T] :   T[U] extends (infer V)[] ? (V| V[]) : T[U];
+  }
+} | {
+  [K in Extract<TUpdateOperator, "push" | "pull" | "addToSet">] : {
+      "each" : {
+        [U in keyof T] : T[U]
+      }
+  }
+};
+const zUpdateQuery = z.union([z.record(zUpdateOperator, z.any()), z.record(z.enum(["push", "pull", "addToSet"]), z.object({"each" : z.any()}))])
+const zFilterQuery = z.object({
+    logic : z.enum(["and", "or"]),
+    criteria : z.array(z.object({
+        field : z.string(),
+        operator : z.enum(["equals", "notEquals", "contains", "in", "notIn", "gt", "gte", "lt", "lte"]),
+        value : z.any()
+    }))
+})
+export const zUpdateueryAndFilter = z.object({
+    updateQuery : zUpdateQuery,
+    queryFilter : zFilterQuery
+})
 
-export const zUpdateQuerySchema = z.array(
-  z.object({
-    field: z.string(),
-    operator: zUpdateOperator,
-    value: z.any(),
-  })
-);
+export const zUpdateQuerySchema = z.union([z.record(zUpdateOperator, z.any()), z.record(z.enum(["push", "pull", "addToSet"]), z.object({"each" : z.any()}))])
 
 export type tFilterCriteria = {
   field: string;
@@ -83,15 +98,7 @@ export interface FetchDataOptions<T> extends PaginateOptions {
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
 }
 
-export type tDataModels =
-  | "category"
-  | "product"
-  | "address"
-  | "userinfo"
-  | "order"
-  | "content"
-  | "productVariant"
-  | "categoryspecificattributes";
+export type tDataModels = keyof typeof DataSourceMap;
 
 export interface tGetDataParams<T> {
   modelName: tDataModels;
@@ -116,4 +123,5 @@ export type tGetResponse<T> =
 export type tFileUploadsTask = {
   path: string;
   multi: boolean;
+  type?: "delete" | "replace";
 }[];

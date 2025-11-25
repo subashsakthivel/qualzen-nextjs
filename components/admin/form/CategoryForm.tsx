@@ -30,18 +30,22 @@ import { Textarea } from "@/components/ui/textarea";
 import DataClientAPI from "@/util/client/data-client-api";
 import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
+import FormatUtil from "@/util/formetUtil";
+import { CommonUtil } from "@/util/util";
 
 const model = "category";
 
 const CategoryForm = ({
   categories,
   existingAttributes,
+  category,
 }: {
   categories: TCategory[];
   existingAttributes: TCategorySpecificAttributes[];
+  category?: TCategory & { attributes: TCategorySpecificAttributes[] };
 }) => {
   const router = useRouter();
-  const [attributes, setAttributes] = React.useState<TCategorySpecificAttributes[]>([]);
+  const [attributes, setAttributes] = React.useState<TCategorySpecificAttributes[]>(category?.attributes || []);
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
 
   const mutation = useMutation({
@@ -50,6 +54,9 @@ const CategoryForm = ({
   });
 
   const onImageFileChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    if(category?.image) {
+      category.image = "/#";
+    }
     if (!ev.target.files?.length) return;
     setImageFile(ev.target.files[0]);
   };
@@ -71,13 +78,23 @@ const CategoryForm = ({
       attributes: productAttributes,
     };
 
-    const fileOperation = [{ path: "image", multi: false }];
+    const fileOperation = [];
+    if (data.image) {
+      fileOperation.push({ path: "image", multi: false });
+      if (category?.image) {
+        fileOperation.push({ path: "image", multi: false , delete: true});
+      }
+    }
     const request = new FormData();
-    request.append("operation", "SAVE_DATA");
+    request.append("operation", category ? "UPDATE_DATA_V1.2" : "SAVE_DATA");
     request.append("fileOperation", JSON.stringify(fileOperation));
-    request.append("data", JSON.stringify(data));
     request.append(imageName, imageFile);
-    debugger;
+    if(category && category._id) {
+      request.append("id", category._id);
+      request.append("data", JSON.stringify(CommonUtil.getDiff(category , data)));
+    } else {
+      request.append("data", JSON.stringify(data));
+    }
     mutation.mutate(request);
   };
 
@@ -162,7 +179,7 @@ const CategoryForm = ({
                       className="aspect-square rounded-md object-cover"
                       height={300}
                       width={300}
-                      src={URL.createObjectURL(imageFile)}
+                      src={FormatUtil.getFormat(category?.image)==="url" ? category?.image! : URL.createObjectURL(imageFile)}
                     />
                   )}
                   <label

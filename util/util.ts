@@ -34,7 +34,27 @@ function getValidatedObj<T>(obj: unknown, zObj: ZodSchema<T>): T {
   }
 }
 
+function getDiff<T extends Record<string, any>>(
+  original: T,
+  updated: T
+): Partial<T> {
+  const diff: Partial<T> = {};
+
+  for (const key in updated) {
+    if (Object.prototype.hasOwnProperty.call(updated, key)) {
+
+      const originalValue = original[key];
+      const updatedValue = updated[key];
+      if (originalValue !== updatedValue) {
+        diff[key] = updatedValue;
+      }
+    }
+  }
+
+  return diff;
+}
 export const CommonUtil = {
   filterObjectByType,
   getValidatedObj,
+  getDiff,
 };

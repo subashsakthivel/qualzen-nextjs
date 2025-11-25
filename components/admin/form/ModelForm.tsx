@@ -32,9 +32,9 @@ const product = async () => {
   return <ProductForm categories={categories} />;
 };
 
-const FormVsModel: Record<string, () => Promise<JSX.Element>> = {
+const ModelForm: Record<string, () => Promise<JSX.Element>> = {
   category,
   product,
 };
 
-export default FormVsModel;
+export default ModelForm;

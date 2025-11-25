@@ -54,6 +54,7 @@ import FilterBuilder from "./filter-builder";
 import { TCategory } from "@/schema/Category";
 import FormatUtil from "@/util/formetUtil";
 import Link from "next/link";
+import { MultiSelect } from "./ui/multi-select";
 
 // Data types that the table can detect
 type DataType = "string" | "number" | "date" | "boolean" | "array" | "object" | "unknown";
@@ -83,8 +84,6 @@ export default function DynamicTable({
   pageSize = 10,
   searchable = true,
   sortable = true,
-  filterable = true,
-  groupable = true,
   model,
 }: DynamicTableProps) {
   // Table state
@@ -112,6 +111,7 @@ export default function DynamicTable({
     queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize],
     queryFn: () => fetchData(),
   });
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(localStorage.getItem(`${model}.table.select`) ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string) : DataSourceMap[model]?.columns ?? []);
 
   async function fetchData() {
     const options = {
@@ -119,28 +119,32 @@ export default function DynamicTable({
       limit: currentPageSize,
       sort: sortConfig ? { [sortConfig.sortby]: sortConfig.direction } : undefined,
       filter: activeFilters.criteria.length > 0 ? activeFilters : undefined,
-      select: DataSourceMap[model]?.columns,
+      select: selectedColumns,
     };
     const tableData = await DataClientAPI.getData({
       modelName: model,
       operation: "GET_DATA",
       request: { options },
     });
-    console.log("Fetched tableData:", tableData);
-    return tableData.docs as Record<string, any>[];
+    const data = tableData.docs.map((doc: Record<string, any>) => {
+      if (DataSourceMap[model].columnConfig) {
+        Object.keys(doc).map((key) => {
+          if (DataSourceMap[model].columnConfig?.[key].parse) {
+            doc[key] = DataSourceMap[model].columnConfig[key].parse(doc[key]);
+          }
+        });
+      }
+      return doc;
+    })
+    console.log("Fetched tableData:", data);
+    return data as Record<string, any>[];
   }
 
-  async function deleteEntry(id: string) {
-    const response = await DataClientAPI.deleteData({
-      modelName: model,
-      request: {
-        operation: "DELETE_DATA",
-        id,
-        data: { id },
-      },
-    });
-    debugger;
+  async function saveSelectedColumns(columns: string[]) {
+    setSelectedColumns(columns);
+    localStorage.setItem(`${model}.table.select`, JSON.stringify(columns));
   }
+  
   // Auto-detect columns if not provided
   const autoDetectedColumns = useMemo(() => {
     if (columns) return columns;
@@ -337,6 +341,9 @@ export default function DynamicTable({
       case "array":
         return Array.isArray(value) ? value.join(", ") : String(value);
       case "object":
+        if(value.text_link && FormatUtil.getFormat(value.text_link) === "url") {
+          return <Link href={value.text_link}>{value.value ?? "Link"}</Link>;
+        }
         return JSON.stringify(value);
       default:
         return String(value);
@@ -588,7 +595,8 @@ export default function DynamicTable({
 
       {/* Filter and grouping buttons */}
       <Input type="text" name="filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
-
+      {/* Select Columns */}
+      <MultiSelect  onValueChange={saveSelectedColumns} value={selectedColumns} options={DataSourceMap[model]?.columns.map((column) => ({ label: column.toUpperCase(), value: column }))} maxCount={5} placeholder="Select Columns"/>
       {/* Table */}
       <div className="rounded-md border">
         {status === "pending"
@@ -705,9 +713,6 @@ export default function DynamicTable({
                           colSpan={autoDetectedColumns.length}
                           className="text-center break-all grid grid-rows-3 grid-cols-1 gap-2"
                         >
-                          <Button variant={"destructive"} onClick={() => deleteEntry(row._id)}>
-                            <Trash2Icon />
-                          </Button>
                           <Button variant={"outline"}>
                             <EditIcon />
                           </Button>

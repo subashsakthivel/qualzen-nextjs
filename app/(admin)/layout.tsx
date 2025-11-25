@@ -1,7 +1,5 @@
-import { authOptions } from "@/lib/authOptions";
 import "../globals.css";
 import type { Metadata } from "next";
-import { getServerSession } from "next-auth";
 import { Noto_Sans } from "next/font/google";
 
 export const metadata: Metadata = {
@@ -15,12 +13,12 @@ const imffcs = Noto_Sans({
   variable: "--font-imffcs",
 });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className="h-full">
       <body className={imffcs.className}>{children}</body>

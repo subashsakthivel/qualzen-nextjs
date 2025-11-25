@@ -1,6 +1,5 @@
 import { TCategorySpecificAttributes } from "@/schema/CategorySpecificAttributes";
 import mongoose from "mongoose";
-import DatabaseUtil from "@/util/dbUtil";
 
 const CategorySpecificAttributesDbSchema = new mongoose.Schema<TCategorySpecificAttributes>({
   attributeName: {

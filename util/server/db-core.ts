@@ -21,6 +21,7 @@ import {
   tGetResponse,
   TUpdate,
   zUpdateQuerySchema,
+  zUpdateueryAndFilter,
 } from "../util-type";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import dbConnect from "@/lib/mongoose";
@@ -29,11 +30,23 @@ import R2Util from "../S3Util";
 import { TProduct } from "@/schema/Product";
 import mongoose from "mongoose";
 
+type UpdateResult = {
+  acknowledged?: boolean,
+  matchedCount?: number,
+  modifiedCount? : number,
+  upsertedId? : number // Only present if 'upsert: true' was used and an insertion occurred
+}
+
+
 type tExecution<T, V> = {
   userId: string;
   callback: (session?: mongoose.ClientSession) => Promise<T>;
   onSuccess?: (response: T) => T | V | Promise<void>;
   onFailure?: () => void | Promise<void>;
+};
+type tUpdateExecution<T, V> = Omit<tExecution<T, V>, "callback"> & {
+  callback: (session?: mongoose.ClientSession) => Promise<UpdateResult | T>;
+
 };
 
 class DBUtil {
@@ -50,7 +63,7 @@ class DBUtil {
     },
     id,
   }: tGetDataParams<T>): Promise<tGetResponse<T>> {
-    await dbConnect();
+    await dbConnect(); // todo : need check
     if (sort) {
       for (const key in sort) {
         sort[key] = sort[key] === "asc" ? "asc" : "desc";
@@ -102,10 +115,10 @@ class DBUtil {
     await dbConnect();
     const { dbModel, schema } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
-    const { data: safeData, error, success } = schema.safeParse(inputData);
+    const { data: safeData, error, success } = schema.parse(inputData);
     if (!success) {
       console.error("Invalid data:", error);
-      throw new Error("Invalid data");
+      throw error;
     }
 
     const execution: tExecution<T, T> = {
@@ -120,23 +133,12 @@ class DBUtil {
       let fileOperation: tFileUploadsTask | undefined;
       if (data instanceof FormData && data.has("fileOperation")) {
         fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
-        await this.fileuploads(safeData, data, fileOperation);
+        await Persistance.fileuploads(safeData, data, fileOperation);
         const inputDataCopy = JSON.parse(JSON.stringify(safeData)) as T;
         execution.onFailure = async () =>
           fileOperation && Persistance.fileDeletes(inputDataCopy, fileOperation);
       }
-      if (operation === "SAVE_EXISTING_DATA") {
-        const existingData = await dbModel.findById(safeData._id);
-        if (!existingData) {
-          throw new Error("Data not found");
-        }
-        if (fileOperation) {
-          execution.onSuccess = async () =>
-            await Persistance.fileDeletes(existingData.lean(), fileOperation);
-        }
-        Object.assign(safeData, existingData);
-        execution.callback = async () => await existingData.save({ upsert: false }).lean();
-      } else if (operation !== "SAVE_DATA") {
+      if (operation !== "SAVE_DATA") {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
       return this.execute(execution);
@@ -150,72 +152,55 @@ class DBUtil {
     modelName,
     operation = "UPDATE_DATA",
     id,
-    filter,
+    updateQuery,
+    queryFilter,
     data,
   }: {
     modelName: tDataModels;
     operation?: string;
     id?: string;
-    filter?: TFilter<T>;
-    data: TUpdate<T> | Partial<T> | Partial<T>[];
+    updateQuery?: TFilter<T>;
+    queryFilter?: TFilter<T>;
+    data: FormData;
   }): Promise<any> {
-    const { dbModel, schema } = DataModelMap[modelName];
-
-    const validateData = (data: TUpdate<T> | Partial<T>) => {
-      const {
-        data: safeData,
+    const { dbModel } = DataModelMap[modelName];
+    const {
+        data: updateQueryAndFilter,
         error,
         success,
-      } = Array.isArray(data) ? zUpdateQuerySchema.safeParse(data) : schema.safeParse(data);
-      if (!success) {
+    } =  zUpdateueryAndFilter.safeParse({updateQuery, queryFilter});
+    if (!success) {
         console.error("Invalid data:", error);
         throw new Error("Invalid data");
-      }
-      return safeData;
-    };
-
+    }
+    
     try {
+      const query = this.parseUpdateQuery(updateQueryAndFilter.updateQuery as TUpdate<T>)
+      const queryFilter = this.parseFilterQuery(updateQueryAndFilter.queryFilter as TFilter<T>);
+      const fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
+      await this.fileuploads(updateQuery, data, fileOperation);
+      const execution: tUpdateExecution<T, T> = {
+        userId: "",
+        callback: async () => {
+          return await dbModel.updateOne(queryFilter, query) as UpdateResult | T
+        },
+        onFailure: () => fileOperation && Persistance.fileDeletes(updateQuery, fileOperation),
+      };
       switch (operation) {
-        case "UPDATE_DATA_V2":
+        case "UPDATE_DATA":
+          execution.callback = async () => (await dbModel.findOneAndUpdate({_id : id}, query, { runValidators : true}) as Promise<UpdateResult | T>)
           break;
-        case "UPDATE_DATA_V1.2":
-          if (id) {
-            const safeData = validateData(data as TUpdate<T>);
-            return await dbModel.findByIdAndUpdate(id, safeData);
-          }
-          break;
-        case "UPDATE_DATA_V1.1":
-          if (filter) {
-            const updateQuery = this.parseUpdateQuery(data as TUpdate<T>);
-            const queryFilter = this.parseFilterQuery(filter);
-            return await dbModel.updateMany(queryFilter, updateQuery, {
+        case "UPDATE_DATA_MANY":
+          execution.callback = async () => (await dbModel.updateMany(queryFilter, query, {
               multi: true,
               upsert: true,
-            });
-          }
-          break;
-        case "UPDATE_DATA":
-          if (filter) {
-            const updateQuery = this.parseUpdateQuery(data as TUpdate<T>);
-            const queryFilter = this.parseFilterQuery(filter);
-            return await dbModel.updateMany(queryFilter, updateQuery, {
-              multi: true,
-              upsert: false,
-            });
-          }
-          break;
-        case "REPLACE_DATA":
-          const modifiedData = Array.isArray(data)
-            ? data.map((d) => validateData(d as Partial<T>))
-            : validateData(data);
-          return Array.isArray(data)
-            ? data.map(async (d) => await dbModel.replaceOne({ _id: (d as any)._id }, d))
-            : await dbModel.replaceOne({ _id: (modifiedData as any)._id }, modifiedData);
+              runValidators : true
+            }) as UpdateResult | T);
           break;
         default:
           throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
-      throw new Error(`Invalid parameters for operation ${operation}`);
+      return this.execute(execution);
     } catch (err) {
       throw new Error("Data updating failed");
     }
@@ -312,14 +297,9 @@ class DBUtil {
   protected parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
     const updateQuery: UpdateQuery<T> = {};
 
-    for (const { field, operator, value } of updates) {
-      const ope = `$${operator}` as keyof UpdateQuery<T>;
-
-      if (!updateQuery[ope]) {
-        updateQuery[ope] = {} as any;
-      }
-
-      (updateQuery[ope] as any)[field as string] = value;
+    for (const update  in Object.keys(updates)) {
+      const ope = `$${update}` as keyof UpdateQuery<T>;
+      updateQuery[ope] = updates[update as keyof TUpdate<T>];
     }
 
     return updateQuery;
@@ -378,15 +358,15 @@ class DBUtil {
     callback,
     onSuccess,
     onFailure,
-  }: tExecution<T, V>): Promise<T | undefined> {
+  }: tExecution<T, V> | tUpdateExecution<T, V>): Promise<T | undefined> {
     const session = await mongoose.startSession();
     try {
       const result = await session.withTransaction(async () => {
         const response = await callback(session);
-        if (onSuccess) await onSuccess(response);
+        if (onSuccess) await onSuccess(response as any);
         return response;
       });
-      return result;
+      return result as any;
     } catch (err) {
       console.error(userId, "Execution error:", err);
       if (session.inTransaction()) {

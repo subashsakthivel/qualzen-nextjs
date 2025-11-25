@@ -14,26 +14,6 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: String,
     required: false,
   },
-  sku: {
-    type: String,
-    required: false,
-  },
-  price: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  sellingPrice: {
-    type: Number,
-    required: false,
-    min: 0,
-  },
-  stockQuantity: {
-    type: Number,
-    required: true,
-    min: 0,
-    default: 0,
-  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
@@ -68,18 +48,12 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: [String],
     default: [],
   },
-  isActive: {
-    type: Boolean,
-    default: true,
-  },
-  instructions: {
-    type: String,
-  },
   otherdetails: {
     type: String,
   },
   relatedLinks: {
-    type: [String],
+    type: [{ name: String, url: String }],
+    default: [],
   },
   createdAt: {
     type: Date,
@@ -99,6 +73,7 @@ ProductDBSchema.post("save", async function (doc, next) {
     next(err as Error);
   }
 });
+
 ProductDBSchema.post("find", async function (docs: TProduct[] | null, next) {
   if (docs) {
     docs.map(async (doc) => {
