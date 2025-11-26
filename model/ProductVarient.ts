@@ -34,10 +34,12 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
       name: {
         type: String,
         required: true,
+        index: true,
       },
       value: {
         type: String,
         required: true,
+        index: true,
       },
       sortOrder: {
         type: Number,

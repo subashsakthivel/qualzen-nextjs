@@ -9,6 +9,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     type: String,
     required: true,
     trim: true,
+    index: true,
   },
   description: {
     type: String,
@@ -32,10 +33,12 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
       name: {
         type: String,
         required: true,
+        index: true,
       },
       value: {
         type: String,
         required: true,
+        index: true,
       },
       sortOrder: {
         type: Number,

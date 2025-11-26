@@ -69,11 +69,16 @@ CategoryDbSchema.post("deleteMany", async function (docs: TCategory[] | null, ne
 });
 
 CategoryDbSchema.pre("updateOne", async function (next) {
-  const doc = await this.findOne(this.getFilter())
-  //todo :  if update query contains image update delete the old one
-
+  const update = this.getUpdate()
+  console.log(update)
+  if (update && !Array.isArray(update) && update.$set && update.$set.image) {
+    const doc = await this.model.findOne(this.getQuery())
+    if (doc && doc.image) {
+      await R2Util.deleteFile(doc.image);
+    }
+  }
   next();
-})
+});
 
 
 CategoryDbSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
