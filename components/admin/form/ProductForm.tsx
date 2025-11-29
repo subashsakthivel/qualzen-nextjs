@@ -40,7 +40,6 @@ import axios from "axios";
 import { redirect } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { TCategory } from "@/schema/Category";
-import { DataSourceMap } from "@/model/DataSourceMap";
 import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
@@ -51,21 +50,19 @@ type TVariant = TProductVariant & {
   predefinedAttributes: TProductVariant["attributes"];
   imageFiles: File[];
 };
-export default function ProductForm({ categories }: { categories: TCategory[] }) {
-  const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>([]);
-  const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
-  const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<
-    TCategory["attributes"]
-  >([]);
+export default function ProductForm({ categories, product }: { categories: TCategory[] , product?: TProduct }) {
+  const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
+  const [attributes, setAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
-  const [tags, setTags] = useState<string[]>([]);
-  const [varients, setVarients] = useState<TVariant[]>([]);
+  const [tags, setTags] = useState<string[]>(product?.tags || []);
+  const [varients, setVarients] = useState<TVariant[]>(product?.variants as TVariant[] || []);
+  const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
   const [curVarient, setCurentVarient] = useState<number>(-1);
 
   const mutation = useMutation({
     mutationFn: async (request: FormData) =>
       await DataClientAPI.saveData({ modelName: "product", request }),
-    // onSuccess: () => redirect("/"),
+    onSuccess: () => redirect("/"),
   });
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
@@ -104,101 +101,56 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
       if (!imageFiles || imageFiles.length === 0) {
         throw new Error("Please upload at least one image.");
       }
-      if (imageFiles && imageFiles.length > 9) {
-        throw new Error("You can only upload a maximum of 9 images.");
+      if (imageFiles && imageFiles.length > 5) {
+        throw new Error("You can only upload a maximum of 5 images.");
       }
-      debugger;
+      if(varients.length==0) {
+        throw new Error("Please add at least one variant.");
+      }
+      // todo : zod check before request
       const productForm = new FormData();
       const fileOperation = [{ path: "images", multi: true }];
-      if (varients.length == 0) {
-        const imageNames: string[] = [];
-        imageFiles.forEach((imageFile) => {
+      const imageNames: string[] = [];
+
+      imageFiles.forEach((imageFile) => {
           const name = uuidv4();
           imageNames.push(name);
           productForm.append(name, imageFile);
-        });
+      });
 
-        const product: TProductFormData = {
-          name: formData.get("name") as string,
-          category: formData.get("category") as string,
-          description: formData.get("description") as string,
-          brand: formData.get("brand") as string,
-          tags: tags,
-          sku: formData.get("sku") as string,
-          price: Number.parseFloat(formData.get("price") as string),
-          sellingPrice: Number.parseFloat(formData.get("sellingPrice") as string),
-          stockQuantity: Number.parseInt(formData.get("stockQuantity") as string),
-          attributes: [...attributes, ...predefinedAttributes],
-          variants: [],
-          images: imageNames,
-          isActive: formData.get("status") === "active",
-        };
-
-        productForm.append("fileOperation", JSON.stringify(fileOperation));
-        productForm.append("operation", "SAVE_DATA");
-        productForm.append("data", JSON.stringify(product));
-        debugger;
-      } else {
-        const imageNames: string[] = [];
-
-        imageFiles.forEach((imageFile) => {
-          const name = uuidv4();
-          imageNames.push(name);
-          productForm.append(name, imageFile);
-        });
-        varients.map((variant) => {
+      varients.map((variant , index) => {
           variant.imageFiles.forEach((imageFile) => {
             const name = uuidv4();
             variant.images.push(name);
             productForm.append(name, imageFile);
           });
-          if (variant.sellingPrice == 0) {
-            variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
-          }
-        });
-
-        varients.map((varaint, index) => {
-          if (varaint.images.length > 0) {
+          if (variant.images.length > 0) {
             fileOperation.push({ path: `variants.${index}.images`, multi: true });
           }
-        });
+          variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
+      });
 
-        const stockQuantity =
-          varients.length > 0
-            ? varients.reduce((acc, variant) => acc + variant.stockQuantity, 0)
-            : Number.parseInt(formData.get("stockQuantity") as string);
-        const product: TProductFormData = {
+      const product: TProductFormData = {
           name: formData.get("name") as string,
           category: formData.get("category") as string,
           description: formData.get("description") as string,
           brand: formData.get("brand") as string,
+          slug: formData.get("slug") as string,
           tags: tags,
-          sku: formData.get("sku") as string,
-          price: Number.parseFloat(formData.get("price") as string),
-          sellingPrice: Number.parseFloat(formData.get("sellingPrice") as string),
-          stockQuantity: stockQuantity,
-          attributes: [...attributes],
+          images: imageNames,
+          attributes: [...attributes].filter((att) => att.value !== ""),
           variants: varients.map(({ imageFiles, predefinedAttributes, ...variant }) => ({
             ...variant,
             attributes: [...variant.attributes, ...predefinedAttributes].filter(
               (att) => att.value && att.value !== ""
             ),
-          })),
-          images: imageNames,
-          isActive: formData.get("status") === "active",
-        };
-        productForm.append("fileOperation", JSON.stringify(fileOperation));
-        productForm.append("data", JSON.stringify(product));
-        productForm.append("operation", "SAVE_DATA");
-        debugger;
-      }
+          }))
+      };
+      productForm.append("fileOperation", JSON.stringify(fileOperation));
+      productForm.append("data", JSON.stringify(product));
+      productForm.append("operation", "SAVE_DATA");
 
-      // const response = await fetch("/api/dataAPI/product", {
-      //   body: productForm,
-      //   method: "POST",
-      // });
       mutation.mutate(productForm);
-      //console.log(await response.json());
     } catch (err) {
       console.log(err);
     }
@@ -208,8 +160,8 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
     const predefinedAttributes = categorySpecificAttributes
       .filter((attr) => typeof attr !== "string")
       .map((attr) => ({
-        name: attr.attributeName,
-        value: attr.allowedValues[0],
+        name: attr.name,
+        value: attr.value,
         sortOrder: attr.sortOrder,
       }));
     const newVarient: TVariant = {
@@ -229,21 +181,14 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
     setVarients([...varients]);
   }
 
-  function onCategoryChange(categoryId: string) {
-    const attributes = categories.find((category) => category._id === categoryId)!.attributes;
-    const predefinedAttr: TProduct["attributes"] = attributes
-      .filter((attr) => typeof attr !== "string")
-      .map((attribute) => {
-        return {
-          name: attribute.attributeName,
-          value: typeof attribute.allowedValues[0] === "string" ? attribute.allowedValues[0] : "",
-          sortOrder: attribute.sortOrder,
-        };
-      });
-    setVarients(varients.map((varient) => ({ ...varient, predefinedAttributes: predefinedAttr })));
-    setPredefinedAttributes(predefinedAttr);
-    debugger;
-    setCategorySpecificAttributes(attributes);
+  async function onCategoryChange(categoryId: string) {
+    const sampleProduct  = await DataClientAPI.getData({modelName : "product", operation : "GET_DATA", request : {options : {category : categoryId}}})
+    if(sampleProduct && sampleProduct.data ){
+      const product = sampleProduct.doc[0];
+      setVarients(product.variants);
+      setPredefinedAttributes(product.attributes);
+      setCategorySpecificAttributes(product.attributes);
+    }
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
@@ -364,48 +309,15 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
                     <Input id="brand" name="brand" type="text" className="w-full" />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="price">Price</Label>
-                    <Input id="price" name="price" type="number" className="w-full" />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="sellingPrice">Selling Price</Label>
-                    <Input id="sellingPrice" name="sellingPrice" type="number" className="w-full" />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" name="sku" type="text" className="w-full" />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">Stock</Label>
-                    <Input
-                      id="stockQuantity"
-                      name="stockQuantity"
-                      type="number"
-                      className="w-full"
-                    />
+                    <Label htmlFor="slug">Slug</Label>
+                    <Input id="slug" name="slug" type="text" className="w-full" />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* <Card x-chunk="dashboard-07-chunk-1" className={varients.length > 0 ? "hidden" : ""}>
-                <CardHeader>
-                  <CardTitle>Price</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-3">
-                    <Label htmlFor="stockQuantity">Stock</Label>
-                    <Input
-                      id="stockQuantity"
-                      name="stockQuantity"
-                      type="number"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card> */}
               <Card x-chunk="dashboard-07-chunk-1" className={varients.length > 0 ? "hidden" : ""}>
                 <CardHeader>
-                  <CardTitle>Predefined Attributes</CardTitle>
+                  <CardTitle>Attributes</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -417,55 +329,25 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
                     </TableHeader>
                     <TableBody>
                       {categorySpecificAttributes
-                        .filter((attribute) => typeof attribute !== "string")
-                        .filter((attribute) => attribute.isMandatoryForProduct)
                         .map((attribute, index) => (
                           <TableRow key={index} className="">
                             <TableCell className="align-top">
-                              <Label>{attribute.attributeName}</Label>
+                              <Label>{attribute.name}</Label>
                             </TableCell>
-                            <TableCell>
-                              <Label className="sr-only">Options</Label>
-                              {attribute.attributeType === "select" ? (
-                                <Select
-                                  onValueChange={(value) => {
-                                    const attrObj = predefinedAttributes.find(
-                                      (attr) => attr.name === attribute.attributeName
-                                    );
-                                    if (attrObj) {
-                                      attrObj.value = value;
-                                      setPredefinedAttributes([...predefinedAttributes]);
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger
-                                    aria-label="Select subcategory"
-                                    className={"w-[180px]"}
-                                  >
-                                    <SelectValue placeholder="Select subcategory" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {attribute.allowedValues.map((value, i: number) => (
-                                      <SelectItem key={i} value={value}>
-                                        {value}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <Input
-                                  type="text"
-                                  onChange={(e) => {
-                                    const attrObj = predefinedAttributes.find(
-                                      (attr) => attr.name === attribute.attributeName
-                                    );
-                                    if (attrObj) {
-                                      attrObj.value = e.target.value;
-                                      setPredefinedAttributes([...predefinedAttributes]);
-                                    }
-                                  }}
-                                />
-                              )}
+                            <TableCell className="align-top">
+                              <Input
+                                type="text"
+                                value={attribute.value}
+                                onChange={(e) => {
+                                  const attrObj = predefinedAttributes.find(
+                                    (attr) => attr.name === attribute.name
+                                  );
+                                  if (attrObj) {
+                                    attrObj.value = e.target.value;
+                                    setPredefinedAttributes([...predefinedAttributes]);
+                                  }
+                                }}
+                              />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -698,54 +580,27 @@ export default function ProductForm({ categories }: { categories: TCategory[] })
                       <TableBody>
                         {categorySpecificAttributes
                           .filter((attribute) => typeof attribute !== "string")
-                          .filter((attribute) => attribute.isMandatoryForVariant)
                           .map((attribute, index) => (
                             <TableRow key={index} className="">
                               <TableCell className="align-top">
-                                <Label>{attribute.attributeName}</Label>
+                                <Label>{attribute.name}</Label>
                               </TableCell>
-                              <TableCell>
-                                <Label className="sr-only">Options</Label>
-                                {attribute.attributeType === "select" ? (
-                                  <Select
-                                    onValueChange={(value) => {
-                                      const attrObj = varient.predefinedAttributes.find(
-                                        (attr) => attr.name === attribute.attributeName
-                                      );
-                                      if (attrObj) {
-                                        attrObj.value = value;
-                                        setVarients([...varients]);
-                                      }
-                                    }}
-                                  >
-                                    <SelectTrigger
-                                      aria-label="Select subcategory"
-                                      className={"w-[180px]"}
-                                    >
-                                      <SelectValue placeholder="Select subcategory" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {attribute.allowedValues.map((value, i: number) => (
-                                        <SelectItem key={i} value={value}>
-                                          {value}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Input
-                                    type="text"
-                                    onChange={(e) => {
-                                      const attrObj = varient.predefinedAttributes.find(
-                                        (attr) => attr.name === attribute.attributeName
-                                      );
-                                      if (attrObj) {
-                                        attrObj.value = e.target.value;
-                                        setVarients([...varients]);
-                                      }
-                                    }}
-                                  />
-                                )}
+                              <TableCell className="align-top">
+                                <Input
+                                  type="text"
+                                  value={varient.predefinedAttributes.find(
+                                    (attr) => attr.name === attribute.name
+                                  )?.value}
+                                  onChange={(e) => {
+                                    const attrObj = varient.predefinedAttributes.find(
+                                      (attr) => attr.name === attribute.name
+                                    );
+                                    if (attrObj) {
+                                      attrObj.value = e.target.value;
+                                      setVarients([...varients]);
+                                    }
+                                  }}
+                                />
                               </TableCell>
                             </TableRow>
                           ))}

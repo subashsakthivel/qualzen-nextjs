@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Card, CardTitle, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,17 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { TCategory } from "@/schema/Category";
 import { useRouter } from "next/navigation";
-import { PlusCircle, RefreshCcwIcon, Trash2Icon, Upload } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import TagInput from "@/components/ui/taginput";
-import { TCategorySpecificAttributes } from "@/schema/CategorySpecificAttributes";
+import { RefreshCcwIcon, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import DataClientAPI from "@/util/client/data-client-api";
 import Image from "next/image";
@@ -37,19 +27,22 @@ const model = "category";
 
 const CategoryForm = ({
   categories,
-  existingAttributes,
   category,
 }: {
   categories: TCategory[];
-  existingAttributes: TCategorySpecificAttributes[];
-  category?: TCategory & { attributes: TCategorySpecificAttributes[] };
+  category?: TCategory;
 }) => {
   const router = useRouter();
-  const [attributes, setAttributes] = React.useState<TCategorySpecificAttributes[]>(category?.attributes || []);
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
 
   const mutation = useMutation({
-    mutationFn: (request: FormData) => DataClientAPI.saveData({ modelName: model, request }),
+    mutationFn: async(request: FormData) => {
+      if (category) {
+        return await DataClientAPI.patchData({modelName: model , request})
+      } else {
+        return await DataClientAPI.saveData({modelName: model , request})
+      }
+    },
     onSuccess: () => router.push("/table/category"),
   });
 
@@ -63,38 +56,32 @@ const CategoryForm = ({
 
   const handleCreatePost = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!imageFile) return;
 
     const formData = new FormData(event.currentTarget);
-    const imageName = uuidv4();
+    const imageName =  uuidv4();
     const parentCategory = formData.get("parentCategory") as string;
-    const productAttributes = attributes.map((attr) => (attr._id ? attr._id : attr));
 
     const data: TCategory = {
       name: formData.get("name") as string,
       image: imageName,
       description: formData.get("description") as string,
       parentCategory: !parentCategory || parentCategory === "none" ? null : parentCategory,
-      attributes: productAttributes,
     };
-
-    const fileOperation = [];
-    if (data.image) {
-      fileOperation.push({ path: "image", multi: false });
-      if (category?.image) {
-        fileOperation.push({ path: "image", multi: false , delete: true});
-      }
-    }
     const request = new FormData();
-    request.append("operation", category ? "UPDATE_DATA_V1.2" : "SAVE_DATA");
-    request.append("fileOperation", JSON.stringify(fileOperation));
-    request.append(imageName, imageFile);
     if(category && category._id) {
       request.append("id", category._id);
-      request.append("data", JSON.stringify(CommonUtil.getDiff(category , data)));
+      request.append("opeation", "UPDATE_DATA_V1.2");
     } else {
-      request.append("data", JSON.stringify(data));
+      request.append("opeation", "SAVE_DATA");
     }
+  
+    if (imageFile) {
+      const fileOperation = [];
+      fileOperation.push({ path: "image", multi: false });
+      request.append("fileOperation", JSON.stringify(fileOperation));
+      request.append(imageName, imageFile);
+    }
+    
     mutation.mutate(request);
   };
 
@@ -198,170 +185,6 @@ const CategoryForm = ({
                   </label>
                 </div>
               </CardContent>
-            </Card>
-
-            {/* Attributes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Attributes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead></TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Allowed Values</TableHead>
-                      <TableHead>Mandatory For Product</TableHead>
-                      <TableHead>Mandatory For Variant</TableHead>
-                      <TableHead>Order</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attributes.map((attr, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Trash2Icon
-                            className="h-3.5 w-3.5 cursor-pointer"
-                            onClick={() => setAttributes(attributes.filter((_, i) => i !== index))}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={attr.attributeName}
-                            onChange={(e) => {
-                              attr.attributeName = e.target.value;
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={attr.attributeType}
-                            onValueChange={(v) => {
-                              attr.attributeType =
-                                v as TCategorySpecificAttributes["attributeType"];
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["text", "number", "select", "checkbox", "radio"].map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {type.toUpperCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <TagInput
-                            defaulttags={attr.allowedValues || []}
-                            onTagValueChange={(tags) => {
-                              if (!!attr._id) return;
-                              attr.allowedValues = tags;
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={attr.isMandatoryForProduct ? "true" : "false"}
-                            onValueChange={(v) => {
-                              attr.isMandatoryForProduct = v === "true";
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">Yes</SelectItem>
-                              <SelectItem value="false">No</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={attr.isMandatoryForVariant ? "true" : "false"}
-                            onValueChange={(v) => {
-                              attr.isMandatoryForVariant = v === "true";
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">Yes</SelectItem>
-                              <SelectItem value="false">No</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={attr.sortOrder}
-                            min={0}
-                            onChange={(e) => {
-                              attr.sortOrder = Math.round(Number(e.target.value));
-                              setAttributes([...attributes]);
-                            }}
-                            disabled={!!attr._id}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-              <CardFooter className="justify-center border-t p-4 flex gap-4">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1"
-                  onClick={() =>
-                    setAttributes([
-                      ...attributes,
-                      {
-                        attributeName: "",
-                        allowedValues: [],
-                        attributeType: "text",
-                        isMandatoryForProduct: true,
-                        isMandatoryForVariant: true,
-                        sortOrder: 0,
-                      },
-                    ])
-                  }
-                >
-                  <PlusCircle className="h-3.5 w-3.5" /> Add Attribute
-                </Button>
-                <Select
-                  onValueChange={(v) =>
-                    setAttributes([...attributes, existingAttributes[Number(v)]])
-                  }
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Add Existing Attributes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {existingAttributes.map((val, i) => (
-                      <SelectItem key={i} value={String(i)}>
-                        {val.attributeName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardFooter>
             </Card>
           </div>
         </div>

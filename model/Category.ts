@@ -17,13 +17,6 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>({
     ref: "Category",
     default: null,
   },
-  attributes: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CategorySpecificAttributes",
-      default: null,
-    },
-  ],
   createdAt: {
     type: Date,
     default: Date.now,

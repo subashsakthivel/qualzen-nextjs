@@ -20,6 +20,12 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
     ref: "Category",
     required: true,
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
+  },
   brand: {
     type: String,
     required: false,

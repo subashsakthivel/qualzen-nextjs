@@ -108,6 +108,36 @@ class DataServiceClass {
     }
   }
 
+  async patchData({
+    modelName,
+    request,
+  }: {
+    modelName: tDataModels;
+    request: any;
+  }): Promise<{ success: boolean; data: any; message?: string }> {
+    try {
+      const { url } = DataSourceMap[modelName];
+
+      const response = await fetch(url, { body: request, method: "PATCH" });
+
+      const resJson = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resJson.message || "Request failed");
+      }
+
+      return { success: true, data: resJson.data };
+    } catch (err) {
+      debugger;
+      console.error("Error posting data:", err);
+      return {
+        success: false,
+        data: null,
+        message: err instanceof Error ? err.message : "Unknown error",
+      };
+    }
+  }
+
   async deleteData({ modelName, request }: { modelName: tDataModels; request: any }) {
     try {
       const { url } = DataSourceMap[modelName];

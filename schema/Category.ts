@@ -10,7 +10,6 @@ export const CategorySchema = z.object({
   parentCategory: z
     .union([z.string(), z.lazy((): z.ZodTypeAny => CategorySchema), z.null()])
     .optional(),
-  attributes: z.array(z.union([z.string(), categorySpecificAttributesSchema])),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });

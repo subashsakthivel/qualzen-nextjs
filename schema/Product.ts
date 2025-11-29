@@ -16,6 +16,7 @@ export const ProductSchema = z.object({
   description: z.string(),
   images: z.array(z.string()).min(1).max(10),
   brand: z.string().optional(),
+  slug : z.string(),
   attributes: z.array(ProductAttributeSchema).max(6),
   variants: z.array(ProductVariantSchema).min(1).max(10),
   tags: z.array(z.string()).max(3).default([]),
