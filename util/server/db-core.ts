@@ -80,9 +80,11 @@ class DBUtil {
     // todo : add filter validation
     // todo : add group-by
     // todo : operation invalid error
+
     try {
       const { dbModel } = DataModelMap[modelName];
       const queryFilter = this.parseFilterQuery(filter);
+
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
         userId: "",
@@ -115,9 +117,9 @@ class DBUtil {
     await dbConnect();
     const { dbModel, schema } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
-    const { data: safeData, error, success } = schema.parse(inputData);
+    const { data: safeData, error, success } = schema.safeParse(inputData);
     if (!success) {
-      console.error("Invalid data:", error);
+      console.error("Invalid data:", error , inputData);
       throw error;
     }
 
@@ -130,9 +132,8 @@ class DBUtil {
     };
 
     try {
-      let fileOperation: tFileUploadsTask | undefined;
       if (data instanceof FormData && data.has("fileOperation")) {
-        fileOperation = JSON.parse(data.get("fileOperation") as string) as tFileUploadsTask;
+        const fileOperation = JSON.parse(data.get("fileOperation") as string ?? "[]") as tFileUploadsTask;
         await Persistance.fileuploads(safeData, data, fileOperation);
         const inputDataCopy = JSON.parse(JSON.stringify(safeData)) as T;
         execution.onFailure = async () =>
@@ -143,6 +144,7 @@ class DBUtil {
       }
       return this.execute(execution);
     } catch (err) {
+      console.error("Error saving data:", err);
       if (execution.onFailure) await execution.onFailure();
       throw new Error("Data saving failed");
     }

@@ -32,7 +32,9 @@ CategoryDbSchema.post("find", async function (docs: TCategory[] | null, next) {
     docs
       .filter((d) => d.image)
       .map(async (doc) => {
-        doc.image = await R2Util.getObjectUrl(doc.image);
+        if(doc.image) {
+          doc.image = await R2Util.getObjectUrl(doc.image);
+        }
       });
   }
   next();

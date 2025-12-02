@@ -86,6 +86,7 @@ export default function DynamicTable({
   sortable = true,
   model,
 }: DynamicTableProps) {
+
   // Table state
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,15 +112,18 @@ export default function DynamicTable({
     queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize],
     queryFn: () => fetchData(),
   });
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(localStorage.getItem(`${model}.table.select`) ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string) : DataSourceMap[model]?.columns ?? []);
-
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  useEffect(() => {
+    const selectedColumns = localStorage.getItem(`${model}.table.select`) ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string) : DataSourceMap[model]?.columns ?? [];
+    setSelectedColumns(selectedColumns);
+  }, []);
   async function fetchData() {
     const options = {
       page: currentPage,
       limit: currentPageSize,
       sort: sortConfig ? { [sortConfig.sortby]: sortConfig.direction } : undefined,
       filter: activeFilters.criteria.length > 0 ? activeFilters : undefined,
-      select: selectedColumns,
+      select: selectedColumns.join(" ") + " -_id",
     };
     const tableData = await DataClientAPI.getData({
       modelName: model,
@@ -141,8 +145,8 @@ export default function DynamicTable({
   }
 
   async function saveSelectedColumns(columns: string[]) {
-    setSelectedColumns(columns);
     localStorage.setItem(`${model}.table.select`, JSON.stringify(columns));
+    fetchData();
   }
   
   // Auto-detect columns if not provided

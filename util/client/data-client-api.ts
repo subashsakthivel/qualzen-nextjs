@@ -91,14 +91,12 @@ class DataServiceClass {
 
       const resJson = await response.json();
 
-      debugger;
       if (!response.ok) {
         throw new Error(resJson.message || "Request failed");
       }
 
       return { success: true, data: resJson.data };
     } catch (err) {
-      debugger;
       console.error("Error posting data:", err);
       return {
         success: false,

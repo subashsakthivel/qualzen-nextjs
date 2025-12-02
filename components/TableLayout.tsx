@@ -20,7 +20,7 @@ export default function TableLayout({
           <CardTitle>{model.toString().toUpperCase()}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value="table">
+          <Tabs>
             <TabsList className="mb-4">
               <TabsTrigger value="table">VIEW</TabsTrigger>
               <TabsTrigger value="data">ADD {model.toString().toUpperCase()}</TabsTrigger>

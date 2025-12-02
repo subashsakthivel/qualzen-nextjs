@@ -15,11 +15,7 @@ class DataAPIclass {
   }): Promise<any> {
     try {
       const { id, options } = request;
-      const { cacheKey } = DataModelMap[modelName];
-      // const operationCacheKey = cacheKey + "-" + operation;
-      // if (localcache.has(operationCacheKey)) {
-      //   return localcache.get(operationCacheKey);
-      // }
+
       const response = await Persistance.getData({
         modelName,
         operation,
@@ -44,17 +40,11 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const { cacheKey } = DataModelMap[modelName];
       const response = await Persistance.saveData({ modelName, operation, data: request });
-      localcache.entries().forEach(([key]) => {
-        if (key.startsWith(cacheKey)) {
-          localcache.delete(key);
-        }
-      });
       return response;
     } catch (err) {
-      console.error("Error in getData:", err);
-      throw new Error("Failed to fetch data");
+      console.error("Error in saveData:", err);
+      throw new Error("Failed to add data");
     }
   }
 

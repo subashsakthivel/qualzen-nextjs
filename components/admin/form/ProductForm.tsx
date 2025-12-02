@@ -3,10 +3,6 @@ import Image from "next/image";
 import {
   PlusCircle,
   RefreshCcwIcon,
-  RemoveFormattingIcon,
-  Router,
-  ShieldCloseIcon,
-  Skull,
   Trash2Icon,
   Upload,
   X,
@@ -51,7 +47,6 @@ type TVariant = TProductVariant & {
   imageFiles: File[];
 };
 export default function ProductForm({ categories, product }: { categories: TCategory[] , product?: TProduct }) {
-  const [predefinedAttributes, setPredefinedAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
   const [attributes, setAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
   const [tags, setTags] = useState<string[]>(product?.tags || []);
@@ -183,10 +178,9 @@ export default function ProductForm({ categories, product }: { categories: TCate
 
   async function onCategoryChange(categoryId: string) {
     const sampleProduct  = await DataClientAPI.getData({modelName : "product", operation : "GET_DATA", request : {options : {category : categoryId}}})
-    if(sampleProduct && sampleProduct.data ){
+    if(sampleProduct && sampleProduct.doc.length > 0 ){
       const product = sampleProduct.doc[0];
       setVarients(product.variants);
-      setPredefinedAttributes(product.attributes);
       setCategorySpecificAttributes(product.attributes);
     }
   }
@@ -315,49 +309,9 @@ export default function ProductForm({ categories, product }: { categories: TCate
                 </CardContent>
               </Card>
 
-              <Card x-chunk="dashboard-07-chunk-1" className={varients.length > 0 ? "hidden" : ""}>
-                <CardHeader>
-                  <CardTitle>Attributes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Options</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categorySpecificAttributes
-                        .map((attribute, index) => (
-                          <TableRow key={index} className="">
-                            <TableCell className="align-top">
-                              <Label>{attribute.name}</Label>
-                            </TableCell>
-                            <TableCell className="align-top">
-                              <Input
-                                type="text"
-                                value={attribute.value}
-                                onChange={(e) => {
-                                  const attrObj = predefinedAttributes.find(
-                                    (attr) => attr.name === attribute.name
-                                  );
-                                  if (attrObj) {
-                                    attrObj.value = e.target.value;
-                                    setPredefinedAttributes([...predefinedAttributes]);
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
               <Card x-chunk="dashboard-07-chunk-1">
                 <CardHeader>
-                  <CardTitle>Additional attributes</CardTitle>
+                  <CardTitle>Attributes</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>

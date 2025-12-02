@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { ObjectIdSchema } from "./Common";
-import { categorySpecificAttributesSchema } from "./CategorySpecificAttributes";
 
 export const CategorySchema = z.object({
   _id: z.union([z.string(), ObjectIdSchema]).optional(),
   name: z.string(),
-  image: z.string(),
+  image: z.string().optional(),
   description: z.string().optional(),
   parentCategory: z
     .union([z.string(), z.lazy((): z.ZodTypeAny => CategorySchema), z.null()])

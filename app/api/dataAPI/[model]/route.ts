@@ -67,13 +67,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
       dataReq.request = data;
     } else if (req.headers.get("Content-Type")?.includes("multipart/form-data")) {
       const formData = await req.formData();
-      const operation = formData.get("operation") as string;
-      dataReq.operation = operation;
+      dataReq.operation = formData.get("operation") as string;
       dataReq.request = formData;
     } else {
       throw new Error("Unsupported content type");
     }
-    //todo : check if request and operation and modelName are valid
+    //todo : check if request and operation and modelName are valid with zod
     const responseData = await DataAPI.saveData(dataReq);
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {

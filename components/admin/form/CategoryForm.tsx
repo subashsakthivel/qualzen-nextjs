@@ -21,7 +21,7 @@ import DataClientAPI from "@/util/client/data-client-api";
 import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
 import FormatUtil from "@/util/formetUtil";
-import { CommonUtil } from "@/util/util";
+
 
 const model = "category";
 
@@ -47,9 +47,6 @@ const CategoryForm = ({
   });
 
   const onImageFileChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
-    if(category?.image) {
-      category.image = "/#";
-    }
     if (!ev.target.files?.length) return;
     setImageFile(ev.target.files[0]);
   };
@@ -63,36 +60,29 @@ const CategoryForm = ({
 
     const data: TCategory = {
       name: formData.get("name") as string,
-      image: imageName,
       description: formData.get("description") as string,
       parentCategory: !parentCategory || parentCategory === "none" ? null : parentCategory,
     };
     const request = new FormData();
-    if(category && category._id) {
-      request.append("id", category._id);
-      request.append("opeation", "UPDATE_DATA_V1.2");
-    } else {
-      request.append("opeation", "SAVE_DATA");
-    }
-  
     if (imageFile) {
       const fileOperation = [];
       fileOperation.push({ path: "image", multi: false });
-      request.append("fileOperation", JSON.stringify(fileOperation));
+      data.image = imageName;
       request.append(imageName, imageFile);
+      request.append("fileOperation", JSON.stringify(fileOperation));
+    } else if(formData.get("image") as string){
+      data.image = formData.get("image") as string;
     }
-    
-    mutation.mutate(request);
-  };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
-    if (
-      event.key === "Enter" &&
-      event.target instanceof HTMLElement &&
-      event.target.tagName.toLowerCase() !== "textarea"
-    ) {
-      event.preventDefault();
+    if(category && category._id) {
+      request.append("id", category._id);
+      request.append("operation", "UPDATE_DATA_V1.2");
+    } else {
+      request.append("operation", "SAVE_DATA");
+      request.append("data", JSON.stringify(data));
     }
+
+    mutation.mutate(request);
   };
 
   return (
@@ -101,7 +91,6 @@ const CategoryForm = ({
         className="grid flex-1 auto-rows-max gap-4"
         autoComplete="off"
         onSubmit={handleCreatePost}
-        onKeyDown={handleKeyDown}
       >
         <div className="flex items-center gap-4">
           <h1 className="flex-1 text-xl font-semibold tracking-tight">Category Form</h1>
@@ -131,10 +120,10 @@ const CategoryForm = ({
                     className="min-h-32"
                   />
                 </div>
-                <div className="grid gap-3">
+                {categories.length > 0 && <div className="grid gap-3">
                   <Label htmlFor="parentCategory">Parent Category</Label>
                   <Select name="parentCategory">
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px]" >
                       <SelectValue placeholder="Select subcategory" />
                     </SelectTrigger>
                     <SelectContent>
@@ -145,21 +134,24 @@ const CategoryForm = ({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div>}
               </CardContent>
             </Card>
 
             {/* Category Images */}
             <Card className="overflow-hidden">
               <CardHeader className="flex items-center justify-between">
-                <CardTitle>Category Images</CardTitle>
+                <CardTitle>Category Image</CardTitle>
                 <RefreshCcwIcon
                   className="size-5 cursor-pointer"
                   onClick={() => setImageFile(undefined)}
                 />
               </CardHeader>
               <CardContent>
-                <div className="flex justify-center relative">
+                <div className={imageFile ? "disabled" : ""}>
+                  <Input type="text" name="image" defaultValue={category?.image || ""}/>
+                </div>
+                <div className="flex justify-center relative m-10">
                   {imageFile && (
                     <Image
                       alt="Product image"
@@ -184,6 +176,7 @@ const CategoryForm = ({
                     />
                   </label>
                 </div>
+                
               </CardContent>
             </Card>
           </div>
@@ -191,7 +184,7 @@ const CategoryForm = ({
 
         <div className="flex items-center justify-center gap-2 md:hidden">
           <Button size="sm" type="submit" disabled={mutation.isPending}>
-            Save Product
+            Save Category
           </Button>
         </div>
       </form>
