@@ -1,12 +1,6 @@
 "use client";
 import Image from "next/image";
-import {
-  PlusCircle,
-  RefreshCcwIcon,
-  Trash2Icon,
-  Upload,
-  X,
-} from "lucide-react";
+import { PlusCircle, RefreshCcwIcon, Trash2Icon, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,19 +34,44 @@ import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
 import DataClientAPI from "@/util/client/data-client-api";
+import DataAPI from "@/util/server/data-util";
 
 type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
 type TVariant = TProductVariant & {
-  predefinedAttributes: TProductVariant["attributes"];
   imageFiles: File[];
 };
-export default function ProductForm({ categories, product }: { categories: TCategory[] , product?: TProduct }) {
-  const [attributes, setAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
+export default function ProductForm({ id }: { id?: string }) {
+  const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
   const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
-  const [tags, setTags] = useState<string[]>(product?.tags || []);
-  const [varients, setVarients] = useState<TVariant[]>(product?.variants as TVariant[] || []);
-  const [categorySpecificAttributes, setCategorySpecificAttributes] = useState<TProduct["attributes"]>(product?.attributes || []);
+  const [tags, setTags] = useState<string[]>([]);
+  const [varients, setVarients] = useState<TVariant[]>([]);
+
   const [curVarient, setCurentVarient] = useState<number>(-1);
+  const { data: { categories, product } = { categories: [], product: undefined }, isLoading } =
+    useQuery({
+      queryKey: ["categories"],
+      queryFn: async () => {
+        const categoryRes = await DataClientAPI.getData({
+          modelName: "category",
+          operation: "GET_DATA",
+          request: {},
+        });
+        const categories = JSON.parse(JSON.stringify(categoryRes?.docs ?? [])) as TCategory[];
+        if (id) {
+          const productRes = await DataClientAPI.getData({
+            modelName: "product",
+            operation: "GET_DATA_BY_ID",
+            request: { id },
+          });
+          const product = JSON.parse(JSON.stringify(productRes)) as TProduct;
+          setAttributes(product.attributes);
+          setTags(product.tags);
+          setVarients(product.variants.map((variant) => ({ ...variant, imageFiles: [] })));
+          return { categories, product };
+        }
+        return { categories };
+      },
+    });
 
   const mutation = useMutation({
     mutationFn: async (request: FormData) =>
@@ -99,7 +118,7 @@ export default function ProductForm({ categories, product }: { categories: TCate
       if (imageFiles && imageFiles.length > 5) {
         throw new Error("You can only upload a maximum of 5 images.");
       }
-      if(varients.length==0) {
+      if (varients.length == 0) {
         throw new Error("Please add at least one variant.");
       }
       // todo : zod check before request
@@ -108,38 +127,36 @@ export default function ProductForm({ categories, product }: { categories: TCate
       const imageNames: string[] = [];
 
       imageFiles.forEach((imageFile) => {
-          const name = uuidv4();
-          imageNames.push(name);
-          productForm.append(name, imageFile);
+        const name = uuidv4();
+        imageNames.push(name);
+        productForm.append(name, imageFile);
       });
 
-      varients.map((variant , index) => {
-          variant.imageFiles.forEach((imageFile) => {
-            const name = uuidv4();
-            variant.images.push(name);
-            productForm.append(name, imageFile);
-          });
-          if (variant.images.length > 0) {
-            fileOperation.push({ path: `variants.${index}.images`, multi: true });
-          }
-          variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
+      varients.map((variant, index) => {
+        variant.imageFiles.forEach((imageFile) => {
+          const name = uuidv4();
+          variant.images.push(name);
+          productForm.append(name, imageFile);
+        });
+        if (variant.images.length > 0) {
+          fileOperation.push({ path: `variants.${index}.images`, multi: true });
+        }
+        variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
       });
 
       const product: TProductFormData = {
-          name: formData.get("name") as string,
-          category: formData.get("category") as string,
-          description: formData.get("description") as string,
-          brand: formData.get("brand") as string,
-          slug: formData.get("slug") as string,
-          tags: tags,
-          images: imageNames,
-          attributes: [...attributes].filter((att) => att.value !== ""),
-          variants: varients.map(({ imageFiles, predefinedAttributes, ...variant }) => ({
-            ...variant,
-            attributes: [...variant.attributes, ...predefinedAttributes].filter(
-              (att) => att.value && att.value !== ""
-            ),
-          }))
+        name: formData.get("name") as string,
+        category: formData.get("category") as string,
+        description: formData.get("description") as string,
+        brand: formData.get("brand") as string,
+        slug: formData.get("slug") as string,
+        tags: tags,
+        images: imageNames,
+        attributes: [...attributes].filter((att) => att.value !== ""),
+        variants: varients.map(({ imageFiles, ...variant }) => ({
+          ...variant,
+          attributes: [...variant.attributes].filter((att) => att.value && att.value !== ""),
+        })),
       };
       productForm.append("fileOperation", JSON.stringify(fileOperation));
       productForm.append("data", JSON.stringify(product));
@@ -152,13 +169,6 @@ export default function ProductForm({ categories, product }: { categories: TCate
   }
 
   function addNewVarient() {
-    const predefinedAttributes = categorySpecificAttributes
-      .filter((attr) => typeof attr !== "string")
-      .map((attr) => ({
-        name: attr.name,
-        value: attr.value,
-        sortOrder: attr.sortOrder,
-      }));
     const newVarient: TVariant = {
       attributes: [],
       images: [],
@@ -167,7 +177,6 @@ export default function ProductForm({ categories, product }: { categories: TCate
       stockQuantity: 0,
       price: 0,
       sellingPrice: 0,
-      predefinedAttributes,
       imageFiles: [],
     };
     setCurentVarient(varients.length);
@@ -177,11 +186,14 @@ export default function ProductForm({ categories, product }: { categories: TCate
   }
 
   async function onCategoryChange(categoryId: string) {
-    const sampleProduct  = await DataClientAPI.getData({modelName : "product", operation : "GET_DATA", request : {options : {category : categoryId}}})
-    if(sampleProduct && sampleProduct.doc.length > 0 ){
+    const sampleProduct = await DataClientAPI.getData({
+      modelName: "product",
+      operation: "GET_DATA",
+      request: { options: { category: categoryId } },
+    });
+    if (sampleProduct && sampleProduct.doc.length > 0) {
       const product = sampleProduct.doc[0];
       setVarients(product.variants);
-      setCategorySpecificAttributes(product.attributes);
     }
   }
 
@@ -521,50 +533,7 @@ export default function ProductForm({ categories, product }: { categories: TCate
                 </Card>
                 <Card x-chunk="dashboard-07-chunk-1">
                   <CardHeader>
-                    <CardTitle>Predefined Attributes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Options</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {categorySpecificAttributes
-                          .filter((attribute) => typeof attribute !== "string")
-                          .map((attribute, index) => (
-                            <TableRow key={index} className="">
-                              <TableCell className="align-top">
-                                <Label>{attribute.name}</Label>
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <Input
-                                  type="text"
-                                  value={varient.predefinedAttributes.find(
-                                    (attr) => attr.name === attribute.name
-                                  )?.value}
-                                  onChange={(e) => {
-                                    const attrObj = varient.predefinedAttributes.find(
-                                      (attr) => attr.name === attribute.name
-                                    );
-                                    if (attrObj) {
-                                      attrObj.value = e.target.value;
-                                      setVarients([...varients]);
-                                    }
-                                  }}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-                <Card x-chunk="dashboard-07-chunk-1">
-                  <CardHeader>
-                    <CardTitle>Additional Attributes</CardTitle>
+                    <CardTitle>Attributes</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>

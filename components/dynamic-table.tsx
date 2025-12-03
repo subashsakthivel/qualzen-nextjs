@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, use } from "react";
 import {
   Table,
   TableBody,
@@ -77,6 +77,7 @@ interface DynamicTableProps {
   filterable?: boolean;
   groupable?: boolean;
   model: tDataModels;
+  onEdit?: (recordId: string) => void;
 }
 
 export default function DynamicTable({
@@ -85,8 +86,8 @@ export default function DynamicTable({
   searchable = true,
   sortable = true,
   model,
+  onEdit,
 }: DynamicTableProps) {
-
   // Table state
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,15 +109,21 @@ export default function DynamicTable({
   const [pageSizeOptions] = useState([5, 10, 20, 50, 100]);
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
   const [filter, setFilter] = useState<string>();
-  const { data: tableData = [], status } = useQuery({
-    queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize],
-    queryFn: () => fetchData(),
-  });
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+
+  const { data: tableData = [], status } = useQuery({
+    queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize, selectedColumns],
+    queryFn: () => fetchData(),
+    enabled: selectedColumns.length > 0,
+  });
+
   useEffect(() => {
-    const selectedColumns = localStorage.getItem(`${model}.table.select`) ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string) : DataSourceMap[model]?.columns ?? [];
+    const selectedColumns = localStorage.getItem(`${model}.table.select`)
+      ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string)
+      : DataSourceMap[model]?.columns ?? [];
     setSelectedColumns(selectedColumns);
-  }, []);
+  }, [model]);
+
   async function fetchData() {
     const options = {
       page: currentPage,
@@ -139,16 +146,16 @@ export default function DynamicTable({
         });
       }
       return doc;
-    })
+    });
     console.log("Fetched tableData:", data);
     return data as Record<string, any>[];
   }
 
   async function saveSelectedColumns(columns: string[]) {
+    setSelectedColumns(columns);
     localStorage.setItem(`${model}.table.select`, JSON.stringify(columns));
-    fetchData();
   }
-  
+
   // Auto-detect columns if not provided
   const autoDetectedColumns = useMemo(() => {
     if (columns) return columns;
@@ -345,7 +352,7 @@ export default function DynamicTable({
       case "array":
         return Array.isArray(value) ? value.join(", ") : String(value);
       case "object":
-        if(value.text_link && FormatUtil.getFormat(value.text_link) === "url") {
+        if (value.text_link && FormatUtil.getFormat(value.text_link) === "url") {
           return <Link href={value.text_link}>{value.value ?? "Link"}</Link>;
         }
         return JSON.stringify(value);
@@ -600,7 +607,17 @@ export default function DynamicTable({
       {/* Filter and grouping buttons */}
       <Input type="text" name="filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
       {/* Select Columns */}
-      <MultiSelect  onValueChange={saveSelectedColumns} value={selectedColumns} options={DataSourceMap[model]?.columns.map((column) => ({ label: column.toUpperCase(), value: column }))} maxCount={5} placeholder="Select Columns"/>
+      <MultiSelect
+        onValueChange={() => {}}
+        value={selectedColumns}
+        options={DataSourceMap[model]?.columns.map((column) => ({
+          label: column.toUpperCase(),
+          value: column,
+        }))}
+        maxCount={5}
+        onApplyChange={saveSelectedColumns}
+        placeholder="Select Columns"
+      />
       {/* Table */}
       <div className="rounded-md border">
         {status === "pending"
@@ -717,9 +734,11 @@ export default function DynamicTable({
                           colSpan={autoDetectedColumns.length}
                           className="text-center break-all grid grid-rows-3 grid-cols-1 gap-2"
                         >
-                          <Button variant={"outline"}>
-                            <EditIcon />
-                          </Button>
+                          {onEdit && row.id && (
+                            <Button variant={"outline"} onClick={() => onEdit(row.id)}>
+                              <EditIcon />
+                            </Button>
+                          )}
                           <Button>
                             <EyeIcon />
                           </Button>

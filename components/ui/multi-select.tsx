@@ -67,6 +67,8 @@ interface MultiSelectProps
    */
   onValueChange: (value: string[]) => void;
 
+  onApplyChange?: (value: string[]) => void;
+
   /** The default selected values when the component mounts. */
   defaultValue?: string[];
 
@@ -120,6 +122,7 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
       maxCount = 3,
       modalPopover = false,
       asChild = false,
+      onApplyChange,
       className,
       ...props
     },
@@ -155,6 +158,13 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
 
     const handleTogglePopover = () => {
       setIsPopoverOpen((prev) => !prev);
+    };
+
+    const onHandleChange = () => {
+      if (onApplyChange) {
+        onApplyChange(selectedValues);
+      }
+      setIsPopoverOpen(false);
     };
 
     const clearExtraOptions = () => {
@@ -316,7 +326,7 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
                     </>
                   )}
                   <CommandItem
-                    onSelect={() => setIsPopoverOpen(false)}
+                    onSelect={onHandleChange}
                     className="flex-1 justify-center cursor-pointer max-w-full"
                   >
                     Apply

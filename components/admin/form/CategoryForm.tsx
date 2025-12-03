@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { TCategory } from "@/schema/Category";
 import { useRouter } from "next/navigation";
 import { RefreshCcwIcon, Upload } from "lucide-react";
@@ -22,25 +22,35 @@ import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
 import FormatUtil from "@/util/formetUtil";
 
-
 const model = "category";
 
-const CategoryForm = ({
-  categories,
-  category,
-}: {
-  categories: TCategory[];
-  category?: TCategory;
-}) => {
+const CategoryForm = ({ id }: { id?: string }) => {
   const router = useRouter();
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
-
+  const [category, setCategory] = React.useState<TCategory | undefined>(undefined);
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await DataClientAPI.getData({
+        modelName: "category",
+        operation: "GET_DATA",
+        request: {},
+      });
+      const docs = res?.docs ?? [];
+      const cateories = JSON.parse(JSON.stringify(docs)) as TCategory[];
+      const ind = categories.findIndex((c) => c._id === id);
+      if (ind >= 0) {
+        setCategory(cateories[ind]);
+      }
+      return JSON.parse(JSON.stringify(docs)) as TCategory[];
+    },
+  });
   const mutation = useMutation({
-    mutationFn: async(request: FormData) => {
-      if (category) {
-        return await DataClientAPI.patchData({modelName: model , request})
+    mutationFn: async (request: FormData) => {
+      if (id) {
+        return await DataClientAPI.patchData({ modelName: model, request });
       } else {
-        return await DataClientAPI.saveData({modelName: model , request})
+        return await DataClientAPI.saveData({ modelName: model, request });
       }
     },
     onSuccess: () => router.push("/table/category"),
@@ -55,7 +65,7 @@ const CategoryForm = ({
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const imageName =  uuidv4();
+    const imageName = uuidv4();
     const parentCategory = formData.get("parentCategory") as string;
 
     const data: TCategory = {
@@ -70,11 +80,11 @@ const CategoryForm = ({
       data.image = imageName;
       request.append(imageName, imageFile);
       request.append("fileOperation", JSON.stringify(fileOperation));
-    } else if(formData.get("image") as string){
+    } else if (formData.get("image") as string) {
       data.image = formData.get("image") as string;
     }
 
-    if(category && category._id) {
+    if (category && category._id) {
       request.append("id", category._id);
       request.append("operation", "UPDATE_DATA_V1.2");
     } else {
@@ -95,7 +105,7 @@ const CategoryForm = ({
         <div className="flex items-center gap-4">
           <h1 className="flex-1 text-xl font-semibold tracking-tight">Category Form</h1>
           <Button size="sm" type="submit" disabled={mutation.isPending} className="hidden md:flex">
-            Save Category
+            {category ? "UPDATE" : "SAVE"} Category
           </Button>
         </div>
 
@@ -120,21 +130,23 @@ const CategoryForm = ({
                     className="min-h-32"
                   />
                 </div>
-                {categories.length > 0 && <div className="grid gap-3">
-                  <Label htmlFor="parentCategory">Parent Category</Label>
-                  <Select name="parentCategory">
-                    <SelectTrigger className="w-[180px]" >
-                      <SelectValue placeholder="Select subcategory" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c, i) => (
-                        <SelectItem key={i} value={c._id || ""}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>}
+                {categories.length > 0 && (
+                  <div className="grid gap-3">
+                    <Label htmlFor="parentCategory">Parent Category</Label>
+                    <Select name="parentCategory">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select subcategory" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((c, i) => (
+                          <SelectItem key={i} value={c._id || ""}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -149,7 +161,7 @@ const CategoryForm = ({
               </CardHeader>
               <CardContent>
                 <div className={imageFile ? "disabled" : ""}>
-                  <Input type="text" name="image" defaultValue={category?.image || ""}/>
+                  <Input type="text" name="image" defaultValue={category?.image || ""} />
                 </div>
                 <div className="flex justify-center relative m-10">
                   {imageFile && (
@@ -158,7 +170,11 @@ const CategoryForm = ({
                       className="aspect-square rounded-md object-cover"
                       height={300}
                       width={300}
-                      src={FormatUtil.getFormat(category?.image)==="url" ? category?.image! : URL.createObjectURL(imageFile)}
+                      src={
+                        FormatUtil.getFormat(category?.image) === "url"
+                          ? category?.image!
+                          : URL.createObjectURL(imageFile)
+                      }
                     />
                   )}
                   <label
@@ -176,7 +192,6 @@ const CategoryForm = ({
                     />
                   </label>
                 </div>
-                
               </CardContent>
             </Card>
           </div>
@@ -184,7 +199,7 @@ const CategoryForm = ({
 
         <div className="flex items-center justify-center gap-2 md:hidden">
           <Button size="sm" type="submit" disabled={mutation.isPending}>
-            Save Category
+            {category ? "UPDATE" : "SAVE"} Category
           </Button>
         </div>
       </form>

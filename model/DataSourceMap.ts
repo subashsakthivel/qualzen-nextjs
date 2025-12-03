@@ -9,7 +9,7 @@ export interface IDataSourceMap {
   url: string;
   schema: z.ZodType;
   columns: string[];
-  columnConfig? : { [key: string]: { parse? : (value:any) => any } }
+  columnConfig?: { [key: string]: { parse?: (value: any) => any } };
 }
 
 export const DataSourceMap: {
@@ -18,22 +18,17 @@ export const DataSourceMap: {
   category: {
     url: "/api/dataAPI/category",
     schema: CategorySchema,
-    columns: ["name", "parentCategory", "description", "updatedAt"],
+    columns: ["name", "parentCategory", "description"],
   },
   product: {
     url: "/api/dataAPI/product",
     schema: ProductSchema,
-    columns: [
-      "name",
-      "description",
-      "category",
-      "brand",
-    ],
+    columns: ["name", "description", "category", "brand"],
     columnConfig: {
-      name : {
-        parse : (value:any) => ({ value , text_link : `/product/${value}`, type: "url"})
-      }
-    }
+      name: {
+        parse: (value: any) => ({ value, text_link: `/product/${value}`, type: "url" }),
+      },
+    },
   },
   address: {
     url: "/api/dataAPI/address",
