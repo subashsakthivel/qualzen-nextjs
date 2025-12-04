@@ -1,5 +1,5 @@
 import { authOptions } from "@/lib/authOptions";
-import { DataUtil, fetchFromDB } from "@/util/server/data-util";
+import { DataUtil, fetchFromDB } from "@/data/data-api";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { DataModelMap, TDataModels } from "@/model/server/data-model-mappings";

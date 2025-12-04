@@ -20,7 +20,7 @@ import OrderSummary from "./order-summary";
 import { TAddress } from "@/schema/Address";
 import { TUserInfo } from "@/schema/UserInfo";
 import { getDataFromServer, postDataToServer } from "@/util/dataAPI";
-import { DataSourceMap } from "@/model/DataSourceMap";
+import { DataSourceMap } from "@/data/model-config";
 
 export default function Checkout() {
   const { status, data: session } = useSession({

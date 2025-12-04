@@ -27,24 +27,25 @@ const model = "category";
 const CategoryForm = ({ id }: { id?: string }) => {
   const router = useRouter();
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
-  const [category, setCategory] = React.useState<TCategory | undefined>(undefined);
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await DataClientAPI.getData({
-        modelName: "category",
-        operation: "GET_DATA",
-        request: {},
-      });
-      const docs = res?.docs ?? [];
-      const cateories = JSON.parse(JSON.stringify(docs)) as TCategory[];
-      const ind = categories.findIndex((c) => c._id === id);
-      if (ind >= 0) {
-        setCategory(cateories[ind]);
-      }
-      return JSON.parse(JSON.stringify(docs)) as TCategory[];
-    },
-  });
+  const { data: { categories, category } = { categories: [], category: undefined }, isLoading } =
+    useQuery({
+      queryKey: ["categories"],
+      queryFn: async () => {
+        const res = await DataClientAPI.getData({
+          modelName: "category",
+          operation: "GET_DATA",
+          request: {},
+        });
+        const docs = res?.docs ?? [];
+        const categories = JSON.parse(JSON.stringify(docs)) as TCategory[];
+        const ind = categories.findIndex((c) => c._id === id);
+        if (ind >= 0) {
+          return { categories, category: categories[ind] };
+        }
+
+        return { categories };
+      },
+    });
   const mutation = useMutation({
     mutationFn: async (request: FormData) => {
       if (id) {
@@ -75,18 +76,15 @@ const CategoryForm = ({ id }: { id?: string }) => {
     };
     const request = new FormData();
     if (imageFile) {
-      const fileOperation = [];
-      fileOperation.push({ path: "image", multi: false });
       data.image = imageName;
       request.append(imageName, imageFile);
-      request.append("fileOperation", JSON.stringify(fileOperation));
     } else if (formData.get("image") as string) {
       data.image = formData.get("image") as string;
     }
 
-    if (category && category._id) {
-      request.append("id", category._id);
-      request.append("operation", "UPDATE_DATA_V1.2");
+    if (category && id) {
+      request.append("id", id);
+      request.append("operation", "UPDATE_DATA");
     } else {
       request.append("operation", "SAVE_DATA");
       request.append("data", JSON.stringify(data));
@@ -105,7 +103,7 @@ const CategoryForm = ({ id }: { id?: string }) => {
         <div className="flex items-center gap-4">
           <h1 className="flex-1 text-xl font-semibold tracking-tight">Category Form</h1>
           <Button size="sm" type="submit" disabled={mutation.isPending} className="hidden md:flex">
-            {category ? "UPDATE" : "SAVE"} Category
+            {id ? "UPDATE" : "SAVE"} Category
           </Button>
         </div>
 
@@ -199,7 +197,7 @@ const CategoryForm = ({ id }: { id?: string }) => {
 
         <div className="flex items-center justify-center gap-2 md:hidden">
           <Button size="sm" type="submit" disabled={mutation.isPending}>
-            {category ? "UPDATE" : "SAVE"} Category
+            {id ? "UPDATE" : "SAVE"} Category
           </Button>
         </div>
       </form>

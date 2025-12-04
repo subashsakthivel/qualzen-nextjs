@@ -1,6 +1,6 @@
 import React from "react";
 import ProductShowcase from "@/components/productShowcase";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import { TProduct } from "@/schema/Product";
 import { TProductInfo } from "@/components/cart-provider";
 

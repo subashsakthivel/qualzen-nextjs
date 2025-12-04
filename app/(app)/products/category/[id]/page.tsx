@@ -1,5 +1,5 @@
 import ProductGallery from "@/components/product-gallery";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import React from "react";
 
 export default async function ProductsPage({ params }: { params: Promise<{ id: string }> }) {

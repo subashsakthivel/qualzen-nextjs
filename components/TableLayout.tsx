@@ -8,7 +8,7 @@ import { useState } from "react";
 import CategoryForm from "./admin/form/CategoryForm";
 import ProductForm from "./admin/form/ProductForm";
 
-const FormVsModel: Record<tDataModels, ({ id }: { id?: string }) => JSX.Element> = {
+const FormVsModel: Record<string, ({ id }: { id?: string }) => JSX.Element> = {
   category: CategoryForm,
   product: ProductForm,
 };
@@ -24,7 +24,7 @@ export default function TableLayout({ model }: { model: tDataModels }) {
         </CardHeader>
         <CardContent>
           <Tabs>
-            <TabsList className="mb-4">
+            <TabsList className="mb-4" defaultValue="table">
               <TabsTrigger value="table">VIEW</TabsTrigger>
               <TabsTrigger value="data">
                 {id ? "UPDATE" : "ADD"} {model.toString().toUpperCase()}

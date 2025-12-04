@@ -1,6 +1,6 @@
 import CategoryForm from "@/components/admin/form/CategoryForm";
 import ProductForm from "@/components/admin/form/ProductForm";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 
 const category = async (): Promise<JSX.Element> => {
   const categories = await DataAPI.getData({
@@ -20,13 +20,15 @@ const product = async () => {
   const categories = await DataAPI.getData({
     modelName: "category",
     operation: "GET_DATA",
-    request: { options: { populate: [{ path: "attributes" }], select: {_id : 1 , name: 1 , category: 1 } } },
+    request: {
+      options: { populate: [{ path: "attributes" }], select: { _id: 1, name: 1, category: 1 } },
+    },
   }).then((res) => {
     const docs = JSON.parse(JSON.stringify(res.docs));
-    docs.map((doc : any) => {
+    docs.map((doc: any) => {
       doc.link = `/product/${doc._id}`;
-    })
-    return docs
+    });
+    return docs;
   });
 
   return <ProductForm categories={categories} />;

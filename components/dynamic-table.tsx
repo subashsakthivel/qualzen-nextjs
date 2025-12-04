@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 // import { FetchDataParams, FilterRule, FilterState, getDataFromServer } from "@/util/dataAPI";
-import { DataSourceMap } from "@/model/DataSourceMap";
+import { ModelConfig } from "@/data/model-config";
 import { tDataModels, tFilter } from "@/util/util-type";
 import DataClientAPI from "@/util/client/data-client-api";
 import FilterBuilder from "./filter-builder";
@@ -120,7 +120,7 @@ export default function DynamicTable({
   useEffect(() => {
     const selectedColumns = localStorage.getItem(`${model}.table.select`)
       ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string)
-      : DataSourceMap[model]?.columns ?? [];
+      : ModelConfig[model]?.columns ?? [];
     setSelectedColumns(selectedColumns);
   }, [model]);
 
@@ -138,10 +138,10 @@ export default function DynamicTable({
       request: { options },
     });
     const data = tableData.docs.map((doc: Record<string, any>) => {
-      if (DataSourceMap[model].columnConfig) {
+      if (ModelConfig[model].columnConfig) {
         Object.keys(doc).map((key) => {
-          if (DataSourceMap[model].columnConfig?.[key].parse) {
-            doc[key] = DataSourceMap[model].columnConfig[key].parse(doc[key]);
+          if (ModelConfig[model].columnConfig?.[key].parse) {
+            doc[key] = ModelConfig[model].columnConfig[key].parse(doc[key]);
           }
         });
       }
@@ -610,7 +610,7 @@ export default function DynamicTable({
       <MultiSelect
         onValueChange={() => {}}
         value={selectedColumns}
-        options={DataSourceMap[model]?.columns.map((column) => ({
+        options={ModelConfig[model]?.columns.map((column) => ({
           label: column.toUpperCase(),
           value: column,
         }))}

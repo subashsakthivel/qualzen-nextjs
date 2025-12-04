@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import { TCategory } from "@/schema/Category";
 
 export async function CategorySection() {

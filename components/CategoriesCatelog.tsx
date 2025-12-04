@@ -1,5 +1,5 @@
 import { TCategory } from "@/schema/Category";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";

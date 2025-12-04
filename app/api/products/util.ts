@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/mongoose";
 import { IProduct, Product, productSchema } from "@/model/Product";
 import { ErrorRequest } from "@/utils/responseUtil";
-import { S3Util } from "@/util/S3Util";
+import { S3Util } from "@/util/server/file/S3Util";
 import { Types } from "mongoose";
 import { v4 as uuid } from "uuid";
 

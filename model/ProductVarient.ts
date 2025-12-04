@@ -1,6 +1,4 @@
-import { ProductVariantSchema, TProductVariant } from "@/schema/ProductVarient";
-import DatabaseUtil from "@/util/dbUtil";
-import R2Util from "@/util/S3Util";
+import { TProductVariant } from "@/schema/ProductVarient";
 import mongoose from "mongoose";
 
 const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({

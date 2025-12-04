@@ -38,12 +38,6 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
       },
     ],
   },
-  categoryspecificattributes: {
-    dbModel: CategorySpecificAttributesModel,
-    schema: categorySpecificAttributesSchema,
-    url: "/api/dataAPI/categoryspecificattributes",
-    cacheKey: "categoryspecificattributes",
-  },
   userinfo: {
     schema: UserInfoSchema,
     dbModel: UserInfoModel,
@@ -61,24 +55,6 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
     dbModel: AddressModel,
     url: "/api/dataAPI/address",
     cacheKey: "address",
-  },
-  order: {
-    schema: OrderSchema,
-    dbModel: OrderModel,
-    url: "/api/dataAPI/order",
-    cacheKey: "order",
-  },
-  content: {
-    schema: ProductVariantSchema, // todo : need to remove
-    dbModel: ContentModel,
-    url: "/api/dataAPI/content",
-    cacheKey: "content",
-  },
-  productVariant: {
-    schema: ProductVariantSchema,
-    dbModel: ContentModel,
-    url: "/api/dataAPI/content",
-    cacheKey: "productVariant",
   },
 };
 

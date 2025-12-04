@@ -6,7 +6,7 @@ export default class ObjectUtil {
       .split(".")
       .reduce((acc, key) => (acc ? acc[key] : undefined), obj);
   }
-  public static updateValue({ obj, path, value }: { obj: any; path: string; value: any }) {
+  public static setValue({ obj, path, value }: { obj: any; path: string; value: any }) {
     const keys = path
       .replace(/\[(\w+)\]/g, ".$1")
       .replace(/^\./, "")

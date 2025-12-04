@@ -7,8 +7,9 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { ErrorRequest } from "./responseUtil";
+import { ErrorRequest } from "../../responseUtil";
 import crypto from "crypto";
+import { FileStoreModel } from "@/model/FileStore";
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const BUCKET_REGION = process.env.R2_BUCKET_REGION || "auto";
@@ -58,13 +59,17 @@ class S3Util {
     return url;
   }
 
-  public async getObjectUrls(fileKey: string[]): Promise<string[]> {
-    const url = Promise.all(fileKey.map((fileKey) => this.getObjectUrl(fileKey)));
-    return url;
-  }
+  // public async getObjectUrls(fileKey: string[]): Promise<string[]> {
+  //   const url = Promise.all(fileKey.map((fileKey) => this.getObjectUrl(fileKey)));
+  //   return url;
+  // }
 
-  public async uploadFile(file: File, ACL?: ObjectCannedACL, mimeType?: string): Promise<string> {
-    const fileKey = this.generateFileKey();
+  public async uploadFile(
+    fileKey: string,
+    file: File,
+    ACL?: ObjectCannedACL,
+    mimeType?: string
+  ): Promise<string> {
     const buffer = Buffer.from(await file.arrayBuffer());
     // use sharp to reize the image if needed
     const command = new PutObjectCommand({
@@ -75,33 +80,47 @@ class S3Util {
       ACL: ACL || DEFAULT_FILES_ACL,
     });
     console.log("Going to upload a image ", fileKey);
-    await this.client.send(command);
+    const response = await this.client.send(command);
+    console.log("debugger : Upload response: ", response);
+    await FileStoreModel.updateOne(
+      { key: fileKey },
+      { $inc: { refCount: 1 } },
+      { upsert: true }
+    ).exec();
     return fileKey;
   }
 
   async deleteFile(fileKey: string) {
-    const command = new DeleteObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: fileKey,
-    });
-    console.log(`${fileKey} deleted`);
-    await this.client.send(command);
-  }
-
-  async uploadFiles(files: File | File[]): Promise<string[] | string> {
-    try {
-      if (Array.isArray(files)) {
-        const fileKeys = await Promise.all(files.map(async (file) => this.uploadFile(file)));
-        return fileKeys;
-      }
-
-      const fileKey = await this.uploadFile(files);
-      return fileKey;
-    } catch (err) {
-      console.error(err);
-      throw new ErrorRequest("Cannot delete the files", 543);
+    const fileRecord = await FileStoreModel.findOneAndUpdate(
+      { key: fileKey },
+      { $inc: { refCount: -1 } }
+    ).exec();
+    if (fileRecord && fileRecord.refCount <= 0) {
+      await FileStoreModel.deleteOne({ key: fileKey }).exec();
+      console.log(`FileStore record for ${fileKey} deleted`);
+      const command = new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+      });
+      console.log(`${fileKey} deleted`);
+      await this.client.send(command);
     }
   }
+
+  // async uploadFiles(files: File | File[]): Promise<string[] | string> {
+  //   try {
+  //     if (Array.isArray(files)) {
+  //       const fileKeys = await Promise.all(files.map(async (file) => this.uploadFile(file)));
+  //       return fileKeys;
+  //     }
+
+  //     const fileKey = await this.uploadFile(files);
+  //     return fileKey;
+  //   } catch (err) {
+  //     console.error(err);
+  //     throw new ErrorRequest("Cannot delete the files", 543);
+  //   }
+  // }
 
   async deleteFiles(fileKeys: string | string[]) {
     try {
@@ -119,7 +138,7 @@ class S3Util {
   }
 }
 
-const R2Util = new S3Util({
+const R2API = new S3Util({
   endpoint: ENDPOINT,
   credentials: {
     accessKeyId: ACCESS_KEY,
@@ -127,4 +146,4 @@ const R2Util = new S3Util({
   },
 });
 
-export default R2Util;
+export default R2API;

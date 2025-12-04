@@ -34,7 +34,7 @@ import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
 import DataClientAPI from "@/util/client/data-client-api";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 
 type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
 type TVariant = TProductVariant & {

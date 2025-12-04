@@ -1,4 +1,4 @@
-import { DataSourceMap } from "@/model/DataSourceMap";
+import { ModelType } from "@/data/model-config";
 import { DeleteResult, FlattenMaps, PaginateOptions, PaginateResult } from "mongoose";
 import z from "zod";
 
@@ -38,32 +38,52 @@ export type TCriteria<T> = {
   value: T[keyof T];
 };
 
-export type TUpdate<T> = {
-  [K in TUpdateOperator] : {
-       [U in keyof T] :   T[U] extends (infer V)[] ? (V| V[]) : T[U];
-  }
-} | {
-  [K in Extract<TUpdateOperator, "push" | "pull" | "addToSet">] : {
-      "each" : {
-        [U in keyof T] : T[U]
-      }
-  }
-};
-const zUpdateQuery = z.union([z.record(zUpdateOperator, z.any()), z.record(z.enum(["push", "pull", "addToSet"]), z.object({"each" : z.any()}))])
+export type TUpdate<T> =
+  | {
+      [K in TUpdateOperator]: {
+        [U in keyof T]: T[U] extends (infer V)[] ? V | V[] : T[U];
+      };
+    }
+  | {
+      [K in Extract<TUpdateOperator, "push" | "pull" | "addToSet">]: {
+        each: {
+          [U in keyof T]: T[U];
+        };
+      };
+    };
+const zUpdateQuery = z.union([
+  z.record(zUpdateOperator, z.any()),
+  z.record(z.enum(["push", "pull", "addToSet"]), z.object({ each: z.any() })),
+]);
 const zFilterQuery = z.object({
-    logic : z.enum(["and", "or"]),
-    criteria : z.array(z.object({
-        field : z.string(),
-        operator : z.enum(["equals", "notEquals", "contains", "in", "notIn", "gt", "gte", "lt", "lte"]),
-        value : z.any()
-    }))
-})
+  logic: z.enum(["and", "or"]),
+  criteria: z.array(
+    z.object({
+      field: z.string(),
+      operator: z.enum([
+        "equals",
+        "notEquals",
+        "contains",
+        "in",
+        "notIn",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+      ]),
+      value: z.any(),
+    })
+  ),
+});
 export const zUpdateueryAndFilter = z.object({
-    updateQuery : zUpdateQuery,
-    queryFilter : zFilterQuery
-})
+  updateQuery: zUpdateQuery,
+  queryFilter: zFilterQuery,
+});
 
-export const zUpdateQuerySchema = z.union([z.record(zUpdateOperator, z.any()), z.record(z.enum(["push", "pull", "addToSet"]), z.object({"each" : z.any()}))])
+export const zUpdateQuerySchema = z.union([
+  z.record(zUpdateOperator, z.any()),
+  z.record(z.enum(["push", "pull", "addToSet"]), z.object({ each: z.any() })),
+]);
 
 export type tFilterCriteria = {
   field: string;
@@ -98,7 +118,7 @@ export interface FetchDataOptions<T> extends PaginateOptions {
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
 }
 
-export type tDataModels = keyof typeof DataSourceMap;
+export type tDataModels = keyof ModelType;
 
 export interface tGetDataParams<T> {
   modelName: tDataModels;

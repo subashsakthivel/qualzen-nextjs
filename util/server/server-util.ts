@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/mongoose";
-import R2Util from "../S3Util";
+import R2Util from "./file/S3Util";
 
 class ServerUtil {
   static IS_SERVER_INITIALIZED = false;

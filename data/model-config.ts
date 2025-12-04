@@ -1,27 +1,28 @@
 import { z } from "zod";
-import { ProductSchema } from "@/schema/Product";
-import { CategorySchema } from "@/schema/Category";
-import { AddressSchema } from "@/schema/Address";
-import { UserInfoSchema } from "@/schema/UserInfo";
-// import { CategorySchema } from "./Category";
-
-export interface IDataSourceMap {
-  url: string;
+import { ProductSchema, TProduct } from "@/schema/Product";
+import { CategorySchema, TCategory } from "@/schema/Category";
+import { AddressSchema, TAddress } from "@/schema/Address";
+import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
+// all of this shoul be in server side
+export interface IModelConfig {
   schema: z.ZodType;
   columns: string[];
   columnConfig?: { [key: string]: { parse?: (value: any) => any } };
 }
 
-export const DataSourceMap: {
-  [key: string]: IDataSourceMap;
-} = {
+export type ModelType = {
+  category: TCategory;
+  product: TProduct;
+  address: TAddress;
+  userinfo: TUserInfo;
+};
+
+export const ModelConfig: Record<keyof ModelType, IModelConfig> = {
   category: {
-    url: "/api/dataAPI/category",
     schema: CategorySchema,
     columns: ["name", "parentCategory", "description"],
   },
   product: {
-    url: "/api/dataAPI/product",
     schema: ProductSchema,
     columns: ["name", "description", "category", "brand"],
     columnConfig: {
@@ -31,12 +32,10 @@ export const DataSourceMap: {
     },
   },
   address: {
-    url: "/api/dataAPI/address",
     schema: AddressSchema,
     columns: [],
   },
   userinfo: {
-    url: "/api/dataAPI/userinfo",
     schema: UserInfoSchema,
     columns: [],
   },

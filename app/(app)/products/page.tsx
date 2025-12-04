@@ -1,5 +1,5 @@
 import ProductGallery from "@/components/product-gallery";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 
 export default async function ProductsPage() {
   const result = await DataAPI.getData({

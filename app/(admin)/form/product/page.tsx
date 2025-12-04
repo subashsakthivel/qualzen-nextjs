@@ -1,7 +1,7 @@
 "use server";
 import ProductForm from "@/components/admin/form/ProductForm";
 import { TCategory } from "@/schema/Category";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import React from "react";
 const ProductFormPage = async () => {
   const categoryList = await DataAPI.getData({

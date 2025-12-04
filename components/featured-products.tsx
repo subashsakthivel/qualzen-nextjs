@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import { TProduct } from "@/schema/Product";
 
 // const products = [

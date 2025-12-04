@@ -1,7 +1,7 @@
 import { localcache } from "@/lib/cache";
 import { DataModelMap } from "@/model/server/data-model-mappings";
-import Persistance from "./db-core";
-import { tDataModels } from "../util-type";
+import Persistance from "../util/server/db-core";
+import { tDataModels } from "../util/util-type";
 
 class DataAPIclass {
   async getData({
@@ -58,12 +58,13 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const { cacheKey } = DataModelMap[modelName];
-      const response = await Persistance.updateData({ modelName, operation, id : request.id , data : request , updateQuery : request.updateQuery , queryFilter : request.queryFilter });
-      localcache.entries().forEach(([key]) => {
-        if (key.startsWith(cacheKey)) {
-          localcache.delete(key);
-        }
+      const response = await Persistance.updateData({
+        modelName,
+        operation,
+        id: request.id,
+        data: request,
+        updateQuery: request.updateQuery,
+        queryFilter: request.queryFilter,
       });
       return response;
     } catch (err) {

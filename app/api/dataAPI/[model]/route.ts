@@ -1,6 +1,6 @@
 import { authOptions } from "@/lib/authOptions";
 import { DataModelMap } from "@/model/server/data-model-mappings";
-import DataAPI from "@/util/server/data-util";
+import DataAPI from "@/data/data-api";
 import { tDataModels } from "@/util/util-type";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -109,8 +109,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
 //     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
 //   }
 // }
-
-
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
   try {
