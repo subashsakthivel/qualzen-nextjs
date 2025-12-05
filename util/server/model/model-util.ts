@@ -1,6 +1,7 @@
 import ObjectUtil from "@/util/ObjectUtil";
 import R2API from "../file/S3Util";
 import { ModelType } from "@/data/model-config";
+import { PaginateResult } from "mongoose";
 
 //todo: change the any later
 const modelMap: Record<string, any> = {
@@ -41,8 +42,8 @@ class ModelHandler {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
           const keys = Array.isArray(key) ? key : [key];
           keys.forEach((k) => {
-            if (!form.has(key)) {
-              throw new Error(`File for key ${key} is missing in form data`);
+            if (!form.has(k)) {
+              throw new Error(`File for key ${k} is missing in form data`);
             }
           });
         });
@@ -54,8 +55,8 @@ class ModelHandler {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
           const keys = Array.isArray(key) ? key : [key];
           keys.forEach(async (k) => {
-            const file = form.get(key) as File;
-            await R2API.uploadFile(key, file);
+            const file = form.get(k) as File;
+            await R2API.uploadFile(k, file);
           });
         });
       });
@@ -91,8 +92,10 @@ class ModelHandler {
     docs,
   }: {
     modelName: K;
-    docs: ModelType[K] | ModelType[K][];
+    docs: ModelType[K] | ModelType[K][] | PaginateResult<ModelType[K]>;
   }) {
+    const result = docs;
+    docs = "docs" in result ? result.docs : docs;
     const modelConfig = modelMap[modelName];
     if (modelConfig && modelConfig.files) {
       const documents = Array.isArray(docs) ? docs : [docs];
@@ -115,7 +118,7 @@ class ModelHandler {
         }
       }
     }
-    return docs;
+    return result;
   }
 
   static handle<K extends keyof ModelType>(

@@ -4,8 +4,6 @@ import mongoose, { PaginateOptions } from "mongoose";
 import { UserInfoModel } from "../UserInfo";
 import { CategorySchema, TCategory } from "@/schema/Category";
 import { UserInfoSchema } from "@/schema/UserInfo";
-import { categorySpecificAttributesSchema } from "@/schema/CategorySpecificAttributes";
-import { CategorySpecificAttributesModel } from "../CategorySpecificAttributes";
 import { ProductAttributeSchema, ProductSchema } from "@/schema/Product";
 import { ProductModel } from "../Product";
 import { ProductVariantModel } from "../ProductVarient";
@@ -31,12 +29,6 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
     dbModel: CategoryModel,
     url: "/api/dataAPI/Category",
     cacheKey: "category",
-    subdocs: [
-      {
-        path: "attributes",
-        dbModel: CategorySpecificAttributesModel,
-      },
-    ],
   },
   userinfo: {
     schema: UserInfoSchema,
@@ -55,6 +47,12 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
     dbModel: AddressModel,
     url: "/api/dataAPI/address",
     cacheKey: "address",
+    subdocs: [
+      {
+        path: "variants",
+        dbModel: ProductVariantModel,
+      },
+    ],
   },
 };
 

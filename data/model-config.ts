@@ -20,7 +20,7 @@ export type ModelType = {
 export const ModelConfig: Record<keyof ModelType, IModelConfig> = {
   category: {
     schema: CategorySchema,
-    columns: ["name", "parentCategory", "description"],
+    columns: ["name", "description", "image"],
   },
   product: {
     schema: ProductSchema,

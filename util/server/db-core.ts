@@ -15,6 +15,7 @@ import ObjectUtil from "../ObjectUtil";
 import mongoose from "mongoose";
 import ModelHandler from "./model/model-util";
 import { ModelType } from "@/data/model-config";
+import { exitCode } from "process";
 
 type UpdateResult = {
   acknowledged?: boolean;
@@ -72,11 +73,12 @@ class DBUtil {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
       };
       if (operation === "GET_DATA_MANY") {
-        execution.callback = async () => await dbModel.find(queryFilter, undefined, options);
+        execution.callback = async () => await dbModel.find(queryFilter, options.select, options);
       } else if (operation === "GET_DATA_ONE") {
-        execution.callback = async () => await dbModel.findOne(queryFilter, undefined, options);
+        execution.callback = async () =>
+          await dbModel.findOne(queryFilter, options.select, options);
       } else if (operation === "GET_DATA_BY_ID") {
-        execution.callback = async () => await dbModel.findById(id, undefined, options);
+        execution.callback = async () => await dbModel.findById(id, options.select, options);
       } else if (operation !== "GET_DATA") {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
@@ -89,7 +91,7 @@ class DBUtil {
 
   async saveData<T>({
     modelName,
-    operation = "POST_DATA",
+    operation = "SAVE_DATA",
     data,
   }: {
     modelName: tDataModels;
@@ -314,13 +316,8 @@ class DBUtil {
     const session = await mongoose.startSession();
     try {
       const result = await session.withTransaction(async () => {
-        const response = await callback(session);
-        const processedRes = await ModelHandler.handle(
-          modelName,
-          response as any,
-          operation,
-          formData
-        );
+        const response = (await callback(session)) as any;
+        const processedRes = await ModelHandler.handle(modelName, response, operation, formData);
         if (onSuccess) return await onSuccess(processedRes as any);
         return processedRes;
       });

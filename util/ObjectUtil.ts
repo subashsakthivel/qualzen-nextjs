@@ -24,4 +24,34 @@ export default class ObjectUtil {
       return acc[key];
     }, obj);
   }
+
+  public static flatten(
+    obj: Record<string, any>,
+    parentKey = "",
+    result: Record<string, any> = {}
+  ): Record<string, any> {
+    for (const key in obj) {
+      const newKey = parentKey ? `${parentKey}.${key}` : key;
+
+      if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key])) {
+        this.flatten(obj[key], newKey, result);
+      } else {
+        result[newKey] = obj[key];
+      }
+    }
+
+    return result;
+  }
+
+  public static diff(obj1: Record<string, any>, obj2: Record<string, any>): Record<string, any> {
+    const flattenedObj1 = this.flatten(obj1);
+    const flattenedObj2 = this.flatten(obj2);
+    const differences: Record<string, any> = {};
+    for (const key in flattenedObj2) {
+      if (flattenedObj1[key] !== flattenedObj2[key]) {
+        differences[key] = flattenedObj2[key];
+      }
+    }
+    return differences;
+  }
 }

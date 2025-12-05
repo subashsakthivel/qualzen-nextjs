@@ -122,7 +122,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ mo
       operation: "",
       request: {},
       id: "",
-      query: "",
+      updateQuery: "",
+      queryFilter: "",
     };
 
     if (req.headers.get("Content-Type")?.includes("application/json")) {
@@ -135,7 +136,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ mo
       dataReq.operation = operation;
       dataReq.request = formData;
       dataReq.id = formData.get("id") as string;
-      dataReq.query = formData.get("query") as string;
+      dataReq.updateQuery = JSON.parse(formData.get("updateQuery") as string);
+      dataReq.queryFilter = JSON.parse(formData.get("queryFilter") as string);
     } else {
       throw new Error("Unsupported content type");
     }

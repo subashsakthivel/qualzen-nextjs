@@ -49,8 +49,10 @@ export default function ProductForm({ id }: { id?: string }) {
   const [curVarient, setCurentVarient] = useState<number>(-1);
   const { data: { categories, product } = { categories: [], product: undefined }, isLoading } =
     useQuery({
-      queryKey: ["categories"],
+      queryKey: ["categories.product", id],
+      refetchOnWindowFocus: false,
       queryFn: async () => {
+        debugger;
         const categoryRes = await DataClientAPI.getData({
           modelName: "category",
           operation: "GET_DATA",
@@ -118,9 +120,7 @@ export default function ProductForm({ id }: { id?: string }) {
       if (imageFiles && imageFiles.length > 5) {
         throw new Error("You can only upload a maximum of 5 images.");
       }
-      if (varients.length == 0) {
-        throw new Error("Please add at least one variant.");
-      }
+
       // todo : zod check before request
       const productForm = new FormData();
       const fileOperation = [{ path: "images", multi: true }];
@@ -188,11 +188,12 @@ export default function ProductForm({ id }: { id?: string }) {
   async function onCategoryChange(categoryId: string) {
     const sampleProduct = await DataClientAPI.getData({
       modelName: "product",
-      operation: "GET_DATA",
+      operation: "GET_DATA_ONE",
       request: { options: { category: categoryId } },
     });
-    if (sampleProduct && sampleProduct.doc.length > 0) {
-      const product = sampleProduct.doc[0];
+    debugger;
+    if (sampleProduct) {
+      const product = sampleProduct;
       setVarients(product.variants);
     }
   }

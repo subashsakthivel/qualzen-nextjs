@@ -21,6 +21,8 @@ import DataClientAPI from "@/util/client/data-client-api";
 import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
 import FormatUtil from "@/util/formetUtil";
+import DataUtil from "@/data/data-util";
+import ObjectUtil from "@/util/ObjectUtil";
 
 const model = "category";
 
@@ -29,8 +31,10 @@ const CategoryForm = ({ id }: { id?: string }) => {
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
   const { data: { categories, category } = { categories: [], category: undefined }, isLoading } =
     useQuery({
-      queryKey: ["categories"],
+      queryKey: ["categories", id],
+      refetchOnWindowFocus: false,
       queryFn: async () => {
+        debugger;
         const res = await DataClientAPI.getData({
           modelName: "category",
           operation: "GET_DATA",
@@ -83,8 +87,10 @@ const CategoryForm = ({ id }: { id?: string }) => {
     }
 
     if (category && id) {
+      const updateObj = ObjectUtil.diff(category, data);
       request.append("id", id);
       request.append("operation", "UPDATE_DATA");
+      request.append("updateQuery", DataUtil.parseUpdateQuery({ Obj: updateObj }));
     } else {
       request.append("operation", "SAVE_DATA");
       request.append("data", JSON.stringify(data));
@@ -107,93 +113,101 @@ const CategoryForm = ({ id }: { id?: string }) => {
           </Button>
         </div>
 
-        <div className="grid gap-4 lg:gap-8">
-          <div className="grid auto-rows-max gap-4 lg:col-span-2 lg:gap-8">
-            {/* Category Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Category Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" placeholder="White Mens Baggy Shirt" />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    name="description"
-                    id="description"
-                    placeholder="Detailed description of the product"
-                    className="min-h-32"
-                  />
-                </div>
-                {categories.length > 0 && (
+        {!isLoading && (
+          <div className="grid gap-4 lg:gap-8">
+            <div className="grid auto-rows-max gap-4 lg:col-span-2 lg:gap-8">
+              {/* Category Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Category Details</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-6">
                   <div className="grid gap-3">
-                    <Label htmlFor="parentCategory">Parent Category</Label>
-                    <Select name="parentCategory">
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select subcategory" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((c, i) => (
-                          <SelectItem key={i} value={c._id || ""}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      placeholder="White Mens Baggy Shirt"
+                      defaultValue={category?.name}
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Category Images */}
-            <Card className="overflow-hidden">
-              <CardHeader className="flex items-center justify-between">
-                <CardTitle>Category Image</CardTitle>
-                <RefreshCcwIcon
-                  className="size-5 cursor-pointer"
-                  onClick={() => setImageFile(undefined)}
-                />
-              </CardHeader>
-              <CardContent>
-                <div className={imageFile ? "disabled" : ""}>
-                  <Input type="text" name="image" defaultValue={category?.image || ""} />
-                </div>
-                <div className="flex justify-center relative m-10">
-                  {imageFile && (
-                    <Image
-                      alt="Product image"
-                      className="aspect-square rounded-md object-cover"
-                      height={300}
-                      width={300}
-                      src={
-                        FormatUtil.getFormat(category?.image) === "url"
-                          ? category?.image!
-                          : URL.createObjectURL(imageFile)
-                      }
+                  <div className="grid gap-3">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      name="description"
+                      id="description"
+                      placeholder="Detailed description of the product"
+                      className="min-h-32"
+                      defaultValue={category?.description}
                     />
+                  </div>
+                  {categories.length > 0 && (
+                    <div className="grid gap-3">
+                      <Label htmlFor="parentCategory">Parent Category</Label>
+                      <Select name="parentCategory" defaultValue={category?.parentCategory}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((c, i) => (
+                            <SelectItem key={i} value={c._id || ""}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
-                  <label
-                    className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${
-                      imageFile ? "shadow-lg min-w-20" : "shadow-sm min-h-80"
-                    }`}
-                  >
-                    <Upload className="h-4 w-4 text-muted-foreground" />
-                    <input
-                      type="file"
-                      name="image"
-                      className="hidden"
-                      onChange={onImageFileChange}
-                      accept="image/png,image/gif,image/jpeg,image/jpg"
-                    />
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Category Images */}
+              <Card className="overflow-hidden">
+                <CardHeader className="flex items-center justify-between">
+                  <CardTitle>Category Image</CardTitle>
+                  <RefreshCcwIcon
+                    className="size-5 cursor-pointer"
+                    onClick={() => setImageFile(undefined)}
+                  />
+                </CardHeader>
+                <CardContent>
+                  <div className={imageFile ? "disabled" : ""}>
+                    <Input type="text" name="image" defaultValue={category?.image || ""} />
+                  </div>
+                  <div className="flex justify-center relative m-10">
+                    {imageFile && (
+                      <Image
+                        alt="Product image"
+                        className="aspect-square rounded-md object-cover"
+                        height={300}
+                        width={300}
+                        src={
+                          FormatUtil.getFormat(category?.image) === "url"
+                            ? category?.image!
+                            : URL.createObjectURL(imageFile)
+                        }
+                      />
+                    )}
+                    <label
+                      className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${
+                        imageFile ? "shadow-lg min-w-20" : "shadow-sm min-h-80"
+                      }`}
+                    >
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="file"
+                        name="image"
+                        className="hidden"
+                        onChange={onImageFileChange}
+                        accept="image/png,image/gif,image/jpeg,image/jpg"
+                      />
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-center gap-2 md:hidden">
           <Button size="sm" type="submit" disabled={mutation.isPending}>

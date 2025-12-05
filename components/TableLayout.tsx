@@ -4,9 +4,10 @@ import DynamicTable from "./dynamic-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tDataModels } from "@/util/util-type";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CategoryForm from "./admin/form/CategoryForm";
 import ProductForm from "./admin/form/ProductForm";
+import { Button } from "./ui/button";
 
 const FormVsModel: Record<string, ({ id }: { id?: string }) => JSX.Element> = {
   category: CategoryForm,
@@ -15,7 +16,17 @@ const FormVsModel: Record<string, ({ id }: { id?: string }) => JSX.Element> = {
 
 export default function TableLayout({ model }: { model: tDataModels }) {
   const [id, setId] = useState<string | undefined>(undefined);
+  const [tab, setTab] = useState<string>("table");
   const FormComponent = FormVsModel[model];
+
+  useEffect(() => {
+    if (id) {
+      setTab("data");
+    } else {
+      setTab("table");
+    }
+  }, [id]);
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <Card>
@@ -23,14 +34,18 @@ export default function TableLayout({ model }: { model: tDataModels }) {
           <CardTitle>{model.toString().toUpperCase()}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs>
-            <TabsList className="mb-4" defaultValue="table">
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="mb-4">
               <TabsTrigger value="table">VIEW</TabsTrigger>
               <TabsTrigger value="data">
                 {id ? "UPDATE" : "ADD"} {model.toString().toUpperCase()}
               </TabsTrigger>
             </TabsList>
-
+            {id && (
+              <Button className="max-w-20 m-10" onClick={() => setId(undefined)}>
+                Refresh
+              </Button>
+            )}
             <TabsContent value="table" className="space-y-4">
               <DynamicTable
                 columns={undefined}

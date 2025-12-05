@@ -79,14 +79,15 @@ class S3Util {
       ContentType: mimeType || mime.lookup(file.name) || "image/jpeg",
       ACL: ACL || DEFAULT_FILES_ACL,
     });
-    console.log("Going to upload a image ", fileKey);
-    const response = await this.client.send(command);
-    console.log("debugger : Upload response: ", response);
     await FileStoreModel.updateOne(
       { key: fileKey },
       { $inc: { refCount: 1 } },
       { upsert: true }
     ).exec();
+    console.log("Going to upload a image ", fileKey);
+    const response = await this.client.send(command);
+    console.log("debugger : Upload response: ", response);
+
     return fileKey;
   }
 

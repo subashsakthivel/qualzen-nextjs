@@ -77,7 +77,7 @@ interface DynamicTableProps {
   filterable?: boolean;
   groupable?: boolean;
   model: tDataModels;
-  onEdit?: (recordId: string) => void;
+  onEdit: (recordId: string) => void;
 }
 
 export default function DynamicTable({
@@ -110,27 +110,23 @@ export default function DynamicTable({
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
   const [filter, setFilter] = useState<string>();
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [state, setState] = useState<boolean>(false);
 
   const { data: tableData = [], status } = useQuery({
-    queryKey: [model, activeFilters, sortConfig, currentPage, currentPageSize, selectedColumns],
+    queryKey: [model],
     queryFn: () => fetchData(),
-    enabled: selectedColumns.length > 0,
+    enabled: state,
+    refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    const selectedColumns = localStorage.getItem(`${model}.table.select`)
-      ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string)
-      : ModelConfig[model]?.columns ?? [];
-    setSelectedColumns(selectedColumns);
-  }, [model]);
-
   async function fetchData() {
+    debugger;
     const options = {
       page: currentPage,
       limit: currentPageSize,
       sort: sortConfig ? { [sortConfig.sortby]: sortConfig.direction } : undefined,
       filter: activeFilters.criteria.length > 0 ? activeFilters : undefined,
-      select: selectedColumns.join(" ") + " -_id",
+      select: selectedColumns.join(" "),
     };
     const tableData = await DataClientAPI.getData({
       modelName: model,
@@ -164,18 +160,20 @@ export default function DynamicTable({
 
     // Extract all unique keys from the tableData
     const keys = Array.from(new Set(tableData.flatMap((item) => Object.keys(item))));
-    const updatedKeys = keys.map((key) => {
-      // Detect tableData type for this column
-      const type = detectDataType(tableData.find((item) => item[key] !== undefined)?.[key]);
+    const updatedKeys = keys
+      .filter((k) => k != "id" && k != "_id")
+      .map((key) => {
+        // Detect tableData type for this column
+        const type = detectDataType(tableData.find((item) => item[key] !== undefined)?.[key]);
 
-      return {
-        key,
-        label: key.charAt(0).toUpperCase() + key.replace(/([A-Z])/g, " $1").slice(1),
-        type,
-        sortable: type !== "object" && type !== "unknown",
-        format: undefined,
-      };
-    });
+        return {
+          key,
+          label: key.charAt(0).toUpperCase() + key.replace(/([A-Z])/g, " $1").slice(1),
+          type,
+          sortable: type !== "object" && type !== "unknown",
+          format: undefined,
+        };
+      });
     return updatedKeys;
   }, [tableData, columns]);
 
@@ -340,10 +338,13 @@ export default function DynamicTable({
   // Format value based on its type
   function formatValue(value: any, type: DataType) {
     if (value === null || value === undefined) return "";
-    debugger;
     const format = FormatUtil.getFormat(value);
     if (format === "url") {
-      return <Link href={value}>link</Link>;
+      return (
+        <Link href={value} target="_blank" rel="noopener noreferrer">
+          link
+        </Link>
+      );
     }
     switch (type) {
       case "date":
@@ -549,6 +550,14 @@ export default function DynamicTable({
     }
   }, [sortedAndGroupedData, currentPageSize, currentPage]);
 
+  useEffect(() => {
+    const selectedColumns = localStorage.getItem(`${model}.table.select`)
+      ? JSON.parse(localStorage.getItem(`${model}.table.select`) as string)
+      : ModelConfig[model]?.columns ?? [];
+    setSelectedColumns(selectedColumns);
+    setState(true);
+  }, [model]);
+
   return (
     <div className="w-full space-y-4">
       {/* Search bar */}
@@ -734,7 +743,7 @@ export default function DynamicTable({
                           colSpan={autoDetectedColumns.length}
                           className="text-center break-all grid grid-rows-3 grid-cols-1 gap-2"
                         >
-                          {onEdit && row.id && (
+                          {row.id && (
                             <Button variant={"outline"} onClick={() => onEdit(row.id)}>
                               <EditIcon />
                             </Button>
