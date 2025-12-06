@@ -58,15 +58,25 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const response = await Persistance.updateData({
-        modelName,
-        operation,
-        id: request.id,
-        data: request,
-        updateQuery: request.updateQuery,
-        queryFilter: request.queryFilter,
-      });
-      return response;
+      if (request.id && operation !== "UPDATE_BY_ID") {
+        const response = await Persistance.updateOneData({
+          modelName,
+          operation,
+          id: request.id,
+          data: request,
+        });
+        return response;
+      } else {
+        const response = await Persistance.updateData({
+          modelName,
+          operation,
+          id: request.id,
+          data: request,
+          updateQuery: request.updateQuery,
+          queryFilter: request.queryFilter,
+        });
+        return response;
+      }
     } catch (err) {
       console.error("Error in getData:", err);
       throw new Error("Failed to fetch data");

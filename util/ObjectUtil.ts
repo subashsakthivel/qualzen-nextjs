@@ -43,9 +43,12 @@ export default class ObjectUtil {
     return result;
   }
 
-  public static diff(obj1: Record<string, any>, obj2: Record<string, any>): Record<string, any> {
-    const flattenedObj1 = this.flatten(obj1);
-    const flattenedObj2 = this.flatten(obj2);
+  public static diff(
+    original: Record<string, any>,
+    referance: Record<string, any>
+  ): Record<string, any> {
+    const flattenedObj1 = this.flatten(original);
+    const flattenedObj2 = this.flatten(referance);
     const differences: Record<string, any> = {};
     for (const key in flattenedObj2) {
       if (flattenedObj1[key] !== flattenedObj2[key]) {

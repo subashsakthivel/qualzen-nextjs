@@ -15,7 +15,7 @@ import ObjectUtil from "../ObjectUtil";
 import mongoose from "mongoose";
 import ModelHandler from "./model/model-util";
 import { ModelType } from "@/data/model-config";
-import { exitCode } from "process";
+import R2API from "./file/S3Util";
 
 type UpdateResult = {
   acknowledged?: boolean;
@@ -26,7 +26,7 @@ type UpdateResult = {
 
 type tExecution<T, V> = {
   callback: (session?: mongoose.ClientSession) => Promise<T>;
-  onSuccess?: (response: T) => T | V | Promise<void>;
+  onSuccess?: (response: T) => T | V | Promise<T>;
   onFailure?: () => void | Promise<void>;
 };
 type tUpdateExecution<T, V> = Omit<tExecution<T, V>, "callback"> & {
@@ -142,7 +142,7 @@ class DBUtil {
     modelName: tDataModels;
     operation?: string;
     id?: string;
-    updateQuery?: TFilter<T>;
+    updateQuery: TUpdate<T>;
     queryFilter?: TFilter<T>;
     data: FormData | T;
   }): Promise<T | undefined> {
@@ -161,11 +161,15 @@ class DBUtil {
       const query = this.parseUpdateQuery(updateQueryAndFilter.updateQuery as TUpdate<T>);
       const queryFilter = this.parseFilterQuery(updateQueryAndFilter.queryFilter as TFilter<T>);
       const execution: tUpdateExecution<T, T> = {
-        callback: async () => {
-          return (await dbModel.updateOne(queryFilter, query)) as UpdateResult | T;
-        },
+        callback: async () => (await dbModel.updateOne(queryFilter, query)) as UpdateResult | T,
       };
       switch (operation) {
+        case "UPDATE_DATA_BY_ID":
+          execution.callback = async () =>
+            (await dbModel.findByIdAndUpdate(id, query, {
+              runValidators: true,
+            })) as Promise<UpdateResult | T>;
+          break;
         case "UPDATE_DATA":
           execution.callback = async () =>
             (await dbModel.findOneAndUpdate({ _id: id }, query, {
@@ -194,6 +198,73 @@ class DBUtil {
     }
   }
 
+  async updateOneData<T>({
+    modelName,
+    operation = "UPDATE_ONE_BY_ID",
+    data,
+    id,
+  }: {
+    modelName: tDataModels;
+    operation?: string;
+    data: T | FormData;
+    id: string;
+  }): Promise<T | undefined> {
+    await dbConnect();
+    const { dbModel, schema } = DataModelMap[modelName];
+    const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
+    const { data: safeData, error, success } = schema.partial().safeParse(inputData);
+    if (!success) {
+      console.error("Invalid data:", error, inputData);
+      throw error;
+    }
+
+    const oldData = await this.getData({
+      modelName,
+      operation: "GET_DATA_BY_ID",
+      options: {},
+      id,
+    }).then((res) => JSON.parse(JSON.stringify(res)));
+    const oldFiles = await ModelHandler.getOldFilesFromObject({
+      modelName,
+      update: safeData,
+      id,
+      oldData,
+    });
+    const update = ObjectUtil.diff(safeData, oldData);
+    const updateQuery = this.parseUpdateObject(update);
+    console.log(updateQuery);
+    const execution: tExecution<T, T> = {
+      callback: async () => {
+        const savedData = await dbModel.findByIdAndUpdate(id, updateQuery);
+        return savedData;
+      },
+      onSuccess: async (response) => {
+        //delete old files
+        if (oldFiles.length > 0) {
+          for (const fileKey of oldFiles) {
+            await R2API.deleteFile(fileKey);
+          }
+        }
+        return response;
+      },
+    };
+
+    try {
+      if (operation !== "UPDATE_ONE_BY_ID") {
+        throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
+      }
+      return this.execute({
+        modelName,
+        formData: data instanceof FormData ? data : undefined,
+        operation: "UPDATE",
+        execution,
+      });
+    } catch (err) {
+      console.error("Error saving data:", err);
+      if (execution.onFailure) await execution.onFailure();
+      throw new Error("Data saving failed");
+    }
+  }
   async deleteData<T>({
     modelName,
     operation = "DELETE_DATA",
@@ -287,6 +358,52 @@ class DBUtil {
     for (const update in Object.keys(updates)) {
       const ope = `$${update}` as keyof UpdateQuery<T>;
       updateQuery[ope] = updates[update as keyof TUpdate<T>];
+    }
+
+    //$pull
+    const pullObj = updateQuery["$pull"];
+
+    if (pullObj) {
+      const pullQuery = {} as any;
+      for (const key in Object.keys(pullObj)) {
+        const val = pullObj[key];
+        if (Array.isArray(val)) {
+          pullQuery[key] = { $in: val };
+        } else {
+          pullQuery[key] = val;
+        }
+      }
+      updateQuery["$pull"] = pullQuery;
+    }
+
+    //$addToSet and $push with $each
+    ["$addToSet", "$push"].forEach((op) => {
+      const opObj = updateQuery[op as keyof UpdateQuery<T>];
+      if (opObj) {
+        const newOpObj = {} as any;
+        for (const key in Object.keys(opObj)) {
+          const val = opObj[key];
+          if (Array.isArray(val)) {
+            newOpObj[key] = { $each: val };
+          } else {
+            newOpObj[key] = val;
+          }
+        }
+        updateQuery[op as keyof UpdateQuery<T>] = newOpObj;
+      }
+    });
+
+    return updateQuery;
+  }
+
+  protected parseUpdateObject<T>(update: T): UpdateQuery<T> {
+    const updateQuery: UpdateQuery<T> = {
+      $set: {},
+    };
+
+    for (const key of Object.keys(update as object)) {
+      const value = (update as any)[key];
+      (updateQuery["$set"] as any)[key] = value;
     }
 
     return updateQuery;

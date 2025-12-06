@@ -87,6 +87,38 @@ class ModelHandler {
     return docs;
   }
 
+  static async getOldFilesFromObject<K extends keyof ModelType>({
+    modelName,
+    update,
+    id,
+    oldData,
+  }: {
+    modelName: K;
+    update: Partial<ModelType[K]>;
+    id: string;
+    oldData: ModelType[K];
+  }): Promise<string[]> {
+    //parse updateQuery)
+    const modelConfig = modelMap[modelName];
+    const oldFiles: string[] = [];
+
+    if (modelConfig && modelConfig.files) {
+      modelConfig.files.forEach(async (fileConfig: { format: string; path: string }) => {
+        const key = ObjectUtil.getValue({ obj: update, path: fileConfig.path });
+        if (key) {
+          const oldKey = ObjectUtil.getValue({ obj: oldData, path: fileConfig.path });
+          if (Array.isArray(key) && Array.isArray(oldKey)) {
+            const oldKeys = oldKey.filter((k: string) => !key.includes(k));
+            oldKeys.forEach((k) => oldFiles.push(k));
+          } else if (key != oldKey) {
+            oldFiles.push(oldKey);
+          }
+        }
+      });
+    }
+    return oldFiles;
+  }
+
   static async getFileUrls<K extends keyof ModelType>({
     modelName,
     docs,

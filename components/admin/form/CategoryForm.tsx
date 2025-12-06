@@ -15,20 +15,20 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { TCategory } from "@/schema/Category";
 import { useRouter } from "next/navigation";
-import { RefreshCcwIcon, Upload } from "lucide-react";
+import { AlertCircle, RefreshCcwIcon, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import DataClientAPI from "@/util/client/data-client-api";
 import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
 import FormatUtil from "@/util/formetUtil";
-import DataUtil from "@/data/data-util";
-import ObjectUtil from "@/util/ObjectUtil";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 
 const model = "category";
 
 const CategoryForm = ({ id }: { id?: string }) => {
   const router = useRouter();
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined);
+  const [alert, setAlert] = React.useState("");
   const { data: { categories, category } = { categories: [], category: undefined }, isLoading } =
     useQuery({
       queryKey: ["categories", id],
@@ -52,10 +52,15 @@ const CategoryForm = ({ id }: { id?: string }) => {
     });
   const mutation = useMutation({
     mutationFn: async (request: FormData) => {
-      if (id) {
-        return await DataClientAPI.patchData({ modelName: model, request });
-      } else {
-        return await DataClientAPI.saveData({ modelName: model, request });
+      setAlert("");
+      try {
+        if (id) {
+          return await DataClientAPI.patchData({ modelName: model, request });
+        } else {
+          return await DataClientAPI.saveData({ modelName: model, request });
+        }
+      } catch (err) {
+        setAlert("Something went Wrong !");
       }
     },
     onSuccess: () => router.push("/table/category"),
@@ -68,7 +73,6 @@ const CategoryForm = ({ id }: { id?: string }) => {
 
   const handleCreatePost = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const formData = new FormData(event.currentTarget);
     const imageName = uuidv4();
     const parentCategory = formData.get("parentCategory") as string;
@@ -87,20 +91,24 @@ const CategoryForm = ({ id }: { id?: string }) => {
     }
 
     if (category && id) {
-      const updateObj = ObjectUtil.diff(category, data);
       request.append("id", id);
-      request.append("operation", "UPDATE_DATA");
-      request.append("updateQuery", DataUtil.parseUpdateQuery({ Obj: updateObj }));
+      request.append("operation", "UPDATE_ONE_BY_ID");
     } else {
       request.append("operation", "SAVE_DATA");
-      request.append("data", JSON.stringify(data));
     }
+    request.append("data", JSON.stringify(data));
 
     mutation.mutate(request);
   };
 
   return (
     <div className="m-10 mb-52 space-y-24 p-10">
+      {alert && (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>{alert}</AlertTitle>
+        </Alert>
+      )}
       <form
         className="grid flex-1 auto-rows-max gap-4"
         autoComplete="off"
