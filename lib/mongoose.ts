@@ -7,7 +7,7 @@ async function dbConnect() {
     if (connection.isConnected) {
       return;
     }
-
+    console.log("connecting to db : ", process.env.MONGODB_URI);
     const db = await mongoose.connect(process.env.MONGODB_URI!);
 
     connection.isConnected = db.connections[0].readyState;
@@ -16,5 +16,23 @@ async function dbConnect() {
     throw error;
   }
 }
+
+mongoose.plugin((schema) => {
+  schema.set("toJSON", {
+    transform(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+    },
+  });
+
+  schema.set("toObject", {
+    transform(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+    },
+  });
+});
 
 export default dbConnect;

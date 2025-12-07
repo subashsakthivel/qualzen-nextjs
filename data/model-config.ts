@@ -27,7 +27,7 @@ export const ModelConfig: Record<keyof ModelType, IModelConfig> = {
     columns: ["name", "description", "category", "brand"],
     columnConfig: {
       name: {
-        parse: (value: any) => ({ value, text_link: `/product/${value}`, type: "url" }),
+        parse: (doc: any) => ({ text: doc.name, text_link: `/product/${doc._id}`, type: "url" }),
       },
     },
   },

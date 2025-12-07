@@ -1,7 +1,5 @@
 /* @type {import('next').NextConfig} */
 
-import { hostname } from "os";
-
 const nextConfig = {
   reactStrictMode: false,
   async rewrites() {

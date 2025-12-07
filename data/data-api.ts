@@ -58,11 +58,14 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      if (request.id && operation !== "UPDATE_BY_ID") {
+      if (
+        (request instanceof FormData ? request.get("id") : request.id) &&
+        operation !== "UPDATE_BY_ID"
+      ) {
         const response = await Persistance.updateOneData({
           modelName,
           operation,
-          id: request.id,
+          id: request instanceof FormData ? request.get("id") : request.id,
           data: request,
         });
         return response;

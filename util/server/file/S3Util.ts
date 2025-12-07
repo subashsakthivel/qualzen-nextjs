@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ErrorRequest } from "../../responseUtil";
 import crypto from "crypto";
 import { FileStoreModel } from "@/model/FileStore";
+import mongoose from "mongoose";
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const BUCKET_REGION = process.env.R2_BUCKET_REGION || "auto";
@@ -68,7 +69,8 @@ class S3Util {
     fileKey: string,
     file: File,
     ACL?: ObjectCannedACL,
-    mimeType?: string
+    mimeType?: string,
+    session?: mongoose.ClientSession
   ): Promise<string> {
     const buffer = Buffer.from(await file.arrayBuffer());
     // use sharp to reize the image if needed
@@ -82,22 +84,24 @@ class S3Util {
     await FileStoreModel.updateOne(
       { key: fileKey },
       { $inc: { refCount: 1 } },
-      { upsert: true }
+      { upsert: true, session }
     ).exec();
     console.log("Going to upload a image ", fileKey);
     const response = await this.client.send(command);
-    console.log("debugger : Upload response: ", response);
+    console.log("debugger : Uploaded : ", fileKey);
 
     return fileKey;
   }
 
-  async deleteFile(fileKey: string) {
+  async deleteFile(fileKey: string, session?: mongoose.ClientSession) {
     const fileRecord = await FileStoreModel.findOneAndUpdate(
       { key: fileKey },
-      { $inc: { refCount: -1 } }
+      { $inc: { refCount: -1 } },
+      { session, new: true }
     ).exec();
+    console.log("Going to delete a image ", fileKey);
     if (fileRecord && fileRecord.refCount <= 0) {
-      await FileStoreModel.deleteOne({ key: fileKey }).exec();
+      await FileStoreModel.deleteOne({ key: fileKey }, { session }).exec();
       console.log(`FileStore record for ${fileKey} deleted`);
       const command = new DeleteObjectCommand({
         Bucket: BUCKET_NAME,

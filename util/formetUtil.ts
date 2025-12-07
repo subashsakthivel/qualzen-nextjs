@@ -1,19 +1,3 @@
-// export function getCurrencyFormet(price: number) {
-//   const formatted = new Intl.NumberFormat("en-US", {
-//     style: "currency",
-//     currency: "INR",
-//   }).format(price);
-
-import { isValid } from "date-fns";
-
-//   return formatted;
-// }
-
-// export function getDateFormet(date: number) {
-//   const d = new Date(date);
-//   return d.toLocaleDateString();
-// }
-
 const matchers = [
   {
     type: "url",
@@ -24,6 +8,12 @@ const matchers = [
       } catch (err) {
         return false;
       }
+    },
+  },
+  {
+    type: "url_path",
+    isValid: (value: string): boolean => {
+      return value.startsWith("/") && !value.includes("<");
     },
   },
 ];

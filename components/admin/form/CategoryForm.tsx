@@ -37,16 +37,15 @@ const CategoryForm = ({ id }: { id?: string }) => {
         debugger;
         const res = await DataClientAPI.getData({
           modelName: "category",
-          operation: "GET_DATA",
+          operation: "GET_DATA_RAW",
           request: {},
         });
         const docs = res?.docs ?? [];
         const categories = JSON.parse(JSON.stringify(docs)) as TCategory[];
         const ind = categories.findIndex((c) => c._id === id);
         if (ind >= 0) {
-          return { categories, category: categories[ind] };
+          return { categories: categories.filter((c, i) => i != ind), category: categories[ind] };
         }
-
         return { categories };
       },
     });
@@ -156,6 +155,7 @@ const CategoryForm = ({ id }: { id?: string }) => {
                         <SelectTrigger className="w-[180px]">
                           <SelectValue placeholder="Select subcategory" />
                         </SelectTrigger>
+
                         <SelectContent>
                           {categories.map((c, i) => (
                             <SelectItem key={i} value={c._id || ""}>

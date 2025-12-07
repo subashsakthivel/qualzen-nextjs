@@ -55,14 +55,14 @@ export default function ProductForm({ id }: { id?: string }) {
         debugger;
         const categoryRes = await DataClientAPI.getData({
           modelName: "category",
-          operation: "GET_DATA",
+          operation: "GET_DATA_RAW",
           request: {},
         });
         const categories = JSON.parse(JSON.stringify(categoryRes?.docs ?? [])) as TCategory[];
         if (id) {
           const productRes = await DataClientAPI.getData({
             modelName: "product",
-            operation: "GET_DATA_BY_ID",
+            operation: "GET_DATA_BY_ID_RAW",
             request: { id },
           });
           const product = JSON.parse(JSON.stringify(productRes)) as TProduct;

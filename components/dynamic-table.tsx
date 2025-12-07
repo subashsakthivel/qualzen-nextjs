@@ -113,7 +113,7 @@ export default function DynamicTable({
   const [state, setState] = useState<boolean>(false);
 
   const { data: tableData = [], status } = useQuery({
-    queryKey: [model],
+    queryKey: [model, selectedColumns],
     queryFn: () => fetchData(),
     enabled: state,
     refetchOnWindowFocus: false,
@@ -133,14 +133,15 @@ export default function DynamicTable({
       operation: "GET_DATA",
       request: { options },
     });
+    const modelConfig = ModelConfig[model];
+    console.log(modelConfig);
     const data = tableData.docs.map((doc: Record<string, any>) => {
-      if (ModelConfig[model].columnConfig) {
-        Object.keys(doc).map((key) => {
-          if (ModelConfig[model].columnConfig?.[key].parse) {
-            doc[key] = ModelConfig[model].columnConfig[key].parse(doc[key]);
-          }
-        });
-      }
+      const columnConfig = modelConfig.columnConfig ?? {};
+      Object.keys(doc).map((key) => {
+        if (columnConfig[key]?.parse) {
+          doc[key] = columnConfig[key].parse(doc);
+        }
+      });
       return doc;
     });
     console.log("Fetched tableData:", data);
@@ -346,6 +347,7 @@ export default function DynamicTable({
         </Link>
       );
     }
+    debugger;
     switch (type) {
       case "date":
         const date = value instanceof Date ? value : new Date(value);
@@ -353,8 +355,9 @@ export default function DynamicTable({
       case "array":
         return Array.isArray(value) ? value.join(", ") : String(value);
       case "object":
-        if (value.text_link && FormatUtil.getFormat(value.text_link) === "url") {
-          return <Link href={value.text_link}>{value.value ?? "Link"}</Link>;
+        const format = FormatUtil.getFormat(value.text_link);
+        if (value.text_link && (format === "url" || format == "url_path")) {
+          return <Link href={value.text_link}>{value.text ?? "Link"}</Link>;
         }
         return JSON.stringify(value);
       default:

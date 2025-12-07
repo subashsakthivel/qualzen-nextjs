@@ -47,7 +47,6 @@ class DBUtil {
     },
     id,
   }: tGetDataParams<T>): Promise<tGetResponse<T>> {
-    await dbConnect(); // todo : need check
     if (sort) {
       for (const key in sort) {
         sort[key] = sort[key] === "asc" ? "asc" : "desc";
@@ -77,12 +76,16 @@ class DBUtil {
       } else if (operation === "GET_DATA_ONE") {
         execution.callback = async () =>
           await dbModel.findOne(queryFilter, options.select, options);
-      } else if (operation === "GET_DATA_BY_ID") {
+      } else if (operation === "GET_DATA_BY_ID" || operation === "GET_DATA_BY_ID_RAW") {
         execution.callback = async () => await dbModel.findById(id, options.select, options);
-      } else if (operation !== "GET_DATA") {
+      } else if (operation !== "GET_DATA" && operation !== "GET_DATA_RAW") {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
-      return await this.execute({ modelName, operation: "GET", execution });
+      return await this.execute({
+        modelName,
+        operation: operation.endsWith("RAW") ? "GET_RAW" : "GET",
+        execution,
+      });
     } catch (err) {
       console.error("Error fetching data:", err);
       throw new Error("Data fetching failed");
@@ -98,7 +101,6 @@ class DBUtil {
     operation?: string;
     data: T | FormData;
   }): Promise<T | undefined> {
-    await dbConnect();
     const { dbModel, schema } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
     const { data: safeData, error, success } = schema.safeParse(inputData);
@@ -171,17 +173,19 @@ class DBUtil {
             })) as Promise<UpdateResult | T>;
           break;
         case "UPDATE_DATA":
-          execution.callback = async () =>
+          execution.callback = async (session) =>
             (await dbModel.findOneAndUpdate({ _id: id }, query, {
               runValidators: true,
+              session,
             })) as Promise<UpdateResult | T>;
           break;
         case "UPDATE_DATA_MANY":
-          execution.callback = async () =>
+          execution.callback = async (session) =>
             (await dbModel.updateMany(queryFilter, query, {
               multi: true,
               upsert: true,
               runValidators: true,
+              session,
             })) as UpdateResult | T;
           break;
         default:
@@ -209,7 +213,6 @@ class DBUtil {
     data: T | FormData;
     id: string;
   }): Promise<T | undefined> {
-    await dbConnect();
     const { dbModel, schema } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
     const { data: safeData, error, success } = schema.partial().safeParse(inputData);
@@ -220,7 +223,7 @@ class DBUtil {
 
     const oldData = await this.getData({
       modelName,
-      operation: "GET_DATA_BY_ID",
+      operation: "GET_DATA_BY_ID_RAW",
       options: {},
       id,
     }).then((res) => JSON.parse(JSON.stringify(res)));
@@ -230,12 +233,12 @@ class DBUtil {
       id,
       oldData,
     });
-    const update = ObjectUtil.diff(safeData, oldData);
+    const update = ObjectUtil.diff(oldData, safeData);
     const updateQuery = this.parseUpdateObject(update);
     console.log(updateQuery);
     const execution: tExecution<T, T> = {
-      callback: async () => {
-        const savedData = await dbModel.findByIdAndUpdate(id, updateQuery);
+      callback: async (session) => {
+        const savedData = await dbModel.findByIdAndUpdate(id, updateQuery, { session, new: true });
         return savedData;
       },
       onSuccess: async (response) => {
@@ -427,9 +430,10 @@ class DBUtil {
   }: {
     modelName: keyof ModelType;
     formData?: FormData;
-    operation: "GET" | "DELETE" | "CREATE" | "UPDATE";
+    operation: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE";
     execution: tExecution<T, V> | tUpdateExecution<T, V>;
   }): Promise<T | undefined> {
+    await dbConnect();
     const session = await mongoose.startSession();
     try {
       const result = await session.withTransaction(async () => {
@@ -438,6 +442,7 @@ class DBUtil {
         if (onSuccess) return await onSuccess(processedRes as any);
         return processedRes;
       });
+      await session.commitTransaction();
       return result as any;
     } catch (err) {
       console.error("Execution error:", err);

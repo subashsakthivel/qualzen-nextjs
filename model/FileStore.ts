@@ -48,25 +48,6 @@ FileStoreDbSchema.pre("updateOne", async function (next) {
   next();
 });
 
-const disallowedOps = [
-  "save",
-  "deleteOne",
-  "deleteMany",
-  "remove",
-  "findOneAndDelete",
-  "findByIdAndDelete",
-  "findOneAndRemove",
-  "findByIdAndRemove",
-  "updateMany",
-  "insertMany",
-];
-
-disallowedOps.forEach((op) => {
-  FileStoreDbSchema.pre(op as any, function () {
-    throw new Error(`${op} is not supported on FileStore`);
-  });
-});
-
 FileStoreDbSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
 
 export const FileStoreModel =

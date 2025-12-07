@@ -1,7 +1,7 @@
 import ObjectUtil from "@/util/ObjectUtil";
 import R2API from "../file/S3Util";
 import { ModelType } from "@/data/model-config";
-import { PaginateResult } from "mongoose";
+import mongoose, { PaginateResult } from "mongoose";
 
 //todo: change the any later
 const modelMap: Record<string, any> = {
@@ -28,10 +28,12 @@ class ModelHandler {
     modelName,
     docs,
     form,
+    session,
   }: {
     modelName: K;
     docs: ModelType[K] | ModelType[K][];
     form: FormData;
+    session?: mongoose.ClientSession;
   }) {
     const modelConfig = modelMap[modelName];
     if (modelConfig && modelConfig.files) {
@@ -40,12 +42,14 @@ class ModelHandler {
         const documents = Array.isArray(docs) ? docs : [docs];
         documents.forEach((doc) => {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
-          const keys = Array.isArray(key) ? key : [key];
-          keys.forEach((k) => {
-            if (!form.has(k)) {
-              throw new Error(`File for key ${k} is missing in form data`);
-            }
-          });
+          if (key) {
+            const keys = Array.isArray(key) ? key : [key];
+            keys.forEach((k) => {
+              if (!form.has(k)) {
+                throw new Error(`File for key ${k} is missing in form data`);
+              }
+            });
+          }
         });
       });
       //upload files
@@ -53,11 +57,13 @@ class ModelHandler {
         const documents = Array.isArray(docs) ? docs : [docs];
         documents.forEach((doc) => {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
-          const keys = Array.isArray(key) ? key : [key];
-          keys.forEach(async (k) => {
-            const file = form.get(k) as File;
-            await R2API.uploadFile(k, file);
-          });
+          if (key) {
+            const keys = Array.isArray(key) ? key : [key];
+            keys.forEach(async (k) => {
+              const file = form.get(k) as File;
+              await R2API.uploadFile(k, file);
+            });
+          }
         });
       });
     }
@@ -67,9 +73,11 @@ class ModelHandler {
   static async delete<K extends keyof ModelType>({
     modelName,
     docs,
+    session,
   }: {
     modelName: K;
     docs: ModelType[K] | ModelType[K][];
+    session?: mongoose.ClientSession;
   }) {
     const modelConfig = modelMap[modelName];
     if (modelConfig && modelConfig.files) {
@@ -107,11 +115,13 @@ class ModelHandler {
         const key = ObjectUtil.getValue({ obj: update, path: fileConfig.path });
         if (key) {
           const oldKey = ObjectUtil.getValue({ obj: oldData, path: fileConfig.path });
-          if (Array.isArray(key) && Array.isArray(oldKey)) {
-            const oldKeys = oldKey.filter((k: string) => !key.includes(k));
-            oldKeys.forEach((k) => oldFiles.push(k));
-          } else if (key != oldKey) {
-            oldFiles.push(oldKey);
+          if (oldKey) {
+            if (Array.isArray(key) && Array.isArray(oldKey)) {
+              const oldKeys = oldKey.filter((k: string) => !key.includes(k));
+              oldKeys.forEach((k) => oldFiles.push(k));
+            } else if (key != oldKey) {
+              oldFiles.push(oldKey);
+            }
           }
         }
       });
@@ -119,7 +129,7 @@ class ModelHandler {
     return oldFiles;
   }
 
-  static async getFileUrls<K extends keyof ModelType>({
+  static async parseFileUrls<K extends keyof ModelType>({
     modelName,
     docs,
   }: {
@@ -156,17 +166,21 @@ class ModelHandler {
   static handle<K extends keyof ModelType>(
     modelName: K,
     docs: ModelType[K] | ModelType[K][],
-    action: "GET" | "DELETE" | "CREATE" | "UPDATE",
-    form?: FormData
+    action: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE",
+    form?: FormData,
+    session?: mongoose.ClientSession
   ) {
     switch (action) {
       case "GET":
-        return this.getFileUrls({ modelName, docs });
+        return this.parseFileUrls({ modelName, docs });
       case "DELETE":
-        return this.delete({ modelName, docs });
+        return this.delete({ modelName, docs, session });
       case "CREATE":
+      case "UPDATE":
         if (!form) throw new Error("FormData is required for CREATE action");
-        return this.create({ modelName, docs, form });
+        return this.create({ modelName, docs, form, session });
+      case "GET_RAW":
+        return docs;
       default:
         throw new Error("Invalid action");
     }
