@@ -10,10 +10,6 @@ import { ProductVariantModel } from "../ProductVarient";
 import { ProductVariantSchema } from "@/schema/ProductVarient";
 import { AddressModel } from "../Address";
 import { AddressSchema } from "@/schema/Address";
-import { OrderSchema } from "@/schema/Order";
-import { OrderModel } from "../Order";
-import { ContentModel } from "../Content";
-import { cache } from "react";
 import { tDataModels } from "@/util/util-type";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;

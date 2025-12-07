@@ -27,20 +27,4 @@ export const DataSourceMap: Record<tDataModels, IDataSourceMap> = {
     url: "/api/dataAPI/userinfo",
     schema: UserInfoSchema,
   },
-  categoryspecificattributes: {
-    url: "/api/dataAPI/categoryspecificattributes",
-    schema: z.any(),
-  },
-  order: {
-    url: "/api/dataAPI/order",
-    schema: z.any(),
-  },
-  content: {
-    url: "/api/dataAPI/content",
-    schema: z.any(),
-  },
-  productVariant: {
-    url: "/api/dataAPI/productVariant",
-    schema: z.any(),
-  },
 };

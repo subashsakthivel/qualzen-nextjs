@@ -17,7 +17,7 @@ export default function Home() {
       <ErrorBoundary fallback={<ErrorPage />}>
         <HeroCarousel />
 
-        <div className="  container  space-y-32 my-10">
+        {/* <div className="  container  space-y-32 my-10">
           <CategorySection />
           <FeaturedProducts />
           <CategoriesCatelog />
@@ -36,7 +36,7 @@ export default function Home() {
           </div>
           <BlogPostsList />
           <SubscribeNewsLetter />
-        </div>
+        </div> */}
       </ErrorBoundary>
     </>
   );

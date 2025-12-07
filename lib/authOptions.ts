@@ -8,7 +8,7 @@ import { AppleProfile } from "next-auth/providers/apple";
 import clientPromise from "./mongodb";
 import { Adapter } from "next-auth/adapters";
 import { UserInfoModel } from "@/model/UserInfo";
-import { CommonUtil } from "@/util/util";
+// import { CommonUtil } from "@/util/util";
 import dbConnect from "./mongoose";
 import { InvalidInputError } from "@/constants/erros";
 import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
@@ -28,7 +28,6 @@ async function checkAndAddUser(user: TUserInfo): Promise<TUserInfo> {
 }
 export const authOptions: NextAuthOptions = {
   providers: [
-
     // CredentialsProvider({
     //   name: "Credentials",
     //   credentials: {
@@ -64,35 +63,34 @@ export const authOptions: NextAuthOptions = {
     // }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  adapter: MongoDBAdapter(clientPromise) as Adapter,
   callbacks: {
     async jwt({ token, account, profile, session, user, trigger }) {
       //persist user data in token
-      if (user || profile) {
-        console.log("trigger", trigger);
+      // if (user || profile) {
+      //   console.log("trigger", trigger);
 
-        console.warn("jwt token", token, account, profile, session, user, trigger);
+      //   console.warn("jwt token", token, account, profile, session, user, trigger);
 
-        const userObj = CommonUtil.filterObjectByType(
-          { ...token, ...account, ...profile, ...session, ...user },
-          Object.keys(UserInfoSchema.shape)
-        );
-        console.log("userObj", userObj);
-        const { data, error, success } = UserInfoSchema.safeParse(userObj);
-        if (error) {
-          console.error("Zod validation error:", error);
-          throw new InvalidInputError(error);
-        } else {
-          console.log("User data is valid:", data);
-          const userInfo = await checkAndAddUser(data as TUserInfo);
-          token.userId = userInfo.userId;
-        }
+      //   const userObj = CommonUtil.filterObjectByType(
+      //     { ...token, ...account, ...profile, ...session, ...user },
+      //     Object.keys(UserInfoSchema.shape)
+      //   );
+      //   console.log("userObj", userObj);
+      //   const { data, error, success } = UserInfoSchema.safeParse(userObj);
+      //   if (error) {
+      //     console.error("Zod validation error:", error);
+      //     throw new InvalidInputError(error);
+      //   } else {
+      //     console.log("User data is valid:", data);
+      //     const userInfo = await checkAndAddUser(data as TUserInfo);
+      //     token.userId = userInfo.userId;
+      //   }
 
-        if (user && account) {
-          token.accessToken = account.access_token;
-          token.role = user.role;
-        }
-      }
+      //   if (user && account) {
+      //     token.accessToken = account.access_token;
+      //     token.role = user.role;
+      //   }
+      // }
 
       return token;
     },
