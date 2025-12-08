@@ -76,7 +76,7 @@ const About = () => {
       {/* Story Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         <div>
-          <h2 className="text-3xl font-bold mb-6">Our Story</h2>
+          <h2 className="text-3xl font-bold mb-6">UnKnown</h2>
           <div className="space-y-4 text-muted-foreground">
             <p>
               Varfeo emerged from a simple idea: For us, it all began with something as simple as
@@ -117,7 +117,6 @@ const About = () => {
 
       {/* Values Section */}
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Our Values</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {values.map((value, index) => (
             <Card key={index} className="text-center p-6">
@@ -130,38 +129,6 @@ const About = () => {
           ))}
         </div>
       </div>
-
-      {/* Team Section */}
-      {/* <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Meet Our Team</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {team.map((member, index) => (
-            <Card key={index} className="text-center">
-              <CardContent className="p-6 relative">
-                <Image
-                  src={member.image}
-                  fill
-                  alt={member.name}
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="font-semibold text-lg mb-1">{member.name}</h3>
-                <p className="text-primary font-medium mb-3">{member.position}</p>
-                <p className="text-sm text-muted-foreground">{member.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div> */}
-
-      {/* Mission Statement */}
-      {/* <div className="hero-gradient rounded-lg p-8 text-white text-center">
-        <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
-        <p className="text-lg max-w-3xl mx-auto">
-          To create exceptional fashion that empowers individuals to express their unique identity,
-          inspired by the courage and strength of iconic heroes. We are not just making clothes; we
-          are crafting confidence, one piece at a time.
-        </p>
-      </div> */}
     </div>
   );
 };

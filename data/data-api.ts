@@ -1,8 +1,7 @@
 import { localcache } from "@/lib/cache";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import Persistance from "../util/server/db-core";
-import { FetchDataOptions, tDataModels } from "../util/util-type";
-import { ModelType } from "./model-config";
+import { tDataModels } from "../util/util-type";
 
 class DataAPIclass {
   async getData({
@@ -97,15 +96,12 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const { cacheKey } = DataModelMap[modelName];
-
       const response = await Persistance.deleteData({
         modelName,
         operation,
         filter: request.filter,
         id: request.id,
       });
-      localcache.delete(cacheKey);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);

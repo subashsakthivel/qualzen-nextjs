@@ -42,7 +42,6 @@ export const Header = () => {
     { to: "/", label: "Home" },
     { to: "/products", label: "Products" },
     { to: "/offers", label: "Offers" },
-    { to: "/about", label: "About" },
     { to: "/contact", label: "Contact" },
     { to: "/help", label: "Help" },
   ];

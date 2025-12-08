@@ -7,7 +7,7 @@ const SubscribeNewsLetter = () => {
   return (
     <div className="flex flex-col space-y-6 justify-center items-center text-3xl w-full">
       <div className="flex gap-5 items-center justify-center">
-        <h1 className="font-extrabold">Subscribe NewsLetter</h1>
+        <h1 className="font-extrabold">Join </h1>
       </div>
       <div className="flex gap-2 items-center justify-center underline">
         <FaWhatsapp className="text-green-500 hover:scale-105 hover:cursor-pointer" />

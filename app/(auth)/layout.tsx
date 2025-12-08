@@ -5,7 +5,6 @@ import "../globals.css";
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { GalleryVerticalEnd } from "lucide-react";
-import AppConfig from "@/config/app-config";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -30,7 +29,7 @@ export default async function RootLayout({
                   <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                     <GalleryVerticalEnd className="size-4" />
                   </div>
-                  {AppConfig.name}
+                  Varfeo
                 </a>
               </div>
               <div className="flex flex-1 items-center justify-center">

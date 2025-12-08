@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Phone, Mail, Clock, Icon } from "lucide-react";
 import { FaFacebook, FaGoogle, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
 import Link from "next/link";
+import About from "@/components/about";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -45,11 +46,6 @@ const Contact = () => {
       title: "Email",
       details: "varfeo.support@gmail.com",
     },
-    {
-      icon: <Clock className="h-5 w-5 text-primary" />,
-      title: "Business Hours",
-      details: "Mon-SAT: 8AM-12PM , SUN: 8AM-12AM",
-    },
   ];
 
   const socialMedia = [
@@ -78,7 +74,6 @@ const Contact = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
           <p className="text-muted-foreground">
@@ -87,7 +82,6 @@ const Contact = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Contact Form */}
           <div className="space-y-5">
             <Card>
               <CardHeader>
@@ -159,7 +153,9 @@ const Contact = () => {
                     key={media.name}
                     className="flex justify-center items-center border p-5 rounded-sm"
                   >
-                    <Link href={media.href}>{media.icon}</Link>
+                    <Link href={media.href} target="_blank">
+                      {media.icon}
+                    </Link>
                   </div>
                 ))}
               </CardContent>
@@ -187,43 +183,10 @@ const Contact = () => {
                 </div>
               ))}
             </div>
-
-            {/* Map Placeholder */}
-            {/* <Card>
-              <CardContent className="p-0">
-                <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Interactive Map</p>
-                    <p className="text-sm text-muted-foreground">Visit our flagship store in NYC</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
-
-            {/* Quick Contact */}
-            {/* <Card className="hero-gradient text-white">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-2">Need Immediate Help?</h3>
-                <p className="mb-4 opacity-90">
-                  Our customer support team is available 24/7 for urgent matters.
-                </p>
-                <div className="space-y-2">
-                  <Button variant="secondary" className="w-full">
-                    Call Support
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full bg-transparent border-white text-white hover:bg-white hover:text-primary"
-                  >
-                    Live Chat
-                  </Button>
-                </div>
-              </CardContent>
-            </Card> */}
           </div>
         </div>
       </div>
+      <About />
     </div>
   );
 };

@@ -57,7 +57,7 @@ export default async function HeroCarousel() {
     request: {
       options: {
         filter: {
-          identifier: "home-page_banner",
+          identifier: "home_page_banner",
           is_active: true,
         },
       },
@@ -70,7 +70,7 @@ export default async function HeroCarousel() {
     <>
       <div className="w-full">
         {heroSlides.map((slide, index) => (
-          <Card key={index} className="border-0 rounded-none">
+          <Card key={index} className="border-0 rounded-none mb-2">
             <CardContent className="relative p-0 h-screen overflow-hidden">
               {slide.bg_img?.img &&
                 (slide.bg_img?.img_link ? (

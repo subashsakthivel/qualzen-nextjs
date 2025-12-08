@@ -272,6 +272,7 @@ class DBUtil {
       throw new Error("Data saving failed");
     }
   }
+
   async deleteData<T>({
     modelName,
     operation = "DELETE_DATA",

@@ -34,4 +34,5 @@ const ContentDBSchema = new mongoose.Schema<TContent>({
   },
 });
 
-export const CategoryModel = mongoose.model<TCategory>("Category", ContentDBSchema);
+export const ContentModel =
+  mongoose.models?.Content || mongoose.model<TContent>("Content", ContentDBSchema);
