@@ -1,36 +1,13 @@
-import { FetchDataOptions, tDataModels, TFilter, tGetDataParams } from "../util-type";
-import { PaginateOptions, PaginateResult } from "mongoose";
+import {
+  FetchDataOptions,
+  TCompositeFilter,
+  tDataModels,
+  TFilter,
+  tGetDataParams,
+} from "../util-type";
 import { DataSourceMap } from "./data-source-mappings";
 
 class DataServiceClass {
-  // async getPaginationData<T>({
-  //   modelName,
-  //   operation = "GET_DATA",
-  //   request,
-  //   id,
-  // }: Omit<tGetDataParams<T>, "options"> & { request: any }): Promise<PaginateResult<T>> {
-
-  //   try {
-  //     const { url } = DataSourceMap[modelName];
-
-  //     const encodedUrl = this.buildEncodedUrl(url, {...request ,  operation });
-
-  //     const response = await fetch(encodedUrl);
-
-  //     const resJson = await response.json();
-
-  //     if (!response.ok) {
-  //       debugger;
-  //       throw new Error("Request failed");
-  //     }
-
-  //     return resJson.data;
-  //   } catch (err) {
-  //     debugger;
-  //     console.error("Error fetching data:", err);
-  //     throw new Error("Unknown error");
-  //   }
-  // }
   async getData<T>({
     modelName,
     operation = "GET_DATA",
@@ -105,7 +82,6 @@ class DataServiceClass {
       };
     }
   }
-
   async patchData({
     modelName,
     request,
@@ -135,7 +111,6 @@ class DataServiceClass {
       };
     }
   }
-
   async deleteData({ modelName, request }: { modelName: tDataModels; request: any }) {
     try {
       const { url } = DataSourceMap[modelName];
@@ -163,5 +138,5 @@ class DataServiceClass {
   }
 }
 const DataClientAPI = new DataServiceClass();
-
+// todo : make it static
 export default DataClientAPI;

@@ -75,10 +75,6 @@ const zFilterQuery = z.object({
     })
   ),
 });
-export const zUpdateueryAndFilter = z.object({
-  updateQuery: zUpdateQuery,
-  queryFilter: zFilterQuery,
-});
 
 export const zUpdateQuerySchema = z.union([
   z.record(zUpdateOperator, z.any()),
@@ -91,11 +87,6 @@ export type tFilterCriteria = {
   operator: TFilterOperator;
 };
 
-export type tFilter<T> = {
-  logic: "and" | "or";
-  criteria: TFilter<T>[];
-};
-
 export type tFilterNode = tFilterCriteria | tFilterGroup;
 
 export type tFilterGroup = {
@@ -104,28 +95,7 @@ export type tFilterGroup = {
   right: tFilterNode;
 };
 
-export type TFilter<T> =
-  | TCriteria<T>
-  | {
-      logic?: "and" | "or";
-      criteria: TFilter<T>[];
-    };
-
-export interface FetchDataOptions<T> extends PaginateOptions {
-  filter?: TFilter<T>;
-  limit?: number;
-  fields?: string;
-  sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
-}
-
 export type tDataModels = keyof ModelType;
-
-export interface tGetDataParams<T> {
-  modelName: tDataModels;
-  operation?: string;
-  options: FetchDataOptions<T>;
-  id?: string;
-}
 
 export type tDeleteResponse<T> =
   | T
@@ -145,3 +115,140 @@ export type tFileUploadsTask = {
   multi: boolean;
   type?: "delete" | "replace";
 }[];
+
+type NumberFilter =
+  | { Eq: number }
+  | { Gt: number }
+  | { Gte: number }
+  | { Lt: number }
+  | { Lte: number };
+
+export type TCompositeFilter = {
+  CompositeFilters?: {
+    StringFilters?: {
+      FieldName: string;
+      Filter: {
+        Value: string;
+        Comparison:
+          | "EQUALS"
+          | "PREFIX"
+          | "NOT_EQUALS"
+          | "PREFIX_NOT_EQUALS"
+          | "CONTAINS"
+          | "NOT_CONTAINS"
+          | "CONTAINS_WORD";
+      };
+    }[];
+    BooleanFilters?: {
+      FieldName: string;
+      Filter: { Value: boolean };
+    }[];
+    NumberFilters?: {
+      FieldName: string;
+      Filter: NumberFilter;
+    }[];
+    ArrayFilters?: {
+      FieldName: string;
+      Filter: {
+        Comparison: "ALL" | "IN" | "NOT_IN";
+        Value: (string | number)[];
+      };
+    }[];
+    NestedCompositeFilters?: TCompositeFilter[];
+    Operator?: "AND" | "OR";
+  }[];
+  CompositeOperator?: "AND" | "OR";
+};
+
+export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
+  z.object({
+    CompositeFilters: z
+      .array(
+        z.object({
+          StringFilters: z
+            .array(
+              z.object({
+                FieldName: z.string(),
+                Filter: z.object({
+                  Value: z.string(),
+                  Comparison: z.enum([
+                    "EQUALS",
+                    "PREFIX",
+                    "NOT_EQUALS",
+                    "PREFIX_NOT_EQUALS",
+                    "CONTAINS",
+                    "NOT_CONTAINS",
+                    "CONTAINS_WORD",
+                  ]),
+                }),
+              })
+            )
+            .optional(),
+
+          BooleanFilters: z
+            .array(
+              z.object({
+                FieldName: z.string(),
+                Filter: z.object({
+                  Value: z.boolean(),
+                }),
+              })
+            )
+            .optional(),
+
+          NumberFilters: z
+            .array(
+              z.object({
+                FieldName: z.string(),
+                Filter: z.union([
+                  z.object({ Eq: z.number() }),
+                  z.object({ Gt: z.number() }),
+                  z.object({ Gte: z.number() }),
+                  z.object({ Lt: z.number() }),
+                  z.object({ Lte: z.number() }),
+                ]),
+              })
+            )
+            .optional(),
+
+          ArrayFilters: z
+            .array(
+              z.object({
+                FieldName: z.string(),
+                Filter: z.object({
+                  Comparison: z.enum(["ALL", "IN", "NOT_IN"]),
+                  Value: z.array(z.union([z.string(), z.number()])).min(1),
+                }),
+              })
+            )
+            .optional(),
+
+          Operator: z.enum(["AND", "OR"]).optional(),
+
+          NestedCompositeFilters: z.array(zCompositeFilter).max(3).optional(),
+        })
+      )
+      .optional(),
+
+    CompositeOperator: z.enum(["OR", "AND"]).optional(),
+  })
+);
+
+export type TFilter<T> = TCompositeFilter | Record<string, string | number | undefined | null>;
+export interface FetchDataOptions<T> extends PaginateOptions {
+  filter?: TFilter<T>;
+  limit?: number;
+  fields?: string;
+  sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
+}
+export interface tGetDataParams<T> {
+  modelName: tDataModels;
+  operation?: string;
+  options: FetchDataOptions<T>;
+  id?: string;
+}
+
+export const zUpdateueryAndFilter = z.object({
+  updateQuery: zUpdateQuery,
+  queryFilter: zCompositeFilter,
+});

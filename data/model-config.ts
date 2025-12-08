@@ -3,11 +3,12 @@ import { ProductSchema, TProduct } from "@/schema/Product";
 import { CategorySchema, TCategory } from "@/schema/Category";
 import { AddressSchema, TAddress } from "@/schema/Address";
 import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
+import { ContentSchema, TContent } from "@/schema/Content";
 // all of this shoul be in server side
-export interface IModelConfig {
+export interface IModelConfig<T, K extends keyof T = keyof T> {
   schema: z.ZodType;
-  columns: string[];
-  columnConfig?: { [key: string]: { parse?: (value: any) => any } };
+  columns: K[];
+  columnConfig?: Partial<{ [K in keyof T]: { parse?: (value: any) => any } }>;
 }
 
 export type ModelType = {
@@ -15,9 +16,11 @@ export type ModelType = {
   product: TProduct;
   address: TAddress;
   userinfo: TUserInfo;
+  content: TContent;
 };
-
-export const ModelConfig: Record<keyof ModelType, IModelConfig> = {
+export const ModelConfig: {
+  [K in keyof ModelType]: IModelConfig<ModelType[K]>;
+} = {
   category: {
     schema: CategorySchema,
     columns: ["name", "description", "image"],
@@ -37,6 +40,10 @@ export const ModelConfig: Record<keyof ModelType, IModelConfig> = {
   },
   userinfo: {
     schema: UserInfoSchema,
+    columns: [],
+  },
+  content: {
+    schema: ContentSchema,
     columns: [],
   },
 };

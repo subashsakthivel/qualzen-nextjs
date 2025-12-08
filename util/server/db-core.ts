@@ -1,5 +1,6 @@
 import { FilterQuery, PaginateModel, RootQuerySelector, UpdateQuery } from "mongoose";
 import {
+  TCompositeFilter,
   TCriteria,
   tDataModels,
   tDeleteResponse,
@@ -66,13 +67,14 @@ class DBUtil {
 
     try {
       const { dbModel } = DataModelMap[modelName];
-      const queryFilter = this.parseFilterQuery(filter);
+      const queryFilter = filter?.CompositeFilters ? this.parseFilterQuery(filter) : filter;
 
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
       };
       if (operation === "GET_DATA_MANY") {
-        execution.callback = async () => await dbModel.find(queryFilter, options.select, options);
+        execution.callback = async () =>
+          await dbModel.find(queryFilter ?? {}, options.select, options);
       } else if (operation === "GET_DATA_ONE") {
         execution.callback = async () =>
           await dbModel.findOne(queryFilter, options.select, options);
@@ -161,7 +163,9 @@ class DBUtil {
 
     try {
       const query = this.parseUpdateQuery(updateQueryAndFilter.updateQuery as TUpdate<T>);
-      const queryFilter = this.parseFilterQuery(updateQueryAndFilter.queryFilter as TFilter<T>);
+      const queryFilter = updateQueryAndFilter.queryFilter?.CompositeFilters
+        ? this.parseFilterQuery(updateQueryAndFilter.queryFilter)
+        : updateQueryAndFilter.queryFilter;
       const execution: tUpdateExecution<T, T> = {
         callback: async () => (await dbModel.updateOne(queryFilter, query)) as UpdateResult | T,
       };
@@ -283,19 +287,19 @@ class DBUtil {
     if (!id && !filter) {
       throw new Error("Either id or filter must be provided for deletion");
     }
+    const queryFilter = filter?.CompositeFilters ? this.parseFilterQuery(filter) : filter;
     const execution: tExecution<tDeleteResponse<T>, T> = {
       callback: async () => {
         if (id) {
           return await dbModel.findByIdAndDelete(id).lean();
         }
-        const queryFilter = this.parseFilterQuery(filter!);
+
         return dbModel.deleteOne(queryFilter).lean();
       },
     };
     try {
       switch (operation) {
         case "DELETE_DATA_MANY":
-          const queryFilter = this.parseFilterQuery(filter!);
           execution.callback = async () => await dbModel.deleteMany(queryFilter).lean();
           break;
         case "DELETE_DATA":
@@ -307,52 +311,6 @@ class DBUtil {
     } catch (err) {
       throw new Error("Data deletion failed");
     }
-  }
-
-  protected parseFilterQuery<T>(filter: TFilter<T> | undefined): FilterQuery<T> {
-    if (!filter) {
-      return {};
-    }
-    if ("logic" in filter) {
-      const logicalOperator = filter.logic === "and" ? "$and" : "$or";
-      const subFilters = filter.criteria.map(this.parseFilterQuery);
-      return { [logicalOperator]: subFilters } as RootQuerySelector<T>;
-    }
-
-    const { field, operator, value } = filter as TCriteria<T>;
-    const filterQuery = {} as any;
-    switch (operator) {
-      case "equals":
-        filterQuery[field] = value;
-        break;
-      case "notEquals":
-        filterQuery[field] = { $ne: value };
-        break;
-      case "contains":
-        filterQuery[field] = { $regex: value, $options: "i" };
-        break;
-      case "in":
-        filterQuery[field] = { $in: Array.isArray(value) ? value : [value] };
-        break;
-      case "notIn":
-        filterQuery[field] = { $nin: Array.isArray(value) ? value : [value] };
-        break;
-      case "gt":
-        filterQuery[field] = { $gt: value };
-        break;
-      case "gte":
-        filterQuery[field] = { $gte: value };
-        break;
-      case "lt":
-        filterQuery[field] = { $lt: value };
-        break;
-      case "lte":
-        filterQuery[field] = { $lte: value };
-        break;
-      default:
-        throw new Error(`Unsupported operator: ${operator}`);
-    }
-    return filterQuery as FilterQuery<T>[keyof T];
   }
 
   protected parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
@@ -497,6 +455,69 @@ class DBUtil {
       throw new Error("Failed to persist subdocuments");
     }
     return await new dbModel(data).save({ session });
+  }
+
+  protected parseFilterQuery(filterQuery: TCompositeFilter): Record<string, any> {
+    if (!filterQuery.CompositeFilters || filterQuery.CompositeFilters.length === 0) {
+      return {};
+    }
+
+    const operator = filterQuery.CompositeOperator === "OR" ? "$or" : "$and";
+    const conditions = filterQuery.CompositeFilters.map((filter) => {
+      const filterConditions: Record<string, any> = {};
+
+      if (filter.StringFilters) {
+        filter.StringFilters.forEach((sf) => {
+          const comparisonMap: Record<string, any> = {
+            EQUALS: { $eq: sf.Filter.Value },
+            NOT_EQUALS: { $ne: sf.Filter.Value },
+            CONTAINS: { $regex: sf.Filter.Value, $options: "i" },
+            NOT_CONTAINS: { $not: { $regex: sf.Filter.Value, $options: "i" } },
+            PREFIX: { $regex: `^${sf.Filter.Value}`, $options: "i" },
+            PREFIX_NOT_EQUALS: { $not: { $regex: `^${sf.Filter.Value}`, $options: "i" } },
+            CONTAINS_WORD: { $regex: `\\b${sf.Filter.Value}\\b`, $options: "i" },
+          };
+          filterConditions[sf.FieldName] = comparisonMap[sf.Filter.Comparison];
+        });
+      }
+
+      if (filter.NumberFilters) {
+        filter.NumberFilters.forEach((nf) => {
+          const numFilter = nf.Filter;
+          if ("Eq" in numFilter) filterConditions[nf.FieldName] = { $eq: numFilter.Eq };
+          else if ("Gt" in numFilter) filterConditions[nf.FieldName] = { $gt: numFilter.Gt };
+          else if ("Gte" in numFilter) filterConditions[nf.FieldName] = { $gte: numFilter.Gte };
+          else if ("Lt" in numFilter) filterConditions[nf.FieldName] = { $lt: numFilter.Lt };
+          else if ("Lte" in numFilter) filterConditions[nf.FieldName] = { $lte: numFilter.Lte };
+        });
+      }
+
+      if (filter.BooleanFilters) {
+        filter.BooleanFilters.forEach((bf) => {
+          filterConditions[bf.FieldName] = { $eq: bf.Filter.Value };
+        });
+      }
+
+      if (filter.ArrayFilters) {
+        filter.ArrayFilters.forEach((af) => {
+          const arrayMap: Record<string, any> = {
+            IN: { $in: af.Filter.Value },
+            NOT_IN: { $nin: af.Filter.Value },
+            ALL: { $all: af.Filter.Value },
+          };
+          filterConditions[af.FieldName] = arrayMap[af.Filter.Comparison];
+        });
+      }
+
+      if (filter.NestedCompositeFilters) {
+        const nested = filter.NestedCompositeFilters.map(this.parseFilterQuery);
+        return { [filter.Operator === "OR" ? "$or" : "$and"]: nested };
+      }
+
+      return filterConditions;
+    });
+
+    return { [operator]: conditions };
   }
 }
 

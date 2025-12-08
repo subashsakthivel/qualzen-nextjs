@@ -1,27 +1,28 @@
+import { TCategory } from "@/schema/Category";
 import { TContent } from "@/schema/Content";
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
-const ContentDbSchema = new mongoose.Schema<TContent>({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  description: {
-    type: String,
-    required: false,
-  },
-  keyWord: {
-    type: [String],
-    required: true,
-  },
+const ContentDBSchema = new mongoose.Schema<TContent>({
   identifier: {
     type: String,
     required: true,
+    index: true,
   },
-  details: {
-    type: Schema.Types.Mixed,
+  title: {
+    type: String,
     required: true,
+  },
+  description: String,
+  bg_img: {
+    type: [{ img: String, img_link: String }],
+  },
+  click_action: [{ text: String, action: String }],
+  title_link: String,
+  additional_params: [{ key: String, value: String }],
+  is_active: {
+    type: Boolean,
+    required: true,
+    default: true,
   },
   createdAt: {
     type: Date,
@@ -33,6 +34,4 @@ const ContentDbSchema = new mongoose.Schema<TContent>({
   },
 });
 
-export const ContentModel =
-  (mongoose.models?.Content as unknown as mongoose.Model<TContent>) ||
-  mongoose.model<TContent>("Content", ContentDbSchema);
+export const CategoryModel = mongoose.model<TCategory>("Category", ContentDBSchema);

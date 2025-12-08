@@ -1,7 +1,8 @@
 import { localcache } from "@/lib/cache";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import Persistance from "../util/server/db-core";
-import { tDataModels } from "../util/util-type";
+import { FetchDataOptions, tDataModels } from "../util/util-type";
+import { ModelType } from "./model-config";
 
 class DataAPIclass {
   async getData({
