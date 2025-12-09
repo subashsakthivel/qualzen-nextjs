@@ -22,11 +22,6 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     required: true,
     min: 0,
   },
-  images: {
-    type: [String],
-    default: [],
-    minlength: 1,
-  },
   attributes: [
     {
       name: {
@@ -50,14 +45,6 @@ const ProductVariantDBSchema = new mongoose.Schema<TProductVariant>({
     type: Boolean,
     required: true,
     default: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
   },
 });
 

@@ -15,11 +15,32 @@ type tAttribute = {
 };
 const ProductShowcase = ({ product }: { product: TProductInfo }) => {
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedAttributes, setSelectedAttributes] = useState<Map<string, tAttribute>>(new Map());
+  const [selectedAttributes, setSelectedAttributes] = useState<Map<string, tAttribute>>(
+    new Map(
+      product.variants[0].attributes.map((attr) => [
+        attr.name,
+        { name: attr.name, value: attr.value },
+      ])
+    )
+  );
   const [filterdVaraints, setFilterdVaraints] = useState<TProductVariant[]>(
     product.selectedVaraint ? [product.selectedVaraint] : product.variants
   );
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(
+    product.variants && product.variants[0].images.length > 0
+      ? product.variants[0].images
+      : product.images
+  );
+  const [variant, setVariant] = useState(product.variants[0]);
+
+  const attributes: Map<string, { name: string; values: {} }> = new Map();
+  product.variants.map((v) =>
+    v.attributes.map((attr) => {
+      if (attributes.has(attr.name)) {
+        attributes.get(attr.name)?.value;
+      }
+    })
+  );
 
   const { cartItems, addToCart, updateQuantity } = useCart();
 
@@ -150,7 +171,6 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
       (product.variants.length == 0 ||
         (filterdVaraints.length == 1 && item.variant?._id == filterdVaraints[0]._id))
   );
-  const varaint = filterdVaraints.length === 1 ? filterdVaraints[0] : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -159,7 +179,7 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
         <div className="space-y-4 hidden md:block">
           <div className="aspect-square bg-muted rounded-lg overflow-hidden">
             <Image
-              src={product.images[selectedImage]}
+              src={images[selectedImage]}
               alt={product.name}
               width={200}
               height={400}
@@ -167,7 +187,7 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {product.images.map((image, index) => (
+            {images.map((image, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedImage(index)}
@@ -188,7 +208,7 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
         </div>
         <Carousel className="md:hidden">
           <CarouselContent className="aspect-square">
-            {product.images.map((image, index) => (
+            {images.map((image, index) => (
               <CarouselItem key={index}>
                 <Image
                   src={image}
@@ -211,23 +231,41 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
             )}
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
             <div className="flex items-center space-x-3">
-              <span className="text-3xl font-bold text-primary">
-                ₹ {varaint ? varaint.sellingPrice : product.sellingPrice}
-              </span>
-              <Badge variant="destructive">
-                Save ₹{" "}
-                {varaint
-                  ? product.price - varaint.sellingPrice
-                  : product.price - product.sellingPrice}
-              </Badge>
+              <span className="text-3xl font-bold text-primary">₹ {variant.sellingPrice}</span>
+              <Badge variant="destructive">Save ₹ {variant.price - variant.sellingPrice}</Badge>
             </div>
           </div>
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
 
+          {variant.images.length > 0 && (
+            <div className="grid grid-cols-4 gap-4">
+              {product.variants
+                .filter((v) => v._id !== variant._id)
+                .map((v) => ({ image: v.images[0], v }))
+                .map(({ image, v }, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setVariant(v)}
+                    className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === index ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`${product.name} view ${index + 1}`}
+                      width={200}
+                      height={400}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+            </div>
+          )}
+
           {product.varaintAttributes &&
-            Array.from(product.varaintAttributes)
-              .sort(([, a], [, b]) => a.sortOrder - b.sortOrder)
+            attributes
+              .sort((a, b) => a.sortOrder - b.sortOrder)
               .map(([key, vAtt], attrIndex) => (
                 <div key={vAtt.name ?? attrIndex}>
                   <h3 className="font-semibold mb-3">{vAtt.name}</h3>

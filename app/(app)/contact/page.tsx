@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Phone, Mail, Clock, Icon } from "lucide-react";
-import { FaFacebook, FaGoogle, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import { MapPin, Phone, Mail } from "lucide-react";
 import Link from "next/link";
 import About from "@/components/about";
+import { socialMedia } from "@/config/config-components";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -45,29 +45,6 @@ const Contact = () => {
       icon: <Mail className="h-5 w-5 text-primary" />,
       title: "Email",
       details: "varfeo.support@gmail.com",
-    },
-  ];
-
-  const socialMedia = [
-    {
-      name: "Gmail",
-      icon: <FaGoogle />,
-      href: "https://gmail.com",
-    },
-    {
-      name: "Instagram",
-      icon: <FaInstagram />,
-      href: "https://instagram.com",
-    },
-    {
-      name: "FaceBook",
-      icon: <FaFacebook />,
-      href: "https://instagram.com",
-    },
-    {
-      name: "WhatsApp",
-      icon: <FaWhatsapp />,
-      href: "https://instagram.com",
     },
   ];
 

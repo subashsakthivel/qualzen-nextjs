@@ -7,8 +7,6 @@ const ProductDBSchema = new mongoose.Schema<TProduct>({
   name: {
     type: String,
     required: true,
-    trim: true,
-    index: true,
   },
   description: {
     type: String,

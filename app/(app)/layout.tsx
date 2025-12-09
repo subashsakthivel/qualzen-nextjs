@@ -7,7 +7,6 @@ import { CartProvider } from "@/components/cart-provider";
 import { Header } from "@/components/Header";
 import { Noto_Sans_Old_Persian } from "next/font/google";
 import FooterSection from "@/components/footer-section";
-import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Create Next App",

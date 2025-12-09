@@ -7,15 +7,17 @@ import { TProductInfo } from "@/components/cart-provider";
 export default async function ProductView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const producId = id.includes("_") ? id.split("_")[0] : id;
-  const product = await DataAPI.getData({
+  const response = await DataAPI.getData({
     modelName: "product",
     operation: "GET_DATA_BY_ID",
     request: { id: producId, options: { lean: true } },
   }).then((res) => JSON.parse(JSON.stringify(res)));
 
-  if (!product) {
+  if (!response) {
     return <>Not Available</>;
   }
+
+  const product = JSON.parse(response);
 
   function processProduct(product: TProduct, id: string) {
     const ids = id.split("_");
