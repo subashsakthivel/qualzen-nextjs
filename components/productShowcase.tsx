@@ -8,39 +8,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
-import { TProductInfo, useCart } from "./cart-provider";
-type tAttribute = {
-  name: string;
-  value: string;
-};
-const ProductShowcase = ({ product }: { product: TProductInfo }) => {
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedAttributes, setSelectedAttributes] = useState<Map<string, tAttribute>>(
-    new Map(
-      product.variants[0].attributes.map((attr) => [
-        attr.name,
-        { name: attr.name, value: attr.value },
-      ])
-    )
-  );
-  const [filterdVaraints, setFilterdVaraints] = useState<TProductVariant[]>(
-    product.selectedVaraint ? [product.selectedVaraint] : product.variants
-  );
-  const [images, setImages] = useState<string[]>(
-    product.variants && product.variants[0].images.length > 0
-      ? product.variants[0].images
-      : product.images
-  );
-  const [variant, setVariant] = useState(product.variants[0]);
+import { useCart } from "./cart-provider";
+import { TProduct } from "@/schema/Product";
 
-  const attributes: Map<string, { name: string; values: {} }> = new Map();
-  product.variants.map((v) =>
-    v.attributes.map((attr) => {
-      if (attributes.has(attr.name)) {
-        attributes.get(attr.name)?.value;
-      }
-    })
-  );
+const ProductShowcase = ({ product }: { product: TProduct }) => {
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+  const [images, setImages] = useState<string[]>(product.images);
+  const [variant, setVariant] = useState(product.variants[0]);
 
   const { cartItems, addToCart, updateQuantity } = useCart();
 
@@ -117,29 +92,24 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
   function getMatchedVaraints(): TProductVariant[] {
     return product.variants.filter((varaint) =>
       varaint.attributes.reduce(
-        (acc, attr) => acc && selectedAttributes.get(attr.name)?.value === attr.value,
+        (acc, attr) => acc && selectedAttributes[attr.name] === attr.value,
         true
       )
     );
   }
 
   function onSelectAttribute(attributeName: string, attributeValue: string) {
-    debugger;
-    if (
-      !selectedAttributes?.has(attributeName) ||
-      selectedAttributes.get(attributeName)?.value !== attributeValue
-    ) {
-      selectedAttributes.clear();
-      selectedAttributes.set(attributeName, { name: attributeName, value: attributeValue });
-      const variants = getMatchedVaraints();
-      setFilterdVaraints(variants);
-      setImages([
-        ...variants[0].images,
-        ...images.filter((img) => variants[0].images.includes(img)),
-      ]);
-      setSelectedAttributes(selectedAttributes);
+    selectedAttributes[attributeName] = attributeValue;
+    setSelectedAttributes(selectedAttributes);
+    const variants = getMatchedVaraints();
+    if (variants.length == 1) {
+      setVariant(variants[0]);
     }
   }
+
+  const handleAddToCart = () => {
+    addToCart(product, variant);
+  };
 
   if (!product) {
     return (
@@ -153,23 +123,22 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
     );
   }
 
-  const handleAddToCart = () => {
-    if (product.variants.length > 0 && filterdVaraints.length > 1) return;
+  const attributes: Map<string, { values: Set<string>; sortOrder: number }> = new Map();
+  product.variants.map((v) =>
+    v.attributes.map((attr) => {
+      if (attributes.has(attr.name)) {
+        attributes.get(attr.name)?.values.add(attr.value);
+      } else {
+        attributes.set(attr.name, {
+          values: new Set([attr.value]),
+          sortOrder: attr.sortOrder,
+        });
+      }
+    })
+  );
 
-    addToCart(product, filterdVaraints[0]);
-  };
-
-  //   if (action === "increase") {
-  //     setQuantity((prev) => prev + 1);
-  //   } else if (action === "decrease" && quantity > 1) {
-  //     setQuantity((prev) => prev - 1);
-  //   }
-  // };
   const item = cartItems.find(
-    (item) =>
-      item.product._id === product._id &&
-      (product.variants.length == 0 ||
-        (filterdVaraints.length == 1 && item.variant?._id == filterdVaraints[0]._id))
+    (item) => item.product._id === product._id && item.variant._id == variant._id
   );
 
   return (
@@ -238,55 +207,51 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
 
-          {variant.images.length > 0 && (
+          {images.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
-              {product.variants
-                .filter((v) => v._id !== variant._id)
-                .map((v) => ({ image: v.images[0], v }))
-                .map(({ image, v }, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setVariant(v)}
-                    className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index ? "border-primary" : "border-transparent"
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.name} view ${index + 1}`}
-                      width={200}
-                      height={400}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
+                    selectedImage === index ? "border-primary" : "border-transparent"
+                  }`}
+                >
+                  <Image
+                    src={image}
+                    alt={`${product.name} view ${index + 1}`}
+                    width={200}
+                    height={400}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
             </div>
           )}
 
-          {product.varaintAttributes &&
-            attributes
-              .sort((a, b) => a.sortOrder - b.sortOrder)
-              .map(([key, vAtt], attrIndex) => (
-                <div key={vAtt.name ?? attrIndex}>
-                  <h3 className="font-semibold mb-3">{vAtt.name}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(vAtt.values).map((val, index) => (
-                      <Button
-                        key={index}
-                        variant={selectedAttributes.get(key)?.value !== val ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => onSelectAttribute(key, val)}
-                        className="min-w-[3rem]"
-                        style={{
-                          backgroundColor: val === "color" ? val : "",
-                        }}
-                      >
-                        {val}
-                      </Button>
-                    ))}
-                  </div>
+          {Array.from(attributes.keys())
+            .map((k) => ({ name: k, ...attributes.get(k) }))
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .map(({ ...vAtt }, attrIndex) => (
+              <div key={vAtt.name ?? attrIndex}>
+                <h3 className="font-semibold mb-3">{vAtt.name}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(vAtt.values ?? []).map((val, index) => (
+                    <Button
+                      key={index}
+                      variant={selectedAttributes[vAtt.name] !== val ? "outline" : "default"}
+                      size="sm"
+                      onClick={() => onSelectAttribute(vAtt.name, val)}
+                      className="min-w-[3rem]"
+                      style={{
+                        backgroundColor: vAtt.name === "color" ? val : "",
+                      }}
+                    >
+                      {val}
+                    </Button>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ))}
 
           {/* Actions */}
           <div className="space-y-3">
@@ -314,12 +279,7 @@ const ProductShowcase = ({ product }: { product: TProductInfo }) => {
                 </div>
               </>
             ) : (
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleAddToCart}
-                disabled={filterdVaraints.length > 1}
-              >
+              <Button size="lg" className="w-full" onClick={handleAddToCart}>
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Add to Cart
               </Button>

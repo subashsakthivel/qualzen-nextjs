@@ -15,27 +15,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCart } from "./cart-provider";
-import { signIn, useSession } from "next-auth/react";
 import OrderSummary from "./order-summary";
 import { TAddress } from "@/schema/Address";
 import { TUserInfo } from "@/schema/UserInfo";
-import { getDataFromServer, postDataToServer } from "@/util/dataAPI";
-import { DataSourceMap } from "@/data/model-config";
+import { ModelConfig } from "@/data/model-config";
+import { useSession } from "@/lib/auth-client";
+import { signIn } from "next-auth/react";
+import DataClientAPI from "@/util/client/data-client-api";
 
 export default function Checkout() {
-  const { status, data: session } = useSession({
-    required: true,
-    onUnauthenticated() {
-      signIn(undefined, { callbackUrl: "/checkout" }); // Redirect to login if not authenticated
-    },
-  });
+  const { data } = useSession();
   const { cartItems, total, clearCart } = useCart();
   const [selectedAddress, setSelectedAddress] = useState<string | undefined>(undefined);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addresses, setAddresses] = useState<TAddress[]>([]);
   const [contactNumber, setContactNumber] = useState<string>("");
 
-  const [formData, setFormData] = useState<TAddress>({
+  const [formData, setFormData] = useState<Omit<TAddress, "userId">>({
     contactName: "",
     addressLine1: "",
     city: "",
@@ -43,45 +39,92 @@ export default function Checkout() {
     postalCode: "",
     state: "",
     addressLine2: "",
-    userId: session?.user.userId ?? "",
   });
+
+  useEffect(() => {
+    const fetchInitData = async () => {
+      const response = (await DataClientAPI.getData({
+        modelName: "address",
+        operation: "GET_DATA_MANY",
+        request: {},
+      })) as TAddress[];
+      if (response && Array.isArray(response)) {
+        setAddresses(response);
+        if (response.length > 0) {
+          const addresses = response.sort((a, b) =>
+            b.updatedAt && a.updatedAt
+              ? new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+              : 0
+          );
+          const primaryAddressId = localStorage.getItem("primaryAddress");
+          const primaryAddress = response.find((addr) => addr._id === primaryAddressId);
+          if (!primaryAddress && addresses[0]._id) {
+            localStorage.setItem("primaryAddress", addresses[0]._id);
+            setSelectedAddress(addresses[0]._id);
+          } else if (primaryAddress) {
+            setSelectedAddress(primaryAddress?._id);
+          }
+        } else {
+          setShowAddressForm(true);
+        }
+      }
+
+      const userInfoData = await DataClientAPI.getData({
+        modelName: "userinfo",
+        operation: "GET_DATA_BY_ID",
+        request: {},
+      });
+      setContactNumber(userInfoData.phoneNumber);
+    };
+    fetchInitData();
+  }, [data]);
+
+  if (!data) {
+    signIn(undefined, { callbackUrl: "/checkout" });
+  }
+
+  console.log("session_checkout", data);
+  debugger;
+  if (data && !data.user) {
+    return <>Unknown User</>;
+  }
+
+  const user = data?.user;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   async function createOrder(): Promise<string> {
-    const response = await fetch("/api/createOrder", {
-      method: "POST",
-      body: JSON.stringify({
-        orders: cartItems.map((item) => ({
-          productId: item._id,
-          variantId: item.selectedVariant?._id,
-          quantity: item.quantity,
-        })),
-        amount: total,
-        shippingAddressId: selectedAddress,
-        contactNumber: contactNumber,
-        shippingMethod: "standard", //todo : need to handle
-        // notes: "GOD bless you",
-      }),
-    });
-    if (!response.ok) {
+    const data = {
+      orders: cartItems.map((item) => ({
+        productId: item.product._id,
+        variantId: item.variant._id,
+        quantity: item.quantity,
+      })),
+      amount: total,
+      shippingAddressId: selectedAddress,
+      contactNumber: contactNumber,
+      shippingMethod: "standard", //todo : need to handle
+      notes: "GOD bless you",
+    };
+    const response = await DataClientAPI.saveData({ modelName: "order", request: { data } });
+    if (!response.success) {
       throw new Error("Network response was not ok");
     }
 
-    const data = await response.json();
-    return data.orderId;
+    return response.data._id;
   }
 
   async function handlePayment() {
+    "use server";
     try {
       const orderId: string = await createOrder();
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: total,
         currency: "INR",
-        name: session?.user.name,
+        name: data?.user.name,
         description: "description",
         order_id: orderId,
         handler: async function (response: any) {
@@ -104,8 +147,8 @@ export default function Checkout() {
           }
         },
         prefill: {
-          name: session?.user.name,
-          email: session?.user.email,
+          name: user?.name,
+          email: user?.email,
         },
         theme: {
           color: "#3399cc",
@@ -115,57 +158,41 @@ export default function Checkout() {
       paymentObject.on("payment.failed", function (response: any) {
         alert(response.error.description);
       });
-      paymentObject.open();
-    } catch (error) {
-      console.log(error);
+      // (Moved useEffect above, see previous replacement)
+    } catch (e) {
+      console.log(e);
+      debugger;
     }
   }
 
-  const handleSaveAddress = async () => {
+  async function handleSaveAddress() {
     // Handle saving the new address
     console.log("Saving address:", formData);
-    console.log("session", session?.user);
-    if (session && session?.user.userId) {
-      formData.userId = session?.user.userId;
+    console.log("session", user);
+    if (user?.id) {
       debugger;
-      const { message, data } = await postDataToServer<TAddress>(DataSourceMap["address"], {
-        data: formData,
+      const response = await DataClientAPI.saveData({
+        modelName: "address",
+        request: {
+          data: formData,
+        },
       });
-      setShowAddressForm(false);
-      setAddresses([data, ...addresses]);
-      setSelectedAddress(data._id);
-      setFormData({
-        contactName: "",
-        addressLine1: "",
-        city: "",
-        country: "India",
-        postalCode: "",
-        state: "",
-        addressLine2: "",
-        userId: session?.user.userId ?? "",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const fetchInitData = async () => {
-      const result = await getDataFromServer<TAddress>(DataSourceMap["address"], "GET_DATA", {});
-      setAddresses(result.docs);
-      if (result.docs.length > 0) {
-        setSelectedAddress(result.docs[0]._id);
-      } else {
-        setShowAddressForm(true);
+      if (response && response.success) {
+        setShowAddressForm(false);
+        setAddresses([response.data, ...addresses]);
+        setSelectedAddress(response.data._id);
+        setFormData({
+          contactName: "",
+          addressLine1: "",
+          city: "",
+          country: "India",
+          postalCode: "",
+          state: "",
+          addressLine2: "",
+        });
       }
-
-      const userInfoData = await getDataFromServer<TUserInfo>(
-        DataSourceMap["userinfo"],
-        "GET_DATA",
-        {}
-      );
-      setContactNumber(userInfoData.docs[0].phoneNumber ?? "");
-    };
-    fetchInitData();
-  }, []);
+    }
+  }
 
   const selectedAddressData = addresses.find((addr) => addr._id === selectedAddress);
 
@@ -179,8 +206,6 @@ export default function Checkout() {
         </Button>
       </div>
     );
-  } else if (status === "loading") {
-    return <div>Loding...</div>;
   }
 
   return (
@@ -279,9 +304,10 @@ export default function Checkout() {
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
-                        id="contactName"
+                        id="Name"
                         value={formData.contactName}
-                        onChange={(e) => handleInputChange("contactName", e.target.value)}
+                        defaultValue={user?.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
                         placeholder="Enter full name"
                       />
                     </div>
@@ -297,12 +323,17 @@ export default function Checkout() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="street">Street Address</Label>
+                      <Label htmlFor="street">Address</Label>
                       <Input
                         id="addressLine1"
                         value={formData.addressLine1}
                         onChange={(e) => handleInputChange("addressLine1", e.target.value)}
-                        placeholder="Enter street address"
+                        placeholder="Enter address"
+                      />
+                      <Input
+                        id="addressLine1"
+                        value={formData.addressLine2}
+                        onChange={(e) => handleInputChange("addressLine2", e.target.value)}
                       />
                     </div>
 
@@ -322,7 +353,7 @@ export default function Checkout() {
                           id="state"
                           value={formData.state}
                           onChange={(e) => handleInputChange("state", e.target.value)}
-                          placeholder="Enter city"
+                          placeholder="Enter state"
                         />
                       </div>
                     </div>
@@ -337,22 +368,6 @@ export default function Checkout() {
                           placeholder="Enter Pincode"
                         />
                       </div>
-                      {/* <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Select
-                          value={formData.country}
-                          onValueChange={(value) => handleInputChange("country", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="United States">United States</SelectItem>
-                            <SelectItem value="Canada">Canada</SelectItem>
-                            <SelectItem value="Mexico">Mexico</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div> */}
                     </div>
 
                     <Button onClick={handleSaveAddress} className="w-full">

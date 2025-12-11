@@ -5,12 +5,12 @@ import { TProductVariant } from "@/schema/ProductVarient";
 import type React from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
-export type TCartItem = { product: TProductInfo; variant?: TProductVariant; quantity: number };
+export type TCartItem = { product: TProductInfo; variant: TProductVariant; quantity: number };
 type CartContextType = {
   cartItems: TCartItem[];
-  addToCart: (product: TProductInfo, variant?: TProductVariant) => void;
-  removeFromCart: (product: TProductInfo, variant?: TProductVariant) => void;
-  updateQuantity: (product: TProductInfo, quantity: number, variant?: TProductVariant) => void;
+  addToCart: (product: TProductInfo, variant: TProductVariant) => void;
+  removeFromCart: (product: TProductInfo, variant: TProductVariant) => void;
+  updateQuantity: (product: TProductInfo, quantity: number, variant: TProductVariant) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -53,12 +53,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cartItems]);
 
-  const addToCart = (product: TProductInfo, variant?: TProductVariant) => {
+  const addToCart = (product: TProductInfo, variant: TProductVariant) => {
     debugger;
     const existingItem = cartItems.find(
-      (item) => item.product._id === product._id && item.variant?._id === variant?._id
+      (item) => item.product._id === product._id && item.variant._id === variant._id
     );
-    const productQuantity = variant ? variant.stockQuantity : product.stockQuantity;
+    const productQuantity = variant.stockQuantity;
 
     if (productQuantity === 0 || (existingItem && existingItem.quantity >= productQuantity)) {
       //todo : show not have error toast
@@ -68,24 +68,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const item: TCartItem = {
       product,
       variant,
-      quantity: existingItem ? existingItem.quantity + 1 : 1,
+      quantity: 1,
     };
 
-    if (!existingItem) {
-      setCartItems([...cartItems, item]);
+    if (existingItem) {
+      existingItem.quantity += 1;
+      setCartItems([...cartItems]);
     } else {
-      setCartItems((prevItems) =>
-        prevItems.map((prevItem) =>
-          item.product._id === product._id && item.variant?._id === variant?._id ? item : prevItem
-        )
-      );
+      setCartItems([...cartItems, item]);
     }
   };
 
-  const removeFromCart = (product: TProductInfo, variant?: TProductVariant) => {
+  const removeFromCart = (product: TProductInfo, variant: TProductVariant) => {
     setCartItems((prevItems) =>
       prevItems.filter(
-        (item) => item.product._id !== product._id && item.variant?._id !== variant?._id
+        (item) => item.product._id !== product._id && item.variant._id !== variant._id
       )
     );
 
@@ -94,32 +91,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateQuantity = (product: TProductInfo, quantity: number, variant?: TProductVariant) => {
-    debugger;
-    const updatedItem = cartItems.find(
+  const updateQuantity = (product: TProductInfo, quantity: number, variant: TProductVariant) => {
+    const existingItem = cartItems.find(
       (item) => item.product._id === product._id && item.variant?._id === variant?._id
     );
-    if (!updatedItem) {
+    if (!existingItem) {
       //todo : show toeast
     } else {
       if (quantity <= 0) {
         removeFromCart(product, variant);
         return;
       }
-      const productQuantity = variant ? variant.stockQuantity : product.stockQuantity;
+      const productQuantity = variant.stockQuantity;
       if (productQuantity < quantity) {
         // todo : show dont have stock tast
         // update the cart local storage
         return;
       }
-      updatedItem.quantity = Math.max(1, quantity);
-      setCartItems((prevItems) =>
-        prevItems.map((prevItem) =>
-          prevItem.product._id === product._id && prevItem.variant?._id === variant?._id
-            ? updatedItem
-            : prevItem
-        )
-      );
+      existingItem.quantity = Math.max(1, quantity);
+      setCartItems([...cartItems]);
     }
   };
 
@@ -130,9 +120,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cartItems.reduce(
-    (total, item) =>
-      total +
-      (item.variant ? item.variant.sellingPrice : item.product.sellingPrice) * item.quantity,
+    (total, item) => total + item.variant.sellingPrice * item.quantity,
     0
   );
   const total = Math.floor(subtotal);

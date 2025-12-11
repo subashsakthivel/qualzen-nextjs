@@ -6,10 +6,12 @@ export default async function ProductsPage() {
     modelName: "product",
     operation: "GET_DATA",
     request: { options: { limit: 20, page: 1 } },
-  }).then((res) => JSON.parse(JSON.stringify(res)));
+  });
+  if (!result) return <>Something went wrong !</>;
+  const products = JSON.parse(JSON.stringify(result));
   return (
     <div className="container px-4 py-12 mx-auto">
-      <ProductGallery initialProducts={result} />
+      <ProductGallery initialProducts={products} />
     </div>
   );
 }

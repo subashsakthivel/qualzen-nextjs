@@ -7,17 +7,6 @@ const ProductGroupDBSchema = new mongoose.Schema<TProductGroup>({
     type: String,
     required: true,
   },
-  category: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category",
-    required: true,
-  },
-  slug: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-  },
   image: {
     type: String,
   },

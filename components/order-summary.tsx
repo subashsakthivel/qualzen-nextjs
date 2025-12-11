@@ -36,7 +36,7 @@ function OrderSummary({
                   <span className="text-sm">{item.name}</span>
                 </div>
                 <span className="text-sm font-medium">
-                  ${(item.price * (item.quantity || 1)).toFixed(2)}
+                  ${(item.price * item.quantity).toFixed(2)}
                 </span>
               </div>
             ))}
@@ -51,7 +51,7 @@ function OrderSummary({
             <span>${total}</span>
           </div>
           <Button type="button" className="w-full" onClick={handlePayment}>
-            Pay
+            Continue to Pay
           </Button>
         </CardContent>
       </Card>

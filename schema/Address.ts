@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { ObjectIdSchema } from "./Common";
 
 export const AddressSchema = z.object({
+  _id: z.union([z.string(), ObjectIdSchema]).optional(),
   userId: z.string(),
   contactName: z.string().min(1),
   addressLine1: z.string().min(1),
@@ -13,4 +15,4 @@ export const AddressSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
-export type TAddress = z.infer<typeof AddressSchema> & { _id?: string };
+export type TAddress = z.infer<typeof AddressSchema>;

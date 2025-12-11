@@ -10,15 +10,12 @@ import { useCart } from "@/components/cart-provider";
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, subtotal, clearCart } = useCart();
-  debugger;
+
   const cartItemInfo = cartItems.map((item) => ({
-    id: item.variant ? item.product._id + " " + item.variant._id : item.product._id,
-    image:
-      item.variant && item.variant.images.length > 0
-        ? item.variant.images[0]
-        : item.product.images[0],
+    id: item.product._id + " " + item.variant._id,
+    image: item.product.images[0],
     name: item.product.name,
-    price: item.variant ? item.variant.sellingPrice : item.product.sellingPrice,
+    price: item.variant.sellingPrice,
     product: item.product,
     variant: item.variant,
     quantity: item.quantity,
