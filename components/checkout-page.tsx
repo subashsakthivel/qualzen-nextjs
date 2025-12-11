@@ -17,8 +17,6 @@ import {
 import { useCart } from "./cart-provider";
 import OrderSummary from "./order-summary";
 import { TAddress } from "@/schema/Address";
-import { TUserInfo } from "@/schema/UserInfo";
-import { ModelConfig } from "@/data/model-config";
 import { useSession } from "@/lib/auth-client";
 import { signIn } from "next-auth/react";
 import DataClientAPI from "@/util/client/data-client-api";
