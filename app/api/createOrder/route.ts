@@ -1,70 +1,44 @@
+import DataAPI from "@/data/data-api";
+import { auth } from "@/lib/auth";
 import { authOptions } from "@/lib/authOptions";
 import { PaymentService } from "@/lib/payment";
 import { DataModel } from "@/model/DataModels";
 import { ProductModel } from "@/model/Product";
 import { TOrder } from "@/schema/Order";
+import { TProductVariant } from "@/schema/ProductVarient";
 import { TUserInfo } from "@/schema/UserInfo";
-import { getData } from "@/util/dataAPI";
-import { getServerSession } from "next-auth";
+import { optional } from "better-auth";
+import { AsyncCallbackSet } from "next/dist/server/lib/async-callback-set";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   //authenticate
-  const session = await getServerSession(authOptions);
-  if (!session?.user.userId) {
+  const data = await auth.api.getSession(request);
+  if (!data || !data?.user.id) {
     return NextResponse.json({ message: "Need to login" }, { status: 403 });
   }
-  const userInfoResData = await getData<TUserInfo>(DataModel["userinfo"], "GET_DATA", {
-    filter: {
-      rules: [
-        {
-          operator: "eq",
-          field: "userId",
-          value: session.user.userId,
-        },
-      ],
-      logicalOperator: "AND",
-    },
-  });
-  if (userInfoResData.docs.length !== 1) {
-    return NextResponse.json({ message: "Invalid User" }, { status: 403 });
-  }
-  const userInfo = userInfoResData.docs[0];
-  if (!userInfo) {
-    return NextResponse.json({ message: "Invalid User" }, { status: 403 });
-  }
   const {
-    orders,
-    notes,
-    contactNumber,
-    shippingAddressId,
-    billingAddressId,
-    shippingMethod,
-    amount,
+    data: { user_details, orders, location, amount, notes, shippingMethod },
   } = await request.json();
   const totalAmount = Math.round(await getTotalAmount(orders));
   if (Math.abs(amount - totalAmount) >= 1) {
-    return NextResponse.json({ message: "Item may be not found" }, { status: 400 }); // return the item which is not availble
+    return NextResponse.json({ message: "Item not found" }, { status: 400 }); // return the item which is not availble
   }
   const orderData: TOrder = {
-    user: userInfo,
+    user: data.user.id,
     status: "created",
     amount,
-    shippingAddress: shippingAddressId,
-    billingAddress: billingAddressId ?? shippingAddressId,
+    shippingAddress: location.shippingAddress,
+    billingAddress: location.billingAddress,
     shippingMethod,
     shippingCost: 0, // todo need calculation
-    products: orders.map((order: any) => ({
-      product: order.productId,
-      variant: order.variantId,
-      quantity: order.quantity,
-    })),
+    products: orders,
     notes,
     trackingNumber: 0,
     currency: "",
     orderDate: new Date(),
     transactionId: "",
-    receipt: `${userInfo.firstName} ${userInfo.lastName ?? ""} ${Date.now()}`,
+    receipt: `${data.user.username}_${Date.now()}`,
   };
   console.log("Order data", orderData);
   const paymentService = PaymentService.getInstance();
@@ -75,15 +49,11 @@ export async function POST(request: NextRequest) {
 
       receipt: orderData.receipt,
       customer_details: {
-        name: userInfo.firstName ?? userInfo.email,
-        contact: contactNumber ?? userInfo.phoneNumber,
-        email: userInfo.email,
-        billing_address: {
-          name: billingAddressId ?? shippingAddressId,
-        },
-        shipping_address: {
-          name: shippingAddressId,
-        },
+        name: user_details.name,
+        contact: user_details.phone_number,
+        email: user_details.email,
+        billing_address: location.billingAddress,
+        shipping_address: location.shippingAddress,
       },
     },
     orderData
@@ -96,38 +66,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function getTotalAmount(
-  orders: { productId: string; variantId?: string; quantity: number }[]
+async function getTotalAmount(
+  orders: { productId: string; variantId: string; quantity: number }[]
 ): Promise<number> {
-  const products = await ProductModel.find({
-    _id: { $in: orders.map((order) => order.productId) },
-  }).populate({
-    path: "variants",
-    match: { _id: { $in: orders.map((order) => order.variantId) } },
-  });
-  return orders.reduce((total, order) => {
-    const product = products.find((p) => p._id.toString() === order.productId);
-    if (!product) {
-      throw new Error(`Product with ID ${order.productId} not found`);
-    }
-    if (order.variantId) {
-      const variant = product.variants
-        .filter((v) => typeof v !== "string")
-        .find((v) => v._id != undefined && v._id.toString() === order.variantId);
-      if (!product.variants && !variant) {
-        throw new Error(`Product Variant with ID ${order.variantId} does not found`);
-      }
-      if (!variant || variant.stockQuantity < 1) {
-        throw new Error("product sold out", { cause: order });
-      }
-
-      total += variant.variantSpecificPrice;
-    } else {
-      if (product.stockQuantity < 1) {
-        throw new Error("product sold out", { cause: order });
-      }
-      total += product.price;
-    }
-    return total;
-  }, 0);
+  const products = (await DataAPI.getData({
+    modelName: "product",
+    operation: "GET_DATA_MANY",
+    request: {
+      options: {
+        filter: {
+          "variants._id": {
+            $in: orders.map((o) => o.variantId),
+          },
+        },
+      },
+    },
+  })) as TProductVariant[];
+  return products.reduce((sum, v) => sum + v.sellingPrice, 0);
 }

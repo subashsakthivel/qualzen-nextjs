@@ -27,9 +27,6 @@ export default function CartPage() {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
           <h1 className="text-2xl font-bold">Your cart is empty</h1>
-          <p className="text-muted-foreground mt-2">
-            Looks like you haven&#39;t added anything to your cart yet.
-          </p>
           <Button asChild className="mt-6">
             <Link href="/products">Continue Shopping</Link>
           </Button>
@@ -40,8 +37,6 @@ export default function CartPage() {
 
   return (
     <div className="container px-4 py-12 mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {cartItemInfo.map((item) => (

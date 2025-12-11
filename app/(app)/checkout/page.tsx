@@ -1,339 +1,427 @@
-import Checkout from "@/components/checkout-page";
+"use client";
 
-export default function CheckoutPage() {
-  return <Checkout />;
+import { useEffect, useState } from "react";
+import { Link, MapPin, Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TAddress } from "@/schema/Address";
+import { useSession } from "@/lib/auth-client";
+import { signIn } from "next-auth/react";
+import DataClientAPI from "@/util/client/data-client-api";
+import { useCart } from "@/components/cart-provider";
+import { Separator } from "@/components/ui/separator";
+import Script from "next/script";
+
+// Add Razorpay type to window
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
 }
 
-// export default function CheckoutPage() {
-//   const { status, data } = useSession({
-//     required: true,
-//     onUnauthenticated() {
-//       signIn(undefined, { callbackUrl: "/checkout" }); // Redirect to login if not authenticated
-//     },
-//   });
-//   const { cartItems, subtotal, clearCart } = useCart();
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-//   const [isComplete, setIsComplete] = useState(false);
-//   const [addresses, setAddresses] = useState<TAddress[]>([]);
-//   const [phonenumber, setPhonenumber] = useState<TUserInfo["phoneNumber"]>();
+export default function Checkout() {
+  const { data } = useSession();
+  const { cartItems, total, clearCart } = useCart();
+  const [selectedAddress, setSelectedAddress] = useState<string | undefined>(undefined);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addresses, setAddresses] = useState<TAddress[]>([]);
+  const [contactNumber, setContactNumber] = useState<string>("");
 
-//   useEffect(() => {
-//     const fetchInitData = async () => {
-//       const result = await getDataFromServer<TAddress>(DataSourceMap["address"], "GET_DATA", {});
-//       setAddresses(result.docs);
-//       const userInfoData = await getDataFromServer<TUserInfo>(
-//         DataSourceMap["userInfo"],
-//         "GET_DATA",
-//         {}
-//       );
-//       setPhonenumber(userInfoData.docs[0].phoneNumber ?? "");
-//     };
-//     fetchInitData();
-//   }, []);
+  const [formData, setFormData] = useState<Omit<TAddress, "userId">>({
+    contactName: "",
+    addressLine1: "",
+    city: "",
+    country: "India",
+    postalCode: "",
+    state: "",
+    addressLine2: "",
+  });
 
-//   if (cartItems.length === 0 && !isComplete) {
-//     return (
-//       <div className="container px-4 py-12 mx-auto text-center">
-//         <h1 className="text-2xl font-bold">Your cart is empty</h1>
-//         <p className="mt-4">You need to add items to your cart before checking out.</p>
-//         <Button asChild className="mt-6">
-//           <Link href="/products">Browse Products</Link>
-//         </Button>
-//       </div>
-//     );
-//   }
+  useEffect(() => {
+    const fetchInitData = async () => {
+      const response = (await DataClientAPI.getData({
+        modelName: "address",
+        operation: "GET_DATA_MANY",
+        request: {},
+      })) as TAddress[];
+      if (response && Array.isArray(response)) {
+        setAddresses(response);
+        if (response.length > 0) {
+          const addresses = response.sort((a, b) =>
+            b.updatedAt && a.updatedAt
+              ? new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+              : 0
+          );
+          const primaryAddressId = localStorage.getItem("primaryAddress");
+          const primaryAddress = response.find((addr) => addr._id === primaryAddressId);
+          if (!primaryAddress && addresses[0]._id) {
+            localStorage.setItem("primaryAddress", addresses[0]._id);
+            setSelectedAddress(addresses[0]._id);
+          } else if (primaryAddress) {
+            setSelectedAddress(primaryAddress?._id);
+          }
+        } else {
+          setShowAddressForm(true);
+        }
+      }
 
-//   if (cartItems.length > 0 && status === "loading") {
-//     return <div>Loding...</div>;
-//   }
+      const userInfoData = await DataClientAPI.getData({
+        modelName: "userinfo",
+        operation: "GET_DATA_BY_ID",
+        request: {},
+      });
+      setContactNumber(userInfoData.phoneNumber);
+    };
+    fetchInitData();
+  }, [data]);
 
-//   if (isComplete) {
-//     return (
-//       <div className="container px-4 py-12 mx-auto max-w-md">
-//         <Card className="text-center">
-//           <CardHeader>
-//             <div className="flex justify-center mb-4">
-//               <div className="rounded-full bg-green-100 p-3">
-//                 <ShieldCheck className="h-8 w-8 text-green-600" />
-//               </div>
-//             </div>
-//             <CardTitle className="text-2xl">Order Confirmed!</CardTitle>
-//           </CardHeader>
-//           <CardContent className="space-y-4">
-//             <p>
-//               Thank you for your purchase. Your order has been confirmed and will be shipped soon.
-//             </p>
-//             <div className="bg-muted p-4 rounded-lg">
-//               <p className="font-medium">Order #12345</p>
-//               <p className="text-sm text-muted-foreground">
-//                 A confirmation email has been sent to your email address.
-//               </p>
-//             </div>
-//           </CardContent>
-//           <CardFooter className="flex justify-center">
-//             <Button asChild>
-//               <Link href="/">Return to Home</Link>
-//             </Button>
-//           </CardFooter>
-//         </Card>
-//       </div>
-//     );
-//   }
+  if (!data) {
+    signIn(undefined, { callbackUrl: "/checkout" });
+  }
 
-//   const handleSubmit = (e: any) => {
-//     e.preventDefault();
-//     setIsSubmitting(true);
+  console.log("session_checkout", data);
+  debugger;
+  if (data && !data.user) {
+    return <>Unknown User</>;
+  }
 
-//     // Simulate payment processing
-//     setTimeout(() => {
-//       setIsSubmitting(false);
-//       setIsComplete(true);
-//       clearCart();
-//     }, 2000);
-//   };
+  const user = data?.user;
 
-//   return (
-//     <div className="container px-4 py-12 mx-auto">
-//       <div className="flex items-center mb-8">
-//         <Button variant="ghost" size="sm" asChild>
-//           <Link href="/cart">
-//             <ChevronLeft className="h-4 w-4 mr-1" />
-//             Back to Cart
-//           </Link>
-//         </Button>
-//       </div>
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//         <div className="lg:col-span-2">
-//           <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+  async function createOrder(): Promise<string> {
+    const data = {
+      orders: cartItems.map((item) => ({
+        productId: item.product._id,
+        variantId: item.variant._id,
+        quantity: item.quantity,
+      })),
+      amount: total,
+      shippingAddressId: selectedAddress,
+      contactNumber: contactNumber,
+      shippingMethod: "standard", //todo : need to handle
+      notes: "GOD bless you",
+    };
+    const response = await DataClientAPI.saveData({ modelName: "order", request: { data } });
+    if (!response.success) {
+      throw new Error("Network response was not ok");
+    }
 
-//           <form onSubmit={handleSubmit}>
-//             <div className="space-y-8">
-//               <div>
-//                 <h2 className="text-lg font-medium mb-4">Contact Information</h2>
-//                 <div className="space-y-4">
-//                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                     <div className="space-y-2">
-//                       <Label htmlFor="firstName">Name</Label>
-//                       <Input id="firstName" required value={data?.user.name ?? ""} />
-//                     </div>
-//                   </div>
-//                   <div className="space-y-2">
-//                     <Label htmlFor="phone">Phone</Label>
-//                     <Input id="phone" type="tel" required />
-//                   </div>
-//                 </div>
-//               </div>
+    return response.data._id;
+  }
 
-//               <Separator />
+  async function handlePayment() {
+    "use server";
+    try {
+      const orderId: string = await createOrder();
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: total,
+        currency: "INR",
+        name: data?.user.name,
+        description: "description",
+        order_id: orderId,
+        handler: async function (response: any) {
+          const data = {
+            OrderCreationId: orderId,
+            PaymentId: response.razorpay_payment_id,
+            OrderId: response.razorpay_order_id,
+            ClientSignature: response.razorpay_signature,
+          };
 
-//               <div>
-//                 <h2 className="text-lg font-medium mb-4">Shipping Address</h2>
-//                 <div className="space-y-4">
-//                   <div className="space-y-2">
-//                     <Label htmlFor="address">Address</Label>
-//                     <Input id="address" required />
-//                   </div>
-//                   <div className="space-y-2">
-//                     <Label htmlFor="apartment">Apartment, suite, etc. (optional)</Label>
-//                     <Input id="apartment" />
-//                   </div>
-//                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-//                     <div className="space-y-2">
-//                       <Label htmlFor="city">City</Label>
-//                       <Input id="city" required />
-//                     </div>
-//                     <div className="space-y-2">
-//                       <Label htmlFor="state">State</Label>
-//                       <Select defaultValue="">
-//                         <SelectTrigger>
-//                           <SelectValue placeholder="Select state" />
-//                         </SelectTrigger>
-//                         <SelectContent>
-//                           <SelectItem value="ca">California</SelectItem>
-//                           <SelectItem value="ny">New York</SelectItem>
-//                           <SelectItem value="tx">Texas</SelectItem>
-//                           <SelectItem value="fl">Florida</SelectItem>
-//                         </SelectContent>
-//                       </Select>
-//                     </div>
-//                     <div className="space-y-2">
-//                       <Label htmlFor="zip">ZIP Code</Label>
-//                       <Input id="zip" required />
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
+          const result = await fetch("/api/verify", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers: { "Content-Type": "application/json" },
+          });
+          const res = await result.json();
+          if (res.isOk) alert("payment succeed");
+          else {
+            alert(res.message);
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.on("payment.failed", function (response: any) {
+        alert(response.error.description);
+      });
+      // (Moved useEffect above, see previous replacement)
+    } catch (e) {
+      console.log(e);
+      debugger;
+    }
+  }
 
-//               <Separator />
+  async function handleSaveAddress() {
+    // Handle saving the new address
+    console.log("Saving address:", formData);
+    console.log("session", user);
+    if (user?.id) {
+      debugger;
+      const response = await DataClientAPI.saveData({
+        modelName: "address",
+        request: {
+          data: formData,
+        },
+      });
+      if (response && response.success) {
+        setShowAddressForm(false);
+        setAddresses([response.data, ...addresses]);
+        setSelectedAddress(response.data._id);
+        setFormData({
+          contactName: "",
+          addressLine1: "",
+          city: "",
+          country: "India",
+          postalCode: "",
+          state: "",
+          addressLine2: "",
+        });
+      }
+    }
+  }
 
-//               <div>
-//                 <h2 className="text-lg font-medium mb-4">Payment Method</h2>
-//                 <Tabs defaultValue="card">
-//                   <TabsList className="grid w-full grid-cols-3">
-//                     <TabsTrigger value="card">Credit Card</TabsTrigger>
-//                     <TabsTrigger value="paypal">PayPal</TabsTrigger>
-//                     <TabsTrigger value="cod">Cash on Delivery</TabsTrigger>
-//                   </TabsList>
-//                   <TabsContent value="card" className="space-y-4 pt-4">
-//                     <div className="space-y-2">
-//                       <Label htmlFor="cardName">Name on Card</Label>
-//                       <Input id="cardName" required />
-//                     </div>
-//                     <div className="space-y-2">
-//                       <Label htmlFor="cardNumber">Card Number</Label>
-//                       <div className="relative">
-//                         <Input id="cardNumber" placeholder="1234 5678 9012 3456" required />
-//                         <CreditCard className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-//                       </div>
-//                     </div>
-//                     <div className="grid grid-cols-2 gap-4">
-//                       <div className="space-y-2">
-//                         <Label htmlFor="expiry">Expiry Date</Label>
-//                         <Input id="expiry" placeholder="MM/YY" required />
-//                       </div>
-//                       <div className="space-y-2">
-//                         <Label htmlFor="cvc">CVC</Label>
-//                         <Input id="cvc" placeholder="123" required />
-//                       </div>
-//                     </div>
-//                   </TabsContent>
-//                   <TabsContent value="paypal" className="pt-4">
-//                     <div className="flex flex-col items-center justify-center py-8 text-center">
-//                       <p className="mb-4">
-//                         You will be redirected to PayPal to complete your purchase securely.
-//                       </p>
-//                       <Button type="button" className="w-full">
-//                         Continue with PayPal
-//                       </Button>
-//                     </div>
-//                   </TabsContent>
-//                   <TabsContent value="cod" className="pt-4">
-//                     <div className="flex flex-col space-y-4">
-//                       <div className="bg-muted p-4 rounded-lg">
-//                         <h3 className="font-medium mb-2">Cash on Delivery</h3>
-//                         <p className="text-sm text-muted-foreground">
-//                           Pay with cash when your order is delivered to your doorstep. A small COD
-//                           fee may apply.
-//                         </p>
-//                       </div>
-//                       <div className="flex items-center space-x-2">
-//                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-//                           <ShieldCheck className="h-5 w-5 text-primary" />
-//                         </div>
-//                         <div className="text-sm">
-//                           <p className="font-medium">Secure and convenient</p>
-//                           <p className="text-muted-foreground">
-//                             No need to share payment details online
-//                           </p>
-//                         </div>
-//                       </div>
-//                       <div className="flex items-center space-x-2">
-//                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-//                           <CreditCard className="h-5 w-5 text-primary" />
-//                         </div>
-//                         <div className="text-sm">
-//                           <p className="font-medium">Pay only when you receive</p>
-//                           <p className="text-muted-foreground">Inspect your items before payment</p>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   </TabsContent>
-//                 </Tabs>
-//               </div>
+  const selectedAddressData = addresses.find((addr) => addr._id === selectedAddress);
 
-//               <Separator />
+  if (cartItems.length === 0) {
+    return (
+      <div className="container px-4 py-12 mx-auto text-center">
+        <h1 className="text-2xl font-bold">Your cart is empty</h1>
+        <p className="mt-4">You need to add items to your cart before checking out.</p>
+        <Button asChild className="mt-6">
+          <Link href="/products">Browse Products</Link>
+        </Button>
+      </div>
+    );
+  }
 
-//               <div>
-//                 <h2 className="text-lg font-medium mb-4">Shipping Method</h2>
-//                 <RadioGroup defaultValue="standard" className="space-y-3">
-//                   <div className="flex items-center space-x-3 space-y-0">
-//                     <RadioGroupItem value="standard" id="standard" />
-//                     <Label htmlFor="standard" className="flex-1">
-//                       <div className="flex justify-between">
-//                         <span>Standard Shipping</span>
-//                         <span>Free</span>
-//                       </div>
-//                       <span className="text-sm text-muted-foreground">
-//                         Delivery in 5-7 business days
-//                       </span>
-//                     </Label>
-//                   </div>
-//                   <div className="flex items-center space-x-3 space-y-0">
-//                     <RadioGroupItem value="express" id="express" />
-//                     <Label htmlFor="express" className="flex-1">
-//                       <div className="flex justify-between">
-//                         <span>Express Shipping</span>
-//                         <span>$9.99</span>
-//                       </div>
-//                       <span className="text-sm text-muted-foreground">
-//                         Delivery in 2-3 business days
-//                       </span>
-//                     </Label>
-//                   </div>
-//                 </RadioGroup>
-//               </div>
+  return (
+    <div className="container mx-auto max-w-4xl p-6">
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Left Column - Address Selection */}
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Checkout</h1>
+            <p className="text-muted-foreground">Complete your order</p>
+          </div>
 
-//               <div className="lg:hidden">
-//                 <OrderSummary cartItems={cartItems} subtotal={subtotal} />
-//               </div>
+          {/* Delivery Address Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Delivery Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!showAddressForm && addresses.length > 0 ? (
+                <>
+                  {/* Address Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="address-select">Select delivery address</Label>
+                    <Select value={selectedAddress} onValueChange={setSelectedAddress}>
+                      <SelectTrigger id="address-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addresses.map((address) => (
+                          <SelectItem key={address._id} value={address._id!}>
+                            <div className="flex flex-col text-left">
+                              <span className="font-medium">{address.addressLine1}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {address.addressLine2}, {address.city}, {address.state}{" "}
+                                {address.postalCode}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-//               <div className="flex justify-end">
-//                 <Button type="submit" size="lg" disabled={isSubmitting}>
-//                   {isSubmitting ? "Processing..." : "Place Order"}
-//                 </Button>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <div className="space-y-1">
+                      <Label htmlFor="contactNumber">Contact No</Label>
+                      <Input
+                        id="contactNumber"
+                        value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)}
+                        placeholder="Enter Contact Number"
+                      />
+                    </div>
+                  </div>
 
-//         <div className="hidden lg:block">
-//           <OrderSummary cartItems={cartItems} subtotal={subtotal} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+                  {/* Selected Address Display */}
+                  {selectedAddressData && (
+                    <div className="rounded-lg border p-4 bg-muted/50">
+                      <div className="space-y-1">
+                        <p className="font-medium">{selectedAddressData.contactName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedAddressData.addressLine1}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedAddressData.addressLine2}, {selectedAddressData.city},{" "}
+                          {selectedAddressData.state} {selectedAddressData.postalCode}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-// function OrderSummary({ cartItems, subtotal }: any) {
-//   return (
-//     <Card>
-//       <CardHeader>
-//         <CardTitle>Order Summary</CardTitle>
-//       </CardHeader>
-//       <CardContent className="space-y-4">
-//         <div className="space-y-2">
-//           {cartItems.map((item: any, index: number) => (
-//             <div key={index} className="flex justify-between">
-//               <div className="flex items-center gap-2">
-//                 <span className="text-sm font-medium">{item.quantity || 1} ×</span>
-//                 <span className="text-sm">{item.name}</span>
-//               </div>
-//               <span className="text-sm font-medium">
-//                 ${(item.price * (item.quantity || 1)).toFixed(2)}
-//               </span>
-//             </div>
-//           ))}
-//         </div>
-//         <Separator />
-//         <div className="flex justify-between">
-//           <span>Subtotal</span>
-//           <span>${subtotal.toFixed(2)}</span>
-//         </div>
-//         <div className="flex justify-between">
-//           <span>Shipping</span>
-//           <span>Free</span>
-//         </div>
-//         <div className="flex justify-between">
-//           <span>Tax</span>
-//           <span>Calculated at checkout</span>
-//         </div>
-//         <Separator />
-//         <div className="flex justify-between font-bold">
-//           <span>Total</span>
-//           <span>${subtotal.toFixed(2)}</span>
-//         </div>
-//       </CardContent>
-//     </Card>
-//   );
-// }
+                  {/* Change Address Button */}
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddressForm(true)}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Change Address
+                  </Button>
+                </>
+              ) : (
+                /* Address Form */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Add New Address</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowAddressForm(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="Name"
+                        value={formData.contactName}
+                        defaultValue={user?.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        placeholder="Enter full name"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contactNumber">Contact No</Label>
+                      <Input
+                        id="contactNumber"
+                        value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)}
+                        placeholder="Enter Contact Number"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="street">Address</Label>
+                      <Input
+                        id="addressLine1"
+                        value={formData.addressLine1}
+                        onChange={(e) => handleInputChange("addressLine1", e.target.value)}
+                        placeholder="Enter address"
+                      />
+                      <Input
+                        id="addressLine1"
+                        value={formData.addressLine2}
+                        onChange={(e) => handleInputChange("addressLine2", e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          value={formData.city}
+                          onChange={(e) => handleInputChange("city", e.target.value)}
+                          placeholder="Enter city"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input
+                          id="state"
+                          value={formData.state}
+                          onChange={(e) => handleInputChange("state", e.target.value)}
+                          placeholder="Enter state"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode">Pincode</Label>
+                        <Input
+                          id="postalCode"
+                          value={formData.postalCode}
+                          onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                          placeholder="Enter Pincode"
+                        />
+                      </div>
+                    </div>
+
+                    <Button onClick={handleSaveAddress} className="w-full">
+                      Save Address
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <>
+          <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {cartItems.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{item.quantity || 1} ×</span>
+                      <span className="text-sm">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span>Tax inclusive</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-bold">
+                <span>Total</span>
+                <span>${total}</span>
+              </div>
+              <Button type="button" className="w-full" onClick={handlePayment}>
+                Continue to Pay
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      </div>
+    </div>
+  );
+}

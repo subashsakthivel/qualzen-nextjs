@@ -18,20 +18,6 @@ export async function GET(
       return NextResponse.json({ message: "Invalid request" }, { status: 400 });
     }
     const requestObj = JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}");
-    // if (modelName === "address" || modelName === "userinfo") {
-    //   const session = await getServerSession({ req: request, ...authOptions });
-    //   if (!session || !session.user.role) {
-    //     return NextResponse.json({ error: "Access Denied", staus: 401 }, { status: 401 });
-    //   }
-
-    //   const filter = session.user.role === "admin" ? {} : { userId: session.user.userId };
-    //   const resData = DataAPI.getData({
-    //     modelName: modelName as tDataModels,
-    //     operation,
-    //     request: { ...requestObj, ...filter },
-    //   });
-    //   return NextResponse.json({ message: "success", data: resData }, { status: 200 });
-    // }
     const responseData = await DataAPI.getData({
       modelName: modelName as tDataModels,
       operation,
@@ -81,34 +67,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
   }
 }
-
-// export async function PUT(
-//   request: NextRequest,
-//   { params }: { params: Promise<{ model: string }> }
-// ) {
-//   try {
-//     const { model: modelName } = await params;
-//     const dataModel = DataModel[modelName];
-//     if (!dataModel) {
-//       throw new Error("Invalid request");
-//     }
-//     if (request.headers.get("Content-Type")?.includes("multipart/form-data")) {
-//       const formData = await request.formData();
-//       const id = formData.get("id") as string;
-//       const responseData = await updateFormData(dataModel, id, formData);
-//       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
-//     } else {
-//       const { id, data } = await request.json();
-//       const responseData = await updateData(modelName, { updateQuery: data }, undefined, id);
-//       return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
-//     }
-//   } catch (err) {
-//     console.error("Put request Error :", err);
-//     const errorMessage =
-//       err instanceof ZodError ? err.errors : err instanceof Error ? err.message : "Unknown error";
-//     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
-//   }
-// }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ model: string }> }) {
   try {
