@@ -147,7 +147,7 @@ class DBUtil {
     operation?: string;
     id?: string;
     updateQuery: TUpdate<T>;
-    queryFilter?: TFilter<T>;
+    queryFilter?: TFilter;
     data: FormData | T;
   }): Promise<T | undefined> {
     const { dbModel } = DataModelMap[modelName];
@@ -186,7 +186,6 @@ class DBUtil {
         case "UPDATE_DATA_MANY":
           execution.callback = async (session) =>
             (await dbModel.updateMany(queryFilter, query, {
-              multi: true,
               upsert: true,
               runValidators: true,
               session,
@@ -282,7 +281,7 @@ class DBUtil {
     modelName: tDataModels;
     operation?: string;
     id?: string;
-    filter?: TFilter<T>;
+    filter?: TFilter;
   }): Promise<tDeleteResponse<T> | undefined> {
     const { dbModel } = DataModelMap[modelName];
     if (!id && !filter) {

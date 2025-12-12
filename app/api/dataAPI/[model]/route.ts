@@ -1,9 +1,30 @@
-import { authOptions } from "@/lib/authOptions";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import DataAPI from "@/data/data-api";
-import { tDataModels } from "@/util/util-type";
+import { tDataModels, zFilter } from "@/util/util-type";
 import { NextRequest, NextResponse } from "next/server";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
+import { auth } from "@/lib/auth";
+import { zModels } from "@/data/model-config";
+
+const zGet = z.object({
+  operation: z.enum(["GET_DATA", "GET_DATA_MANY", "GET_DATA_BY_ID"], {
+    message: "Invalid Operation",
+  }),
+  request: z.object(
+    {
+      id: z.string().max(100),
+      options: z
+        .object({
+          filter: z.union([zFilter, z.record(z.string().max(100), z.any())]),
+          limit: z.number().min(10).max(50),
+          page: z.number().min(1).max(1000),
+          select: z.array(z.string().max(100)).max(10),
+        })
+        .partial(),
+    },
+    { message: "Not a valid request" }
+  ),
+});
 
 export async function GET(
   request: NextRequest,
@@ -12,16 +33,18 @@ export async function GET(
   try {
     const { model: modelName } = await params;
     const searchParams = request.nextUrl.searchParams;
-    const dataModel = DataModelMap[modelName as tDataModels];
-    const operation = searchParams.get("operation");
-    if (!operation || !dataModel) {
-      return NextResponse.json({ message: "Invalid request" }, { status: 400 });
-    }
-    const requestObj = JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}");
+    const operation = searchParams.get("operation") as string;
+    const data = await auth.api.getSession();
+    console.log("user", data?.user.username);
+    const requestObj = {
+      operation,
+      request: JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}"),
+    };
+    const safeObject = zGet.parse(requestObj);
+
     const responseData = await DataAPI.getData({
       modelName: modelName as tDataModels,
-      operation,
-      request: requestObj,
+      ...safeObject,
     });
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {

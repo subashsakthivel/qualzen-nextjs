@@ -1,14 +1,8 @@
 import DataAPI from "@/data/data-api";
 import { auth } from "@/lib/auth";
-import { authOptions } from "@/lib/authOptions";
 import { PaymentService } from "@/lib/payment";
-import { DataModel } from "@/model/DataModels";
-import { ProductModel } from "@/model/Product";
 import { TOrder } from "@/schema/Order";
 import { TProductVariant } from "@/schema/ProductVarient";
-import { TUserInfo } from "@/schema/UserInfo";
-import { optional } from "better-auth";
-import { AsyncCallbackSet } from "next/dist/server/lib/async-callback-set";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

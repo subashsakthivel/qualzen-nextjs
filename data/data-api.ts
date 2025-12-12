@@ -1,5 +1,3 @@
-import { localcache } from "@/lib/cache";
-import { DataModelMap } from "@/model/server/data-model-mappings";
 import Persistance from "../util/server/db-core";
 import { tDataModels } from "../util/util-type";
 
@@ -22,11 +20,9 @@ class DataAPIclass {
         options: { ...options },
         id,
       });
-      //localcache.set(operationCacheKey, response);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
-      //throw new Error("Failed to fetch data");
     }
   }
 

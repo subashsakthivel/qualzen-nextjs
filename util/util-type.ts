@@ -234,9 +234,14 @@ export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
   })
 );
 
-export type TFilter<T> = TCompositeFilter | Record<string, string | number | undefined | null>;
+export const zFilter = z.union([
+  zCompositeFilter,
+  z.record(z.union([z.number(), z.string(), z.null(), z.undefined()])),
+]);
+
+export type TFilter = z.infer<typeof zFilter>;
 export interface FetchDataOptions<T> extends PaginateOptions {
-  filter?: TFilter<T>;
+  filter?: TFilter;
   limit?: number;
   fields?: string;
   sort?: { [key: string]: 1 | -1 | "asc" | "desc" };
