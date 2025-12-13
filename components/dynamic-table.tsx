@@ -48,7 +48,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery } from "@tanstack/react-query";
 // import { FetchDataParams, FilterRule, FilterState, getDataFromServer } from "@/util/dataAPI";
 import { ModelConfig } from "@/data/model-config";
-import { tDataModels, tFilter } from "@/util/util-type";
+import { tDataModels, TFilter } from "@/util/util-type";
 import DataClientAPI from "@/util/client/data-client-api";
 import FilterBuilder from "./filter-builder";
 import { TCategory } from "@/schema/Category";
@@ -95,14 +95,8 @@ export default function DynamicTable({
     sortby: string;
     direction: "asc" | "desc";
   } | null>(null);
-  const [filterState, setFilterState] = useState<tFilter<TCategory>>({
-    logic: "and",
-    criteria: [],
-  });
-  const [activeFilters, setActiveFilters] = useState<tFilter<TCategory>>({
-    logic: "and",
-    criteria: [],
-  });
+  const [filterState, setFilterState] = useState<TFilter>({});
+  const [activeFilters, setActiveFilters] = useState<TFilter>({});
   const [groupByField, setGroupByField] = useState<string | null>(null);
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -125,7 +119,6 @@ export default function DynamicTable({
       page: currentPage,
       limit: currentPageSize,
       sort: sortConfig ? { [sortConfig.sortby]: sortConfig.direction } : undefined,
-      filter: activeFilters.criteria.length > 0 ? activeFilters : undefined,
       select: selectedColumns.join(" "),
     };
     const tableData = await DataClientAPI.getData({
@@ -136,7 +129,7 @@ export default function DynamicTable({
     const modelConfig = ModelConfig[model];
     console.log(modelConfig);
     const data = tableData.docs.map((doc: Record<string, any>) => {
-      const columnConfig = modelConfig.columnConfig ?? {};
+      const columnConfig = (modelConfig.columnConfig ?? {}) as Record<string, any>;
       Object.keys(doc).map((key) => {
         if (columnConfig[key]?.parse) {
           doc[key] = columnConfig[key].parse(doc);
@@ -215,17 +208,17 @@ export default function DynamicTable({
   };
 
   // Function to remove a specific filter
-  const removeFilter = (index: number) => {
-    const newRules = [...filterState.criteria];
-    newRules.splice(index, 1);
-    const newFilterState = { ...filterState, criteria: newRules };
-    setFilterState(newFilterState);
-    setActiveFilters(newFilterState);
+  // const removeFilter = (index: number) => {
+  //   const newRules = [...filterState.criteria];
+  //   newRules.splice(index, 1);
+  //   const newFilterState = { ...filterState, criteria: newRules };
+  //   setFilterState(newFilterState);
+  //   setActiveFilters(newFilterState);
 
-    const newTags = [...appliedTags];
-    newTags.splice(index, 1);
-    setAppliedTags(newTags);
-  };
+  //   const newTags = [...appliedTags];
+  //   newTags.splice(index, 1);
+  //   setAppliedTags(newTags);
+  // };
 
   // Function to add a new filter rule
   const addFilterRule = () => {
@@ -245,11 +238,11 @@ export default function DynamicTable({
   };
 
   // Function to update a filter rule
-  const updateFilterRule = (index: number, field: string, value: any) => {
-    const newRules = [...filterState.criteria];
-    newRules[index] = { ...newRules[index], [field]: value };
-    setFilterState({ ...filterState, criteria: newRules });
-  };
+  // const updateFilterRule = (index: number, field: string, value: any) => {
+  //   const newRules = [...filterState.criteria];
+  //   newRules[index] = { ...newRules[index], [field]: value };
+  //   setFilterState({ ...filterState, criteria: newRules });
+  // };
 
   // Function to get operators based on tableData type
   const getOperatorsForType = (type: DataType) => {
@@ -385,23 +378,23 @@ export default function DynamicTable({
     }
 
     // Apply advanced filters
-    if (activeFilters.criteria.length > 0) {
-      // result = result.filter((row) => {
-      //   const results = activeFilters.criteria.map((rule) => {
-      //     const column = autoDetectedColumns.find((col) => col.key === rule.field);
-      //     if (!column) return false;
-      //     const value = row[rule.field];
-      //     const type = column.type || detectDataType(value);
-      //     return evaluateFilterRule(value, rule, type);
-      //   });
-      //   return activeFilters.logic === "and"
-      //     ? results.every(Boolean)
-      //     : results.some(Boolean);
-      // });
-    }
+    // if (activeFilters.criteria.length > 0) {
+    // result = result.filter((row) => {
+    //   const results = activeFilters.criteria.map((rule) => {
+    //     const column = autoDetectedColumns.find((col) => col.key === rule.field);
+    //     if (!column) return false;
+    //     const value = row[rule.field];
+    //     const type = column.type || detectDataType(value);
+    //     return evaluateFilterRule(value, rule, type);
+    //   });
+    //   return activeFilters.logic === "and"
+    //     ? results.every(Boolean)
+    //     : results.some(Boolean);
+    // });
+    // }
 
     return result;
-  }, [tableData, searchQuery, activeFilters, autoDetectedColumns]);
+  }, [tableData, searchQuery, autoDetectedColumns]);
 
   // Sort tableData and apply grouping
   const sortedAndGroupedData = useMemo(() => {
@@ -572,7 +565,7 @@ export default function DynamicTable({
               <Badge key={index} variant="secondary" className="flex items-center gap-1">
                 <Filter className="h-3 w-3" />
                 {tag}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter(index)} />
+                {/* <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter(index)} /> */}
               </Badge>
             ))}
             {groupByField && (

@@ -50,14 +50,9 @@ const CategoryForm = ({ id }: { id?: string }) => {
       },
     });
   const mutation = useMutation({
-    mutationFn: async (request: FormData) => {
-      setAlert("");
+    mutationFn: async (formData: FormData) => {
       try {
-        if (id) {
-          return await DataClientAPI.patchData({ modelName: model, request });
-        } else {
-          return await DataClientAPI.saveData({ modelName: model, request });
-        }
+        handleCreatePost(formData);
       } catch (err) {
         setAlert("Something went Wrong !");
       }
@@ -70,9 +65,7 @@ const CategoryForm = ({ id }: { id?: string }) => {
     setImageFile(ev.target.files[0]);
   };
 
-  const handleCreatePost = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+  const handleCreatePost = async (formData: FormData) => {
     const imageName = uuidv4();
     const parentCategory = formData.get("parentCategory") as string;
 
@@ -88,17 +81,60 @@ const CategoryForm = ({ id }: { id?: string }) => {
     } else if (formData.get("image") as string) {
       data.image = formData.get("image") as string;
     }
-
-    if (category && id) {
-      request.append("id", id);
-      request.append("operation", "UPDATE_ONE_BY_ID");
+    if (id) {
+      const response = await DataClientAPI.patchData({
+        modelName: model,
+        request: {
+          data,
+          id,
+          operation: "UPDATE_ONE_BY_ID",
+        },
+      });
+      if (imageFile) {
+        await uploadFile(response.data);
+      }
     } else {
-      request.append("operation", "SAVE_DATA");
+      const response = await DataClientAPI.saveData({
+        modelName: model,
+        request: {
+          data,
+          operation: "SAVE_DATA",
+        },
+      });
+      if (imageFile) {
+        await uploadFile(response.data);
+      }
     }
-    request.append("data", JSON.stringify(data));
-
-    mutation.mutate(request);
   };
+
+  async function uploadFile(category: TCategory) {
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: JSON.stringify({
+        modelName: model,
+        id: category._id,
+      }),
+    });
+    if (response && response.ok) {
+      const responseJSon = await response.json();
+      const {
+        data: { uploadUrl },
+      } = responseJSon as {
+        data: {
+          uploadUrl: {
+            uploadUrl: string;
+            key: string;
+          };
+        };
+      };
+      debugger;
+      const uploadResponse = await fetch(uploadUrl.uploadUrl, {
+        method: "POST",
+        body: imageFile,
+      });
+      console.log(await uploadResponse.json());
+    }
+  }
 
   return (
     <div className="m-10 mb-52 space-y-24 p-10">
@@ -108,11 +144,7 @@ const CategoryForm = ({ id }: { id?: string }) => {
           <AlertTitle>{alert}</AlertTitle>
         </Alert>
       )}
-      <form
-        className="grid flex-1 auto-rows-max gap-4"
-        autoComplete="off"
-        onSubmit={handleCreatePost}
-      >
+      <form className="grid flex-1 auto-rows-max gap-4" autoComplete="off" action={mutation.mutate}>
         <div className="flex items-center gap-4">
           <h1 className="flex-1 text-xl font-semibold tracking-tight">Category Form</h1>
           <Button size="sm" type="submit" disabled={mutation.isPending} className="hidden md:flex">

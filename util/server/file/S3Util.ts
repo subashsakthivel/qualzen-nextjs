@@ -141,6 +141,23 @@ class S3Util {
       throw new ErrorRequest("Cannot delete the files", 543);
     }
   }
+
+  async getUploadUrl(modelName: string, key: string, contentType: string) {
+    const fileKey = `${modelName}/${key}`;
+
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: fileKey,
+      ContentType: contentType,
+    });
+
+    const url = await getSignedUrl(this.client, command, { expiresIn: 60 });
+    console.log(url);
+    return {
+      uploadUrl: url,
+      key,
+    };
+  }
 }
 
 const R2API = new S3Util({

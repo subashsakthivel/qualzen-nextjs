@@ -1,8 +1,6 @@
 import { TCategory } from "@/schema/Category";
-import R2Util from "@/util/server/file/S3Util";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
-import { FileStoreModel } from "./FileStore";
 
 const CategoryDbSchema = new mongoose.Schema<TCategory>({
   name: {

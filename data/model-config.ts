@@ -5,7 +5,6 @@ import { AddressSchema, TAddress } from "@/schema/Address";
 import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
 import { ContentSchema, TContent } from "@/schema/Content";
 import { OrderSchema, TOrder } from "@/schema/Order";
-import products from "razorpay/dist/types/products";
 import { FileStoreSchema, TFileStore } from "@/schema/FileStore";
 import { ProductGroupSchema, TProductGroup } from "@/schema/ProductGroup";
 // all of this shoul be in server side

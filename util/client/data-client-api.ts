@@ -64,7 +64,13 @@ class DataServiceClass {
     try {
       const { url } = DataSourceMap[modelName];
 
-      const response = await fetch(url, { body: request, method: "POST" });
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+        method: "POST",
+      });
 
       const resJson = await response.json();
 

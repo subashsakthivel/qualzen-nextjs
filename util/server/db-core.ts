@@ -1,7 +1,6 @@
 import { FilterQuery, PaginateModel, RootQuerySelector, UpdateQuery } from "mongoose";
 import {
   TCompositeFilter,
-  TCriteria,
   tDataModels,
   tDeleteResponse,
   TFilter,
@@ -17,6 +16,7 @@ import mongoose from "mongoose";
 import ModelHandler from "./model/model-util";
 import { ModelType } from "@/data/model-config";
 import R2API from "./file/S3Util";
+import { tGet } from "@/types/api-type";
 
 type UpdateResult = {
   acknowledged?: boolean;
@@ -35,51 +35,31 @@ type tUpdateExecution<T, V> = Omit<tExecution<T, V>, "callback"> & {
 };
 
 class DBUtil {
-  async getData<T>({
-    modelName,
-    operation = "GET_DATA",
-    options: {
-      filter,
-      limit = 100,
-      sort = { ["timestamp"]: -1 },
-      fields = "",
-      page = 1,
-      ...otherOptions
-    },
-    id,
-  }: tGetDataParams<T>): Promise<tGetResponse<T>> {
-    if (sort) {
-      for (const key in sort) {
-        sort[key] = sort[key] === "asc" ? "asc" : "desc";
-      }
-    }
-    const options = {
-      limit: Math.min(limit, 100), // Limit to a maximum of 100
-      sort,
-      page,
-      lean: otherOptions.lean || true,
-      ...otherOptions,
-    };
-    // todo : add validation
-    // todo : add filter validation
-    // todo : add group-by
-    // todo : operation invalid error
-
+  async getData<T>({ modelName, operation, request }: tGet): Promise<tGetResponse<T>> {
     try {
       const { dbModel } = DataModelMap[modelName];
-      const queryFilter = filter?.CompositeFilters ? this.parseFilterQuery(filter) : filter;
+      const options = request.options
+        ? {
+            limit: Math.min(request.options.limit ?? 10, 100), // Limit to a maximum of 100
+            page: request.options.page ?? 1,
+          }
+        : undefined;
 
+      const queryFilter = request?.options?.filter
+        ? request.options.filter?.CompositeFilters
+          ? this.parseFilterQuery(request.options.filter)
+          : request.options.filter
+        : undefined;
+      const select = request.options?.select;
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
       };
       if (operation === "GET_DATA_MANY") {
-        execution.callback = async () =>
-          await dbModel.find(queryFilter ?? {}, options.select, options);
+        execution.callback = async () => await dbModel.find(queryFilter ?? {}, select, options);
       } else if (operation === "GET_DATA_ONE") {
-        execution.callback = async () =>
-          await dbModel.findOne(queryFilter, options.select, options);
+        execution.callback = async () => await dbModel.findOne(queryFilter, select, options);
       } else if (operation === "GET_DATA_BY_ID" || operation === "GET_DATA_BY_ID_RAW") {
-        execution.callback = async () => await dbModel.findById(id, options.select, options);
+        execution.callback = async () => await dbModel.findById(request.id, select, options);
       } else if (operation !== "GET_DATA" && operation !== "GET_DATA_RAW") {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
@@ -101,7 +81,7 @@ class DBUtil {
   }: {
     modelName: tDataModels;
     operation?: string;
-    data: T | FormData;
+    data: T;
   }): Promise<T | undefined> {
     const { dbModel, schema } = DataModelMap[modelName];
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
@@ -124,7 +104,7 @@ class DBUtil {
       }
       return this.execute({
         modelName,
-        formData: data instanceof FormData ? data : undefined,
+        data,
         operation: "CREATE",
         execution,
       });
@@ -148,7 +128,7 @@ class DBUtil {
     id?: string;
     updateQuery: TUpdate<T>;
     queryFilter?: TFilter;
-    data: FormData | T;
+    data: T;
   }): Promise<T | undefined> {
     const { dbModel } = DataModelMap[modelName];
     const {
@@ -197,7 +177,7 @@ class DBUtil {
       return this.execute({
         modelName,
         operation: "UPDATE",
-        formData: data instanceof FormData ? data : undefined,
+        data,
         execution,
       });
     } catch (err) {
@@ -213,7 +193,7 @@ class DBUtil {
   }: {
     modelName: tDataModels;
     operation?: string;
-    data: T | FormData;
+    data: T;
     id: string;
   }): Promise<T | undefined> {
     const { dbModel, schema } = DataModelMap[modelName];
@@ -227,8 +207,9 @@ class DBUtil {
     const oldData = await this.getData({
       modelName,
       operation: "GET_DATA_BY_ID_RAW",
-      options: {},
-      id,
+      request: {
+        id,
+      },
     }).then((res) => JSON.parse(JSON.stringify(res)));
     const oldFiles = await ModelHandler.getOldFilesFromObject({
       modelName,
@@ -261,7 +242,7 @@ class DBUtil {
       }
       return this.execute({
         modelName,
-        formData: data instanceof FormData ? data : undefined,
+        data,
         operation: "UPDATE",
         execution,
       });
@@ -382,12 +363,12 @@ class DBUtil {
 
   async execute<T, V>({
     modelName,
-    formData,
+    data,
     operation,
     execution: { callback, onSuccess, onFailure },
   }: {
     modelName: keyof ModelType;
-    formData?: FormData;
+    data?: T;
     operation: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE";
     execution: tExecution<T, V> | tUpdateExecution<T, V>;
   }): Promise<T | undefined> {
@@ -396,7 +377,7 @@ class DBUtil {
     try {
       const result = await session.withTransaction(async () => {
         const response = (await callback(session)) as any;
-        const processedRes = await ModelHandler.handle(modelName, response, operation, formData);
+        const processedRes = await ModelHandler.handle(modelName, response, operation, data);
         if (onSuccess) return await onSuccess(processedRes as any);
         return processedRes;
       });

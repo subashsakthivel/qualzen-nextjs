@@ -34,17 +34,15 @@ import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
 import DataClientAPI from "@/util/client/data-client-api";
-import DataAPI from "@/data/data-api";
+import Link from "next/link";
 
 type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
-type TVariant = TProductVariant & {
-  imageFiles: File[];
-};
+const MAX_ALLOWED_FILE_COUNT = 8;
 export default function ProductForm({ id }: { id?: string }) {
   const [attributes, setAttributes] = useState<TProduct["attributes"]>([]);
-  const [imageFiles, setImageFiles] = useState<File[] | undefined>(undefined);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [varients, setVarients] = useState<TVariant[]>([]);
+  const [variants, setVariants] = useState<TProduct["variants"]>([]);
 
   const [curVarient, setCurentVarient] = useState<number>(-1);
   const { data: { categories, product } = { categories: [], product: undefined }, isLoading } =
@@ -68,7 +66,7 @@ export default function ProductForm({ id }: { id?: string }) {
           const product = JSON.parse(JSON.stringify(productRes)) as TProduct;
           setAttributes(product.attributes);
           setTags(product.tags);
-          setVarients(product.variants.map((variant) => ({ ...variant, imageFiles: [] })));
+          setVariants(product.variants);
           return { categories, product };
         }
         return { categories };
@@ -76,40 +74,26 @@ export default function ProductForm({ id }: { id?: string }) {
     });
 
   const mutation = useMutation({
-    mutationFn: async (request: FormData) =>
-      await DataClientAPI.saveData({ modelName: "product", request }),
+    mutationFn: async (formData: FormData) => await saveProduct(formData),
     onSuccess: () => redirect("/"),
   });
 
   function onImageFileChange(ev: React.FormEvent<EventTarget>) {
-    if (imageFiles?.length === 9) {
-      return;
+    if (imageFiles?.length === MAX_ALLOWED_FILE_COUNT) {
+      return; // toast limit
     }
     const { files } = ev.target as HTMLInputElement & {
       files: FileList;
     };
-    var fileList: File[] = [];
-    for (let i = 0; i < files.length && i < 9; i++) {
-      fileList.push(files[i]);
-    }
-    console.log("list ", fileList);
-    setImageFiles((f) => (f === undefined ? [...fileList] : [...f, ...fileList]));
-  }
-
-  function onVarientImageFileChange(ev: React.FormEvent<EventTarget>, varient: TVariant) {
-    if (varient.imageFiles?.length === 9) {
+    if (files.length > MAX_ALLOWED_FILE_COUNT) {
       return;
     }
-    const { files } = ev.target as HTMLInputElement & {
-      files: FileList;
-    };
     var fileList: File[] = [];
-    for (let i = 0; i < files.length && i < 9; i++) {
+    for (let i = 0; i < files.length; i++) {
       fileList.push(files[i]);
     }
     console.log("list ", fileList);
-    varient.imageFiles = [...varient.imageFiles, ...fileList];
-    setVarients([...varients]);
+    setImageFiles([...imageFiles, ...fileList]);
   }
 
   async function saveProduct(formData: FormData) {
@@ -117,31 +101,20 @@ export default function ProductForm({ id }: { id?: string }) {
       if (!imageFiles || imageFiles.length === 0) {
         throw new Error("Please upload at least one image.");
       }
-      if (imageFiles && imageFiles.length > 5) {
+      if (imageFiles && imageFiles.length > MAX_ALLOWED_FILE_COUNT) {
         throw new Error("You can only upload a maximum of 5 images.");
       }
 
       // todo : zod check before request
       const productForm = new FormData();
-      const fileOperation = [{ path: "images", multi: true }];
       const imageNames: string[] = [];
+      const imageMap = {} as any;
 
       imageFiles.forEach((imageFile) => {
         const name = uuidv4();
         imageNames.push(name);
         productForm.append(name, imageFile);
-      });
-
-      varients.map((variant, index) => {
-        variant.imageFiles.forEach((imageFile) => {
-          const name = uuidv4();
-          variant.images.push(name);
-          productForm.append(name, imageFile);
-        });
-        if (variant.images.length > 0) {
-          fileOperation.push({ path: `variants.${index}.images`, multi: true });
-        }
-        variant.sellingPrice = Number.parseFloat(formData.get("sellingPrice") as string);
+        imageMap[name] = imageFile;
       });
 
       const product: TProductFormData = {
@@ -153,36 +126,55 @@ export default function ProductForm({ id }: { id?: string }) {
         tags: tags,
         images: imageNames,
         attributes: [...attributes].filter((att) => att.value !== ""),
-        variants: varients.map(({ imageFiles, ...variant }) => ({
-          ...variant,
-          attributes: [...variant.attributes].filter((att) => att.value && att.value !== ""),
-        })),
+        variants,
       };
-      productForm.append("fileOperation", JSON.stringify(fileOperation));
-      productForm.append("data", JSON.stringify(product));
-      productForm.append("operation", "SAVE_DATA");
 
-      mutation.mutate(productForm);
+      const saveResponse = await DataClientAPI.saveData({
+        modelName: "product",
+        request: {
+          data: product,
+          operation: "SAVE_DATA",
+        },
+      });
+      if (saveResponse.success) {
+        debugger;
+        const { data: savedProduct } = saveResponse;
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: JSON.stringify({
+            modelName: "product",
+            id: savedProduct._id,
+          }),
+        });
+        if (response && response.ok) {
+          const responseJson = await response.json();
+          const { data: uploadUrls } = responseJson;
+          Promise.allSettled(
+            uploadUrls.map(
+              async ({ key, uploadUrl }: { key: string; uploadUrl: string }) =>
+                await fetch(uploadUrl, {
+                  body: imageMap[key],
+                })
+            )
+          );
+        }
+      }
     } catch (err) {
       console.log(err);
     }
   }
 
   function addNewVarient() {
-    const newVarient: TVariant = {
+    const newVarient: TProduct["variants"][0] = {
       attributes: [],
-      images: [],
       isActive: true,
       sku: "",
       stockQuantity: 0,
       price: 0,
       sellingPrice: 0,
-      imageFiles: [],
     };
-    setCurentVarient(varients.length);
-
-    varients.push(newVarient);
-    setVarients([...varients]);
+    setCurentVarient(variants.length);
+    setVariants([...variants, newVarient]);
   }
 
   async function onCategoryChange(categoryId: string) {
@@ -194,7 +186,8 @@ export default function ProductForm({ id }: { id?: string }) {
     debugger;
     if (sampleProduct) {
       const product = sampleProduct;
-      setVarients(product.variants);
+      setAttributes(product.attributes);
+      setVariants(product.variants);
     }
   }
 
@@ -207,12 +200,23 @@ export default function ProductForm({ id }: { id?: string }) {
     }
   };
 
+  if (!categories || categories.length == 0) {
+    return (
+      <div className="grid grid-flow-col gap-10">
+        <h1>No Category yet created</h1>
+        <Link href={"/table/category"}>
+          <Button>Create Now</Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <QueryClientHook>
       <main className="grid flex-1 items-start gap-4 sm:px-6 sm:py-0 md:gap-8 p-10">
         <form
           className="grid flex-1  gap-4 m-16 mx-28"
-          action={saveProduct}
+          action={mutation.mutate}
           onKeyDown={handleKeyDown}
         >
           <div className="flex items-center gap-4">
@@ -223,39 +227,13 @@ export default function ProductForm({ id }: { id?: string }) {
               Product Form
             </h1>
 
-            {varients.map((varient, idx) => (
-              <div className="hidden items-center gap-2 md:ml-auto md:flex relative " key={idx}>
-                <Button
-                  size="sm"
-                  type="button"
-                  className={"p-5" + (idx === curVarient ? "border font-bold" : "")}
-                  onClick={() => setCurentVarient(idx)}
-                >
-                  <span>Varient {" " + (idx + 1)}</span>
-                </Button>
-                <X
-                  className="absolute top-0 right-0 rounded-full size-4 text-white"
-                  onClick={() => {
-                    setCurentVarient(curVarient >= 0 ? curVarient - 1 : -1);
-                    setVarients(varients.filter((varient, i) => i != idx));
-                  }}
-                />
-              </div>
-            ))}
-            <div className="hidden items-center gap-2 md:ml-auto md:flex">
-              <Button size="sm" type="button" onClick={addNewVarient}>
-                Add Varient
-              </Button>
-            </div>
             <div className="hidden items-center gap-2 md:ml-auto md:flex">
               <Button size="sm" type="submit" disabled={mutation.isPending}>
                 Save Product
               </Button>
             </div>
           </div>
-          <div
-            className={"grid gap-4 lg:grid-cols-3 lg:gap-8 " + (curVarient !== -1 ? "hidden" : "")}
-          >
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-8">
             <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
               <Card x-chunk="dashboard-07-chunk-2">
                 <CardHeader>
@@ -266,8 +244,8 @@ export default function ProductForm({ id }: { id?: string }) {
                     <div className="grid gap-1 capitalize ">
                       <Label htmlFor="category">Category</Label>
                       <Select name="category" onValueChange={(value) => onCategoryChange(value)}>
-                        <SelectTrigger aria-label="Select subcategory" className={"w-[180px]"}>
-                          <SelectValue placeholder="Select subcategory" />
+                        <SelectTrigger aria-label="Select category" className={"w-[180px]"}>
+                          <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category: TCategory, i: number) => (
@@ -472,225 +450,168 @@ export default function ProductForm({ id }: { id?: string }) {
               </Card>
             </div>
           </div>
-
-          {varients.map((varient, idx) => (
-            <div
-              className={`grid gap-4 lg:grid-cols-3 lg:gap-8 ${idx !== curVarient ? "hidden" : ""}`}
-              key={idx}
-            >
-              <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-                <Card x-chunk="dashboard-07-chunk-1">
-                  <CardContent>
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-semibold">Stock Quantity</TableCell>
-                          <TableCell>
-                            <Input
-                              id="stock-1"
-                              type="number"
-                              autoComplete="off"
-                              resource="off"
-                              value={varient.stockQuantity}
-                              onChange={(e) => {
-                                varient.stockQuantity = Number.parseInt(e.target.value);
-                                setVarients([...varients]);
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-semibold">Selling Price</TableCell>
-                          <TableCell>
-                            <Input
-                              id="stock-2"
-                              type="number"
-                              value={varient.price}
-                              onChange={(e) => {
-                                varient.price = Number.parseInt(e.target.value ?? 0);
-                                setVarients([...varients]);
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-semibold">SKU</TableCell>
-                          <TableCell>
-                            <Input
-                              id="sku"
-                              name="sku"
-                              type="text"
-                              className="w-full"
-                              value={varient.sku}
-                              onChange={(e) => {
-                                (varient.sku = e.target.value), setVarients([...varients]);
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-                <Card x-chunk="dashboard-07-chunk-1">
-                  <CardHeader>
-                    <CardTitle>Attributes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead></TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Options</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {varient.attributes.map((property, index) => (
-                          <TableRow key={index} className="">
-                            <TableCell className="m-0 p-1 align-top">
-                              <Label className="sr-only">remove Property</Label>
-                              <Trash2Icon
-                                className="h-3.5 w-3.5 m-0 my-6"
-                                onClick={() => {
-                                  varient.attributes = varient.attributes.filter(
-                                    (p, i) => i !== index
-                                  );
-                                  setVarients([...varients]);
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell className="align-top">
-                              <Label className="sr-only">Name</Label>
-                              <Input
-                                id="stock-1"
-                                value={property.name}
-                                onChange={(val) => {
-                                  varient.attributes = varient.attributes.map((p, i) => {
-                                    if (i === index) {
-                                      p.name = val.target.value;
-                                    }
-                                    return p;
-                                  });
-                                  setVarients([...varients]);
-                                }}
-                              />
-                            </TableCell>
+          <div className=" grid grid-cols-1 gap-4">
+            {variants.map((varient, idx) => (
+              <div className="grid gap-4 lg:grid-cols-3 lg:gap-8 border-2" key={idx}>
+                <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+                  <Card x-chunk="dashboard-07-chunk-1">
+                    <CardHeader>
+                      <CardTitle>Varaint {idx + 1}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-semibold">Stock Quantity</TableCell>
                             <TableCell>
-                              <Label className="sr-only">Options</Label>
                               <Input
                                 id="stock-1"
-                                value={property.value}
-                                onChange={(val) => {
-                                  varient.attributes = varient.attributes.map((p, i) => {
-                                    if (i === index) {
-                                      p.value = val.target.value;
-                                    }
-                                    return p;
-                                  });
-                                  setVarients([...varients]);
+                                type="number"
+                                autoComplete="off"
+                                resource="off"
+                                value={varient.stockQuantity}
+                                onChange={(e) => {
+                                  varient.stockQuantity = Number.parseInt(e.target.value);
+                                  setVariants([...variants]);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="font-semibold">SKU</TableCell>
+                            <TableCell>
+                              <Input
+                                id="sku"
+                                name="sku"
+                                type="text"
+                                className="w-full"
+                                value={varient.sku}
+                                onChange={(e) => {
+                                  (varient.sku = e.target.value), setVariants([...variants]);
                                 }}
                               />
                             </TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                  <CardFooter className="justify-center border-t p-4">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="gap-1"
-                      onClick={() => {
-                        varient.attributes = [
-                          ...varient.attributes,
-                          { name: "", value: "", sortOrder: 100 },
-                        ];
-                        setVarients([...varients]);
-                      }}
-                    >
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      Add Attribute
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-              <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-                <Card className="overflow-hidden" x-chunk="dashboard-07-chunk-4">
-                  <CardHeader className="felx flex-row items-center justify-around">
-                    <CardTitle>Product Images</CardTitle>
-                    <RefreshCcwIcon
-                      className="size-5 cursor-pointer"
-                      onClick={() => {
-                        varient.imageFiles = [];
-                        setVarients([...varients]);
-                      }}
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-2">
-                      {varient.imageFiles && varient.imageFiles.length >= 1 && (
-                        <div className="grid gap-2">
-                          <Image
-                            alt="Product image"
-                            className="aspect-square w-full rounded-md object-cover"
-                            height="300"
-                            width="300"
-                            src={URL.createObjectURL(varient.imageFiles[0])}
-                          />
-                        </div>
-                      )}
-
-                      <div
-                        className={`grid grid-flow-* gap-2 ${
-                          varient.imageFiles.length > 0 ? "grid-cols-2 h-20" : ""
-                        }`}
-                      >
-                        {varient.imageFiles &&
-                          varient.imageFiles.slice(1).map((imageFile, index) => (
-                            <div key={index} className="relative">
-                              <span className="absolute rounded-full border bg-background m-1 size-5 text-center">
-                                {index + 2}
-                              </span>
-                              <Image
-                                alt="Product image"
-                                className="aspect-square rounded-md object-cover"
-                                height="84"
-                                width="84"
-                                src={URL.createObjectURL(imageFile)}
-                                key={index}
+                          <TableRow>
+                            <TableCell className="font-semibold">Price</TableCell>
+                            <TableCell>
+                              <Input
+                                id="stock-2"
+                                type="number"
+                                value={varient.price}
+                                onChange={(e) => {
+                                  varient.price = Number.parseInt(e.target.value ?? 0);
+                                  setVariants([...variants]);
+                                }}
                               />
-                            </div>
+                            </TableCell>
+                            <TableCell className="font-semibold">Selling Price</TableCell>
+                            <TableCell>
+                              <Input
+                                id="stock-2"
+                                type="number"
+                                value={varient.sellingPrice}
+                                onChange={(e) => {
+                                  varient.price = Number.parseInt(e.target.value ?? 0);
+                                  setVariants([...variants]);
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                  <Card x-chunk="dashboard-07-chunk-1">
+                    <CardHeader>
+                      <CardTitle>Attributes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead></TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Options</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {varient.attributes.map((property, index) => (
+                            <TableRow key={index} className="">
+                              <TableCell className="m-0 p-1 align-top">
+                                <Label className="sr-only">remove Property</Label>
+                                <Trash2Icon
+                                  className="h-3.5 w-3.5 m-0 my-6"
+                                  onClick={() => {
+                                    varient.attributes = varient.attributes.filter(
+                                      (p, i) => i !== index
+                                    );
+                                    setVariants([...variants]);
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <Label className="sr-only">Name</Label>
+                                <Input
+                                  id="stock-1"
+                                  value={property.name}
+                                  onChange={(val) => {
+                                    varient.attributes = varient.attributes.map((p, i) => {
+                                      if (i === index) {
+                                        p.name = val.target.value;
+                                      }
+                                      return p;
+                                    });
+                                    setVariants([...variants]);
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Label className="sr-only">Options</Label>
+                                <Input
+                                  id="stock-1"
+                                  value={property.value}
+                                  onChange={(val) => {
+                                    varient.attributes = varient.attributes.map((p, i) => {
+                                      if (i === index) {
+                                        p.value = val.target.value;
+                                      }
+                                      return p;
+                                    });
+                                    setVariants([...variants]);
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
                           ))}
-
-                        <div className="flex justify-center relative">
-                          <label
-                            className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                              varient.imageFiles.length > 0
-                                ? "relative shadow-lg min-w-20"
-                                : "shadow-sm min-h-80"
-                            }`}
-                          >
-                            <Upload className="h-4 w-4 text-muted-foreground" />
-                            <input
-                              type="file"
-                              name="image"
-                              className="hidden"
-                              onChange={(e) => onVarientImageFileChange(e, varient)}
-                              multiple
-                              accept="image/png, image/gif, image/jpeg"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                    <CardFooter className="justify-center border-t p-4">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1"
+                        onClick={() => {
+                          varient.attributes = [
+                            ...varient.attributes,
+                            { name: "", value: "", sortOrder: 100 },
+                          ];
+                          setVariants([...variants]);
+                        }}
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Add Attribute
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Button type="button" size="sm" variant="ghost" className="gap-1" onClick={addNewVarient}>
+            <PlusCircle className="h-3.5 w-3.5" />
+            Add Variant
+          </Button>
 
           <div className="flex items-center justify-center gap-2 md:hidden">
             <Button size="sm" type="submit" disabled={mutation.isPending}>

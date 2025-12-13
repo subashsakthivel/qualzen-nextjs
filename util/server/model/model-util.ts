@@ -61,7 +61,7 @@ class ModelHandler {
             const keys = Array.isArray(key) ? key : [key];
             keys.forEach(async (k) => {
               const file = form.get(k) as File;
-              await R2API.uploadFile(k, file);
+              //await R2API.uploadFile(k, file);
             });
           }
         });
@@ -167,7 +167,7 @@ class ModelHandler {
     modelName: K,
     docs: ModelType[K] | ModelType[K][],
     action: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE",
-    form?: FormData,
+    data?: any,
     session?: mongoose.ClientSession
   ) {
     switch (action) {
@@ -177,8 +177,7 @@ class ModelHandler {
         return this.delete({ modelName, docs, session });
       case "CREATE":
       case "UPDATE":
-        if (!form) throw new Error("FormData is required for CREATE action");
-        return this.create({ modelName, docs, form, session });
+        return docs;
       case "GET_RAW":
         return docs;
       default:

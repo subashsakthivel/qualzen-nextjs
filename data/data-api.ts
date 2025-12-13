@@ -1,25 +1,15 @@
+import { tGet } from "@/types/api-type";
 import Persistance from "../util/server/db-core";
 import { tDataModels } from "../util/util-type";
 
 class DataAPIclass {
-  async getData({
-    modelName,
-    operation,
-    request,
-  }: {
-    modelName: tDataModels;
-    operation: string;
-    request: any;
-  }): Promise<any> {
+  async getData({ modelName, operation, request }: tGet): Promise<any> {
     try {
-      const { id, options } = request;
-
       const response = await Persistance.getData({
         modelName,
         operation,
-        options: { ...options },
-        id,
-      });
+        request,
+      } as tGet);
       return response;
     } catch (err) {
       console.error("Error in getData:", err);
