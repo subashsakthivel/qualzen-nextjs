@@ -207,27 +207,6 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
 
-          {images.length > 0 && (
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <button
-                  key={index}
-                  className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? "border-primary" : "border-transparent"
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${product.name} view ${index + 1}`}
-                    width={200}
-                    height={400}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-
           {Array.from(attributes.keys())
             .map((k) => ({ name: k, ...attributes.get(k) }))
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))

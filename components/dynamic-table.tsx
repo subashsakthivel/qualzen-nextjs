@@ -114,7 +114,6 @@ export default function DynamicTable({
   });
 
   async function fetchData() {
-    debugger;
     const options = {
       page: currentPage,
       limit: currentPageSize,
@@ -340,7 +339,6 @@ export default function DynamicTable({
         </Link>
       );
     }
-    debugger;
     switch (type) {
       case "date":
         const date = value instanceof Date ? value : new Date(value);

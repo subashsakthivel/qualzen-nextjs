@@ -93,7 +93,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateQuantity = (product: TProductInfo, quantity: number, variant: TProductVariant) => {
     const existingItem = cartItems.find(
-      (item) => item.product._id === product._id && item.variant?._id === variant?._id
+      (item) => item.product._id === product._id && item.variant._id === variant._id
     );
     if (!existingItem) {
       //todo : show toeast

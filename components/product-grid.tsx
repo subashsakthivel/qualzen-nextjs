@@ -7,25 +7,19 @@ import { TProductVariant } from "@/schema/ProductVarient";
 export function ProductGrid({ products }: { products: TProduct[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {products.map((product) =>
-        product.variants && product.variants.filter((v) => v.images.length > 0).length > 0 ? (
-          product.variants.map((variant) => (
-            <ProductCard key={product._id} product={product} variant={variant} />
-          ))
-        ) : (
-          <ProductCard key={product._id} product={product} />
-        )
-      )}
+      {products.map((product) => (
+        <ProductCard key={product._id} product={product} />
+      ))}
     </div>
   );
 }
 
-function ProductCard({ product, variant }: { product: TProduct; variant?: TProductVariant }) {
+function ProductCard({ product }: { product: TProduct }) {
   const productInfo = {
-    image: variant ? variant.images[0] : product.images[0],
+    image: product.images[0],
     name: product.name,
-    id: variant ? product._id + "_" + variant._id : product._id,
-    price: variant ? variant.sellingPrice : product.sellingPrice,
+    id: product._id,
+    price: product.variants.reduce((p, v) => Math.min(v.sellingPrice, p), 10 ^ 8),
   };
 
   return (

@@ -2,6 +2,7 @@ import ObjectUtil from "@/util/ObjectUtil";
 import R2API from "../file/S3Util";
 import { ModelType } from "@/data/model-config";
 import mongoose, { PaginateResult } from "mongoose";
+import { FileStoreModel } from "@/model/FileStore";
 
 //todo: change the any later
 const modelMap: Record<string, any> = {
@@ -27,31 +28,17 @@ class ModelHandler {
   static async create<K extends keyof ModelType>({
     modelName,
     docs,
-    form,
+    data,
     session,
   }: {
     modelName: K;
     docs: ModelType[K] | ModelType[K][];
-    form: FormData;
+    data: any;
     session?: mongoose.ClientSession;
   }) {
     const modelConfig = modelMap[modelName];
     if (modelConfig && modelConfig.files) {
       //pre check all files exist
-      modelConfig.files.forEach(async (fileConfig: { format: string; path: string }) => {
-        const documents = Array.isArray(docs) ? docs : [docs];
-        documents.forEach((doc) => {
-          const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
-          if (key) {
-            const keys = Array.isArray(key) ? key : [key];
-            keys.forEach((k) => {
-              if (!form.has(k)) {
-                throw new Error(`File for key ${k} is missing in form data`);
-              }
-            });
-          }
-        });
-      });
       //upload files
       modelConfig.files.forEach(async (fileConfig: { format: string; path: string }) => {
         const documents = Array.isArray(docs) ? docs : [docs];
@@ -60,8 +47,11 @@ class ModelHandler {
           if (key) {
             const keys = Array.isArray(key) ? key : [key];
             keys.forEach(async (k) => {
-              const file = form.get(k) as File;
-              //await R2API.uploadFile(k, file);
+              await FileStoreModel.updateOne(
+                { key: k },
+                { $inc: { refCount: 1 } },
+                { upsert: true, session }
+              ).exec();
             });
           }
         });
@@ -137,7 +127,7 @@ class ModelHandler {
     docs: ModelType[K] | ModelType[K][] | PaginateResult<ModelType[K]>;
   }) {
     const result = docs;
-    docs = "docs" in result ? result.docs : docs;
+    docs = result && "docs" in result ? result.docs : docs;
     const modelConfig = modelMap[modelName];
     if (modelConfig && modelConfig.files) {
       const documents = Array.isArray(docs) ? docs : [docs];
@@ -149,12 +139,12 @@ class ModelHandler {
           if (Array.isArray(key)) {
             const urls = [];
             for (const k of key) {
-              const url = await R2API.getObjectUrl(k);
+              const url = await R2API.getObjectUrl(modelName, k);
               urls.push(url);
             }
             ObjectUtil.setValue({ obj: doc, path: fileConfig.path, value: urls });
           } else {
-            const url = await R2API.getObjectUrl(key);
+            const url = await R2API.getObjectUrl(modelName, key);
             ObjectUtil.setValue({ obj: doc, path: fileConfig.path, value: url });
           }
         }

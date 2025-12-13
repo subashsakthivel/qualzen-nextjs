@@ -50,7 +50,6 @@ export default function ProductForm({ id }: { id?: string }) {
       queryKey: ["categories.product", id],
       refetchOnWindowFocus: false,
       queryFn: async () => {
-        debugger;
         const categoryRes = await DataClientAPI.getData({
           modelName: "category",
           operation: "GET_DATA_RAW",
@@ -139,7 +138,7 @@ export default function ProductForm({ id }: { id?: string }) {
       if (saveResponse.success) {
         debugger;
         const { data: savedProduct } = saveResponse;
-        const response = await fetch("/upload", {
+        const response = await fetch("/api/upload", {
           method: "POST",
           body: JSON.stringify({
             modelName: "product",
@@ -147,12 +146,14 @@ export default function ProductForm({ id }: { id?: string }) {
           }),
         });
         if (response && response.ok) {
+          debugger;
           const responseJson = await response.json();
           const { data: uploadUrls } = responseJson;
           Promise.allSettled(
             uploadUrls.map(
               async ({ key, uploadUrl }: { key: string; uploadUrl: string }) =>
                 await fetch(uploadUrl, {
+                  method: "PUT",
                   body: imageMap[key],
                 })
             )
@@ -510,7 +511,7 @@ export default function ProductForm({ id }: { id?: string }) {
                                 type="number"
                                 value={varient.sellingPrice}
                                 onChange={(e) => {
-                                  varient.price = Number.parseInt(e.target.value ?? 0);
+                                  varient.sellingPrice = Number.parseInt(e.target.value ?? 0);
                                   setVariants([...variants]);
                                 }}
                               />

@@ -42,6 +42,7 @@ class DBUtil {
         ? {
             limit: Math.min(request.options.limit ?? 10, 100), // Limit to a maximum of 100
             page: request.options.page ?? 1,
+            select: request.options.select,
           }
         : undefined;
 
@@ -54,6 +55,7 @@ class DBUtil {
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
         callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
       };
+
       if (operation === "GET_DATA_MANY") {
         execution.callback = async () => await dbModel.find(queryFilter ?? {}, select, options);
       } else if (operation === "GET_DATA_ONE") {

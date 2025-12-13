@@ -34,7 +34,6 @@ const CategoryForm = ({ id }: { id?: string }) => {
       queryKey: ["categories", id],
       refetchOnWindowFocus: false,
       queryFn: async () => {
-        debugger;
         const res = await DataClientAPI.getData({
           modelName: "category",
           operation: "GET_DATA_RAW",
@@ -121,18 +120,14 @@ const CategoryForm = ({ id }: { id?: string }) => {
         data: { uploadUrl },
       } = responseJSon as {
         data: {
-          uploadUrl: {
-            uploadUrl: string;
-            key: string;
-          };
+          uploadUrl: string;
+          key: string;
         };
       };
-      debugger;
-      const uploadResponse = await fetch(uploadUrl.uploadUrl, {
-        method: "POST",
+      await fetch(uploadUrl, {
+        method: "PUT",
         body: imageFile,
       });
-      console.log(await uploadResponse.json());
     }
   }
 
@@ -147,7 +142,13 @@ const CategoryForm = ({ id }: { id?: string }) => {
       <form className="grid flex-1 auto-rows-max gap-4" autoComplete="off" action={mutation.mutate}>
         <div className="flex items-center gap-4">
           <h1 className="flex-1 text-xl font-semibold tracking-tight">Category Form</h1>
-          <Button size="sm" type="submit" disabled={mutation.isPending} className="hidden md:flex">
+          <Button
+            size="sm"
+            type="submit"
+            disabled={mutation.isPending}
+            className="hidden md:flex"
+            variant={mutation.isPending ? "secondary" : "default"}
+          >
             {id ? "UPDATE" : "SAVE"} Category
           </Button>
         </div>

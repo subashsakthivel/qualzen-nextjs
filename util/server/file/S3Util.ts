@@ -51,10 +51,10 @@ class S3Util {
     return crypto.randomBytes(32).toString("hex");
   }
 
-  public async getObjectUrl(fileKey: string): Promise<string> {
+  public async getObjectUrl(modelName: string, fileKey: string): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
-      Key: fileKey,
+      Key: `${modelName}/${fileKey}`,
     });
     const url = await getSignedUrl(this.client, command, { expiresIn: 3600 });
     return url;
@@ -152,7 +152,7 @@ class S3Util {
     });
 
     const url = await getSignedUrl(this.client, command, { expiresIn: 60 });
-    console.log(url);
+
     return {
       uploadUrl: url,
       key,

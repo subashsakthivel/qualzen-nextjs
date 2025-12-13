@@ -7,9 +7,9 @@ async function dbConnect() {
     if (connection.isConnected) {
       return;
     }
-    console.log("connecting to db : ", process.env.MONGODB_URI);
-    const db = await mongoose.connect(process.env.MONGODB_URI!);
 
+    const db = await mongoose.connect(process.env.MONGODB_URI!);
+    console.log("connected to db : ", process.env.MONGODB_URI, db.connection.readyState);
     connection.isConnected = db.connection.readyState;
   } catch (error) {
     console.log("DB Connection ERROR ", error);

@@ -15,7 +15,7 @@ export default async function ProductView({ params }: { params: Promise<{ id: st
     return <>Not Available</>;
   }
 
-  const product = JSON.parse(response);
+  const product = response;
 
   return <ProductShowcase product={product} />;
 }
