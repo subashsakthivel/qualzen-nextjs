@@ -1,7 +1,7 @@
 import { TOrder } from "@/schema/Order";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
-import Counter from "./Counter";
+import { SequanceModel } from "./Sequance";
 
 const OrderSchema = new mongoose.Schema<TOrder>({
   user: {
@@ -101,7 +101,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
 
 OrderSchema.pre("save", async function (next) {
   if (this.isNew) {
-    const counter = await Counter.findByIdAndUpdate(
+    const counter = await SequanceModel.findByIdAndUpdate(
       { _id: "trackingNumber" },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }

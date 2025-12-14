@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { ShoppingBag, Menu, X, User, Search } from "lucide-react";
+import { ShoppingBag, Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,7 +41,6 @@ export const Header = () => {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/products", label: "Products" },
-    { to: "/offers", label: "Offers" },
     { to: "/contact", label: "Contact" },
     { to: "/help", label: "Help" },
   ];
@@ -101,9 +100,6 @@ export const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Search className="h-4 w-4" />
-            </Button>
             <Link href="/profile">
               <Button variant="ghost" size="icon">
                 <User className="h-4 w-4" />

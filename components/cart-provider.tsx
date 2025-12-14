@@ -80,11 +80,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeFromCart = (product: TProductInfo, variant: TProductVariant) => {
-    setCartItems((prevItems) =>
-      prevItems.filter(
-        (item) => item.product._id !== product._id && item.variant._id !== variant._id
-      )
-    );
+    const remaingCartItems = cartItems.filter((item) => {
+      console.log(item.product._id === product._id && item.variant._id === variant._id);
+      console.log(item.product._id, product._id, item.variant._id, variant._id);
+      return !(item.product._id === product._id && item.variant._id === variant._id);
+    });
+    setCartItems(remaingCartItems);
 
     if (cartItems.length === 0) {
       localStorage.removeItem("cart");
@@ -92,6 +93,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = (product: TProductInfo, quantity: number, variant: TProductVariant) => {
+    debugger;
     const existingItem = cartItems.find(
       (item) => item.product._id === product._id && item.variant._id === variant._id
     );

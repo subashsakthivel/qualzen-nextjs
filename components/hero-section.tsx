@@ -7,49 +7,6 @@ import { TContent } from "@/schema/Content";
 import Link from "next/link";
 import DataAPI from "@/data/data-api";
 
-const homePageContent: TContent[] = [
-  {
-    identifier: "home_page_banner",
-    title: "Discover Amazing Products",
-    description: "Explore our latest collection of premium items",
-    bg_img: {
-      img: "https://i.pinimg.com/1200x/78/93/4f/78934fc7f30fc1e3a3ea54cd14f46041.jpg",
-      img_link: "/",
-    },
-    is_active: true,
-  },
-  {
-    identifier: "home_page_banner",
-    title: "Innovation at Its Best",
-    description: "Experience cutting-edge technology and design",
-    bg_img: {
-      img: "https://i.pinimg.com/1200x/c4/12/5b/c4125b07e10568a098c937705337a544.jpg",
-      img_link: "/",
-    },
-    is_active: true,
-  },
-  {
-    identifier: "home_page_banner",
-    title: "Transform Your Lifestyle",
-    description: "Join thousands of satisfied customers worldwide",
-    bg_img: {
-      img: "https://i.pinimg.com/1200x/8b/29/6c/8b296c7735232fa1cbc69e415ac7c25b.jpg",
-      img_link: "/",
-    },
-    is_active: true,
-  },
-  {
-    identifier: "home_page_banner",
-    title: "Premium Quality Guaranteed",
-    description: "Crafted with attention to detail and excellence",
-    bg_img: {
-      img: "https://i.pinimg.com/1200x/c4/12/5b/c4125b07e10568a098c937705337a544.jpg",
-      img_link: "/",
-    },
-    is_active: true,
-  },
-];
-
 export default async function HeroCarousel() {
   const response = await DataAPI.getData({
     modelName: "content",
@@ -62,7 +19,7 @@ export default async function HeroCarousel() {
         },
       },
     },
-  });
+  }).then((res) => JSON.parse(JSON.stringify(res)));
 
   const heroSlides = (response && Array.isArray(response) ? response : []) as TContent[];
 

@@ -23,7 +23,7 @@ const ProductGroupDBSchema = new mongoose.Schema<TProductGroup>({
 ProductGroupDBSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
 
 export const ProductGroupModel =
-  (mongoose.models?.TProductGroup as unknown as mongoose.PaginateModel<TProductGroup>) ||
+  (mongoose.models?.ProductGroup as unknown as mongoose.PaginateModel<TProductGroup>) ||
   mongoose.model<TProductGroup, mongoose.PaginateModel<TProductGroup>>(
     "ProductGroup",
     ProductGroupDBSchema

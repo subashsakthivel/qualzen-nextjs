@@ -12,6 +12,12 @@ import { AddressSchema } from "@/schema/Address";
 import { tDataModels } from "@/util/util-type";
 import { ContentSchema } from "@/schema/Content";
 import { ContentModel } from "../Content";
+import { OrderSchema } from "@/schema/Order";
+import { OrderModel } from "../Order";
+import { ProductGroupSchema } from "@/schema/ProductGroup";
+import { ProductGroupModel } from "../ProductGroup";
+import { FileStoreSchema } from "@/schema/FileStore";
+import { FileStoreModel } from "../FileStore";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
@@ -44,5 +50,17 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   content: {
     schema: ContentSchema,
     dbModel: ContentModel,
+  },
+  order: {
+    schema: OrderSchema,
+    dbModel: OrderModel,
+  },
+  productgroup: {
+    schema: ProductGroupSchema,
+    dbModel: ProductGroupModel,
+  },
+  filestore: {
+    schema: FileStoreSchema,
+    dbModel: FileStoreModel,
   },
 };

@@ -19,7 +19,7 @@ export default function Home() {
           <FeaturedProducts />
           <CategoriesCatelog />
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Ready to upgrade?</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Ready to upgrade</h2>
             <p className="max-w-[600px] text-muted-foreground">
               Discover our latest collections and find your perfect fit.
             </p>

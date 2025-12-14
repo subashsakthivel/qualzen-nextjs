@@ -56,9 +56,8 @@ export default function CartPage() {
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         {item.variant?.attributes.map((attr) => (
-                          <span key={attr.name}>
-                            {attr.name}: {attr.value}
-                            {", "}
+                          <span key={attr.name} className="m-2">
+                            {attr.name} : {attr.value}
                           </span>
                         ))}
                       </p>
