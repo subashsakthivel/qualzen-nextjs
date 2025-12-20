@@ -27,7 +27,7 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
   return (
     <html lang="en" className={` ${imffcs.variable}`}>
-      <body className={`overflow-x-hidden ${imffcs.className}`}>
+      <body className={`overflow-x-hidden dark ${imffcs.className}`}>
         <SessionProviderClientComponent session={session}>
           <CartProvider>
             <div className="relative flex flex-col">

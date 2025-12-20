@@ -6,8 +6,83 @@ import Image from "next/image";
 import { TContent } from "@/schema/Content";
 import Link from "next/link";
 import DataAPI from "@/data/data-api";
+import { TProduct } from "@/schema/Product";
+import { InfiniteCarousel } from "./client-components/infinite-carousel";
+import ProductCard from "./blocks/ProductCard";
+
+const featuredProduct: Partial<TProduct>[] = [
+  {
+    _id: "1",
+    images: ["https://i.pinimg.com/originals/e8/3c/2c/e83c2cbf27f7bdbceea191d320a1044c.png"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "2",
+    images: ["https://i.pinimg.com/736x/9f/a4/b5/9fa4b579ad7629763c22f0f5c943a861.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "3",
+    images: ["https://i.pinimg.com/1200x/ca/5e/63/ca5e6358aa03e051945892e4c463ca6a.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "4",
+    images: ["https://i.pinimg.com/1200x/73/c9/6e/73c96e744d759cdb1ef5fc545a74ec27.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "8",
+    images: ["https://i.pinimg.com/1200x/ca/5e/63/ca5e6358aa03e051945892e4c463ca6a.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "5",
+    images: ["https://i.pinimg.com/736x/3c/9f/b1/3c9fb139af1ac23fc42892f4566bbd78.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "6",
+    images: ["https://i.pinimg.com/1200x/73/c9/6e/73c96e744d759cdb1ef5fc545a74ec27.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+  {
+    _id: "7",
+    images: ["https://i.pinimg.com/736x/9f/a4/b5/9fa4b579ad7629763c22f0f5c943a861.jpg"],
+    feature_location: "home_page_top",
+    name: "",
+    createdAt: Date.now(),
+  },
+];
 
 export default async function HeroCarousel() {
+  const featuredProductRes = await DataAPI.getData({
+    modelName: "product",
+    operation: "GET_DATA_MANY",
+    request: {
+      options: {
+        filter: {
+          feature_location: "home_page_top",
+          select: "images feature_location createdAt",
+        },
+      },
+    },
+  });
+
   const response = await DataAPI.getData({
     modelName: "content",
     operation: "GET_DATA_MANY",
@@ -26,6 +101,14 @@ export default async function HeroCarousel() {
   return (
     <>
       <div className="w-full">
+        <div>
+          <InfiniteCarousel
+            items={featuredProduct.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+            className=""
+          />
+        </div>
         {heroSlides.map((slide, index) => (
           <Card key={index} className="border-0 rounded-none mb-2">
             <CardContent className="relative p-0 h-screen overflow-hidden">

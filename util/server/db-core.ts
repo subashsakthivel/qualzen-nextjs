@@ -1,10 +1,9 @@
-import { FilterQuery, PaginateModel, RootQuerySelector, UpdateQuery } from "mongoose";
+import { PaginateModel, UpdateQuery } from "mongoose";
 import {
   TCompositeFilter,
   tDataModels,
   tDeleteResponse,
   TFilter,
-  tGetDataParams,
   tGetResponse,
   TUpdate,
   zUpdateueryAndFilter,

@@ -22,6 +22,7 @@ export const ProductSchema = z.object({
   tags: z.array(z.string()).max(3).default([]),
   otherdetails: z.string().optional(),
   relatedLinks: z.array(z.object({ name: z.string(), url: z.string() })).optional(),
+  feature_location: z.string().optional(),
   createdAt: z.union([z.number(), z.date()]).optional(),
   updatedAt: z.date().optional(),
 });

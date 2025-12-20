@@ -2,29 +2,32 @@ import { TCategory } from "@/schema/Category";
 import mongoose from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
-const CategoryDbSchema = new mongoose.Schema<TCategory>({
-  name: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
+const CategoryDbSchema = new mongoose.Schema<TCategory>(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    image: { type: String, required: false },
+    description: { type: String, required: false },
+    parentCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  image: { type: String, required: false },
-  description: { type: String, required: false },
-  parentCategory: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category",
-    default: null,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { id: true }
+);
 
 CategoryDbSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
 
