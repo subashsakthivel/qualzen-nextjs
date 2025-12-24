@@ -10,10 +10,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface InfiniteCarouselProps {
   items: React.ReactNode[];
   className?: string;
-  cardsToShow?: number;
 }
 
-export function InfiniteCarousel({ items, className, cardsToShow = 3 }: InfiniteCarouselProps) {
+export function InfiniteCarousel({ items, className }: InfiniteCarouselProps) {
   const clonedItems = [...items, ...items, ...items];
   const [currentIndex, setCurrentIndex] = useState(items.length);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -23,8 +22,9 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
   const [startPos, setStartPos] = useState(0);
   const [currentTranslate, setCurrentTranslate] = useState(0);
   const [prevTranslate, setPrevTranslate] = useState(0);
+  const [cards, setCards] = useState(3);
 
-  const cardWidth = 100 / cardsToShow;
+  const cardWidth = 100 / cards;
 
   const goToNext = () => {
     if (isTransitioning) return;
@@ -56,7 +56,7 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
     setIsDragging(false);
 
     const movedBy = currentTranslate - prevTranslate;
-    const threshold = 50; // Minimum swipe distance in pixels
+    const threshold = 20; // Minimum swipe distance in pixels
 
     if (movedBy < -threshold) {
       // Swiped left, go next
@@ -105,6 +105,11 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
   };
 
   useEffect(() => {
+    const update = () => {
+      setCards(window.innerWidth >= 768 ? 3 : 1);
+    };
+    update();
+
     if (!isTransitioning) return;
 
     const timeout = setTimeout(() => {
@@ -125,14 +130,16 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
 
   return (
     <div className={cn("relative w-full", className)}>
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm"
-        onClick={goToPrevious}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+      {cards > 1 && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm"
+          onClick={goToPrevious}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      )}
 
       <div
         className="overflow-hidden cursor-grab active:cursor-grabbing"
@@ -160,7 +167,7 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
             <div
               key={index}
               className="flex-shrink-0"
-              style={{ width: `calc(${cardWidth}% - ${((cardsToShow - 1) * 16) / cardsToShow}px)` }}
+              style={{ width: `calc(${cardWidth}% - ${((cards - 1) * 16) / cards}px)` }}
             >
               {item}
             </div>
@@ -168,16 +175,18 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
         </div>
       </div>
 
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm"
-        onClick={goToNext}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+      {cards > 1 && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm"
+          onClick={goToNext}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      )}
 
-      <div className="mt-6 flex justify-center gap-2">
+      {/* <div className="mt-6 flex justify-center gap-2">
         {items.map((_, index) => (
           <button
             key={index}
@@ -191,7 +200,7 @@ export function InfiniteCarousel({ items, className, cardsToShow = 3 }: Infinite
             }}
           />
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }

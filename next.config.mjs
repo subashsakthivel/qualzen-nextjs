@@ -38,7 +38,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "lumalabs.ai", // todo:  remove
+        hostname: "picsum.photos", // todo:  remove
       },
       {
         protocol: "https",

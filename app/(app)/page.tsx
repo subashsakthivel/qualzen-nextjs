@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <>
       <ErrorBoundary fallback={<ErrorPage />}>
-        <HeroCarousel />
+        {/* <HeroCarousel />
 
         <div className="  container  space-y-32 my-10">
           <CategorySection />
@@ -30,7 +30,7 @@ export default function Home() {
               </Link>
             </Button>
           </div>
-        </div>
+        </div> */}
       </ErrorBoundary>
     </>
   );

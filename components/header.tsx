@@ -55,7 +55,7 @@ export const Header = () => {
         " ease-out duration-100"
       }
     >
-      <section
+      {/* <section
         className={
           "bg-primary text-white py-2 overflow-hidden " + (lastScrollY == 0 ? "block" : "hidden")
         }
@@ -69,7 +69,7 @@ export const Header = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}

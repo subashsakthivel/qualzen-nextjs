@@ -3,7 +3,13 @@ import { Card, CardContent } from "../ui/card";
 import Image from "next/image";
 import { TProduct } from "@/schema/Product";
 
-export default function ProductCard({ product }: { product: Partial<TProduct> }) {
+export default function ProductCard({
+  product,
+  className,
+}: {
+  product: Partial<TProduct>;
+  className?: string;
+}) {
   const productInfo = {
     image: product.images ? product.images[0] : "#",
     name: product.name,
@@ -12,7 +18,7 @@ export default function ProductCard({ product }: { product: Partial<TProduct> })
   };
 
   return (
-    <Card className="overflow-hidden group">
+    <Card className={"overflow-hidden group " + className}>
       <Link href={`/products/${productInfo.id}`}>
         <div className="relative aspect-square overflow-hidden">
           <Image

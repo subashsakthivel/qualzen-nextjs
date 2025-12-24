@@ -27,14 +27,12 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
   return (
     <html lang="en" className={` ${imffcs.variable}`}>
-      <body className={`overflow-x-hidden dark ${imffcs.className}`}>
+      <body className={`dark`}>
         <SessionProviderClientComponent session={session}>
           <CartProvider>
-            <div className="relative flex flex-col">
-              <Header />
-              <main className="flex flex-col ">{children}</main>
-              <FooterSection />
-            </div>
+            {/* <Header /> */}
+            <main>{children}</main>
+            {/* <FooterSection /> */}
           </CartProvider>
         </SessionProviderClientComponent>
       </body>
