@@ -12,25 +12,13 @@ export default function Home() {
   return (
     <>
       <ErrorBoundary fallback={<ErrorPage />}>
-        {/* <HeroCarousel />
+        <HeroCarousel />
 
-        <div className="  container  space-y-32 my-10">
+        <div className="">
           <CategorySection />
           <FeaturedProducts />
           <CategoriesCatelog />
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Ready to upgrade</h2>
-            <p className="max-w-[600px] text-muted-foreground">
-              Discover our latest collections and find your perfect fit.
-            </p>
-            <Button asChild size="lg">
-              <Link href="/products">
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Shop Now
-              </Link>
-            </Button>
-          </div>
-        </div> */}
+        </div>
       </ErrorBoundary>
     </>
   );
