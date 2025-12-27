@@ -1,6 +1,8 @@
+import { group } from "console";
 import { z } from "zod";
 
 export const ContentSchema = z.object({
+  _id: z.string().optional(),
   identifier: z.string(),
   title: z.string(),
   description: z.string(),
@@ -25,6 +27,7 @@ export const ContentSchema = z.object({
       action: z.string(),
     })
     .optional(),
+  group_name: z.string().optional(),
   is_active: z.boolean(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),

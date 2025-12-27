@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ObjectIdSchema } from "./Common";
 
 export const CategorySchema = z.object({
-  _id: z.union([z.string(), ObjectIdSchema]).optional(),
+  _id: z.string().optional(),
   name: z.string(),
   image: z.string().optional(),
   description: z.string().optional(),

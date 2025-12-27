@@ -46,9 +46,7 @@ class DBUtil {
         : undefined;
 
       const queryFilter = request?.options?.filter
-        ? request.options.filter?.CompositeFilters
-          ? this.parseFilterQuery(request.options.filter)
-          : request.options.filter
+        ? this.parseFilterQuery(request.options.filter)
         : undefined;
       const select = request.options?.select;
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
@@ -439,13 +437,35 @@ class DBUtil {
     return await new dbModel(data).save({ session });
   }
 
-  protected parseFilterQuery(filterQuery: TCompositeFilter): Record<string, any> {
+  protected parseFilterQuery(
+    filterQuery: Record<string, any> | TCompositeFilter
+  ): Record<string, any> {
     if (!filterQuery.CompositeFilters || filterQuery.CompositeFilters.length === 0) {
+      const parsedFilter = Object.keys(filterQuery as Record<string, any>).reduce(
+        (acc: Record<string, any>, field) => {
+          const value = (filterQuery as Record<string, any>)[field];
+
+          if (value && typeof value === "object" && !Array.isArray(value)) {
+            acc[field] = Object.keys(value).reduce((ops: Record<string, any>, op) => {
+              ops[`$${op}`] = value[op];
+              return ops;
+            }, {});
+          } else {
+            acc[field] = value;
+          }
+
+          return acc;
+        },
+        {}
+      );
+      return parsedFilter;
+    }
+    if (!filterQuery || !filterQuery.CompositeFilters) {
       return {};
     }
 
     const operator = filterQuery.CompositeOperator === "OR" ? "$or" : "$and";
-    const conditions = filterQuery.CompositeFilters.map((filter) => {
+    const conditions = (filterQuery as TCompositeFilter).CompositeFilters!.map((filter) => {
       const filterConditions: Record<string, any> = {};
 
       if (filter.StringFilters) {

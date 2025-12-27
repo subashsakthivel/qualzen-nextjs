@@ -24,3 +24,33 @@ struct :
 # after works
 
 # mobile otp Auth
+
+# todo
+
+0. CDN usage -
+1. Remove Admin feature - 1 day
+2. Order History - 1 day
+3. Order Tracking -
+4. Payment -
+5. Similar Product Showing - 1 day
+6. Create multiple groups of products -
+7. Create Custom Tshirt , Shirt , Innerwear - 3 day
+8. Create page for crafts - 1 day
+9. cookies settings for google analytics -
+10. Join Varfeo button - 1 day
+
+total - 9 days
+
+{
+"\_id": {
+"$oid": "6936fc1e1dd7602691bb8b4f"
+},
+"identifier": "home_page_banner",
+"title": "Discover Amazing Products",
+"description": "Explore our latest collection of premium items",
+"bg_img": {
+"img": "https://i.pinimg.com/1200x/78/93/4f/78934fc7f30fc1e3a3ea54cd14f46041.jpg",
+"img_link": "/products"
+},
+"is_active": true
+}

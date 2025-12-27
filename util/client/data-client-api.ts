@@ -1,10 +1,4 @@
-import {
-  FetchDataOptions,
-  TCompositeFilter,
-  tDataModels,
-  TFilter,
-  tGetDataParams,
-} from "../util-type";
+import { tDataModels, tGetDataParams } from "../util-type";
 import { DataSourceMap } from "./data-source-mappings";
 
 class DataServiceClass {

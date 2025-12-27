@@ -30,7 +30,8 @@ export default async function RootLayout({
       <body className={`dark`}>
         <SessionProviderClientComponent session={session}>
           <CartProvider>
-            <main>{children}</main>
+            <main className="max-w-full ">{children}</main>
+            <FooterSection />
           </CartProvider>
         </SessionProviderClientComponent>
       </body>

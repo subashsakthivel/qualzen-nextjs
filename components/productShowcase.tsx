@@ -3,13 +3,14 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Minus, Plus, Truck, Shield, RotateCcw } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Truck, Shield, RotateCcw, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 import { useCart } from "./cart-provider";
 import { TProduct } from "@/schema/Product";
+import { FaBuyNLarge } from "react-icons/fa";
 
 const ProductShowcase = ({ product }: { product: TProduct }) => {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -100,7 +101,7 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
 
   function onSelectAttribute(attributeName: string, attributeValue: string) {
     selectedAttributes[attributeName] = attributeValue;
-    setSelectedAttributes(selectedAttributes);
+    setSelectedAttributes({ ...selectedAttributes });
     const variants = getMatchedVaraints();
     if (variants.length == 1) {
       setVariant(variants[0]);
@@ -176,15 +177,17 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
           </div>
         </div>
         <Carousel className="md:hidden">
-          <CarouselContent className="aspect-square">
+          <CarouselContent>
             {images.map((image, index) => (
               <CarouselItem key={index}>
-                <Image
-                  src={image}
-                  alt={`${product.name} view ${index + 1}`}
-                  fill
-                  className="w-full h-full object-cover"
-                />
+                <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+                  <Image
+                    src={image}
+                    alt={`${product.name} view ${index + 1}`}
+                    fill
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </CarouselItem>
             ))}
           </CarouselContent>
@@ -198,9 +201,9 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
                 <span className="text-sm text-muted-foreground">{product.brand}</span>
               </div>
             )}
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+            <h1 className="text-xl font-bold mb-2">{product.name}</h1>
             <div className="flex items-center space-x-3">
-              <span className="text-3xl font-bold text-primary">₹ {variant.sellingPrice}</span>
+              <span className="text-xl font-bold text-primary">₹ {variant.sellingPrice}</span>
               <Badge variant="destructive">Save ₹ {variant.price - variant.sellingPrice}</Badge>
             </div>
           </div>
@@ -211,7 +214,7 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
             .map((k) => ({ name: k, ...attributes.get(k) }))
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .map(({ ...vAtt }, attrIndex) => (
-              <div key={vAtt.name ?? attrIndex}>
+              <div key={vAtt.name}>
                 <h3 className="font-semibold mb-3">{vAtt.name}</h3>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(vAtt.values ?? []).map((val, index) => (
@@ -258,10 +261,16 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
                 </div>
               </>
             ) : (
-              <Button size="lg" className="w-full" onClick={handleAddToCart}>
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
-              </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button size="lg" className="w-full" onClick={handleAddToCart}>
+                  <ShoppingBag className="h-5 w-5 mr-2" />
+                  Buy Now
+                </Button>
+                <Button size="lg" className="w-full" onClick={handleAddToCart}>
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Add to Cart
+                </Button>
+              </div>
             )}
           </div>
 

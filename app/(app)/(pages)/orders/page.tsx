@@ -4,34 +4,48 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Truck, Package, CheckCircle, Clock } from "lucide-react";
 import Image from "next/image";
+import DataClientAPI from "@/util/client/data-client-api";
+import { TOrder } from "@/schema/Order";
 
-export const Orders = () => {
-  const orders = [
-    {
-      id: "ORD-001",
-      date: "2024-01-15",
-      status: "delivered",
-      total: 348.0,
-      items: [
-        { name: "Hero Red Jacket", price: 199, quantity: 1, image: "/placeholder.svg" },
-        { name: "Wolverine Yellow Hoodie", price: 149, quantity: 1, image: "/placeholder.svg" },
-      ],
-    },
-    {
-      id: "ORD-002",
-      date: "2024-01-12",
-      status: "shipped",
-      total: 79.0,
-      items: [{ name: "Deadpool Graphic Tee", price: 79, quantity: 1, image: "/placeholder.svg" }],
-    },
-    {
-      id: "ORD-003",
-      date: "2024-01-10",
-      status: "processing",
-      total: 299.0,
-      items: [{ name: "X-Force Combat Boots", price: 299, quantity: 1, image: "/placeholder.svg" }],
-    },
-  ];
+export const Orders = async () => {
+  // const orders = [
+  //   {
+  //     id: "ORD-001",
+  //     date: "2024-01-15",
+  //     status: "delivered",
+  //     total: 348.0,
+  //     items: [
+  //       { name: "Hero Red Jacket", price: 199, quantity: 1, image: "/placeholder.svg" },
+  //       { name: "Wolverine Yellow Hoodie", price: 149, quantity: 1, image: "/placeholder.svg" },
+  //     ],
+  //   },
+  //   {
+  //     id: "ORD-002",
+  //     date: "2024-01-12",
+  //     status: "shipped",
+  //     total: 79.0,
+  //     items: [{ name: "Deadpool Graphic Tee", price: 79, quantity: 1, image: "/placeholder.svg" }],
+  //   },
+  //   {
+  //     id: "ORD-003",
+  //     date: "2024-01-10",
+  //     status: "processing",
+  //     total: 299.0,
+  //     items: [{ name: "X-Force Combat Boots", price: 299, quantity: 1, image: "/placeholder.svg" }],
+  //   },
+  // ];
+
+  const response = await DataClientAPI.getData({
+    modelName: "order",
+    operation: "GET_DATA",
+    request: {},
+  });
+
+  if (!response || !Array.isArray(response)) {
+    return <div>Error loading orders.</div>;
+  }
+
+  const orders: TOrder[] = response;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -79,7 +93,7 @@ export const Orders = () => {
                   <div>
                     <CardTitle className="text-lg">Order {order.id}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Placed on {new Date(order.date).toLocaleDateString()}
+                      Placed on {new Date(order.orderDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
@@ -89,7 +103,7 @@ export const Orders = () => {
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </Badge>
                     </div>
-                    <p className="font-semibold">${order.total.toFixed(2)}</p>
+                    <p className="font-semibold">${order.amount.toFixed(2)}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -98,13 +112,13 @@ export const Orders = () => {
                   {order.items.map((item, index) => (
                     <div key={index} className="flex items-center space-x-4 relative">
                       <Image
-                        src={item.image}
-                        alt={item.name}
+                        src={item.product.images[0] || "/placeholder.svg"}
+                        alt={item.product.name}
                         fill
                         className="w-16 h-16 object-cover rounded"
                       />
                       <div className="flex-1">
-                        <h4 className="font-medium">{item.name}</h4>
+                        <h4 className="font-medium">{item.product.name}</h4>
                         <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">

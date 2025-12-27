@@ -24,6 +24,11 @@ const ContentDBSchema = new mongoose.Schema<TContent>({
     required: true,
     default: true,
   },
+  group_name: {
+    type: String,
+    required: false,
+    index: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

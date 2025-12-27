@@ -66,7 +66,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
     enum: ["credit_card", "paypal", "bank_transfer", "UPI"],
     default: "credit_card",
   },
-  products: [
+  items: [
     {
       product: {
         type: mongoose.Schema.Types.ObjectId,
@@ -99,7 +99,7 @@ const OrderSchema = new mongoose.Schema<TOrder>({
   },
 });
 
-OrderSchema.pre("save", async function (next) {
+OrderSchema.pre("save", async function (next: any) {
   if (this.isNew) {
     const counter = await SequanceModel.findByIdAndUpdate(
       { _id: "trackingNumber" },

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { ShoppingBag, Menu, X, User } from "lucide-react";
+import { ShoppingBag, Menu, X, User, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -13,9 +13,10 @@ const newsItems = [
 ];
 import Image from "next/image";
 import Link from "next/link";
+import { useCart } from "./cart-provider";
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const cartItemsCount = 0; // This would come from cart context
+  const { cartItems } = useCart(); // This would come from cart context
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   useEffect(() => {
@@ -107,10 +108,10 @@ export const Header = () => {
             </Link>
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
-                <ShoppingBag className="h-4 w-4" />
-                {cartItemsCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
-                    {cartItemsCount}
+                <ShoppingCart className="h-4 w-4" />
+                {cartItems.length > 0 && (
+                  <Badge className="absolute top-0 -right-2 px-2 text-xs brightness-200">
+                    {cartItems.length}
                   </Badge>
                 )}
               </Button>

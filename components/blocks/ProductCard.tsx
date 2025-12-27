@@ -18,21 +18,25 @@ export default function ProductCard({
   };
 
   return (
-    <Card className={"overflow-hidden group " + className}>
+    <Card className={"overflow-hidden group border-none " + className}>
       <Link href={`/products/${productInfo.id}`}>
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-square overflow-hidden ">
           <Image
             src={productInfo.image || "/placeholder.svg"}
             alt={productInfo.name ?? "#"}
             fill
             className="object-cover transition-transform group-hover:scale-105"
           />
+          <div
+            className="absolute bottom-0 w-full h-10
+                  bg-gradient-to-t from-black to-transparent"
+          />
         </div>
       </Link>
       {(product.name || productInfo.price) && (
-        <CardContent className="p-4">
+        <CardContent className="p-2 ">
           {product.name && <h3 className="font-medium">{productInfo.name}</h3>}
-          {productInfo.price && <p className="font-bold mt-1">${productInfo.price}</p>}
+          {productInfo.price && <p className="font-extralight mt-1">{productInfo.price} rs</p>}
         </CardContent>
       )}
     </Card>

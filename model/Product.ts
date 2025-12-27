@@ -13,9 +13,18 @@ const ProductDBSchema = new mongoose.Schema<TProduct>(
       type: String,
       required: false,
     },
+    audience: {
+      type: String,
+      enum: ["men", "women", "kids", "unisex", "boys", "girls", "kids"],
+      required: false,
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
+      required: true,
+    },
+    categorySlug: {
+      type: String,
       required: true,
     },
     slug: {
