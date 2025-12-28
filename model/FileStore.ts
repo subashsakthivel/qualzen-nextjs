@@ -25,7 +25,7 @@ const FileStoreDbSchema = new mongoose.Schema<TFileStore>({
   },
 });
 
-FileStoreDbSchema.pre("updateOne", async function (next) {
+FileStoreDbSchema.pre("updateOne", async function (next: any) {
   const update = this.getUpdate();
   console.log(update);
   if (update && !Array.isArray(update)) {

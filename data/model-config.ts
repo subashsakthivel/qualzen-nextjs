@@ -7,6 +7,7 @@ import { ContentSchema, TContent } from "@/schema/Content";
 import { OrderSchema, TOrder } from "@/schema/Order";
 import { FileStoreSchema, TFileStore } from "@/schema/FileStore";
 import { ProductGroupSchema, TProductGroup } from "@/schema/ProductGroup";
+import { OfferSchema, TOffer } from "@/schema/Offer";
 // all of this shoul be in server side
 export interface IModelConfig<T, K extends keyof T = keyof T> {
   schema: z.ZodType;
@@ -36,6 +37,7 @@ export type ModelType = {
   order: TOrder;
   productgroup: TProductGroup;
   filestore: TFileStore;
+  offer: TOffer;
 };
 
 export const zModelschemas: Record<keyof ModelType, z.ZodType<any>> = {
@@ -47,6 +49,7 @@ export const zModelschemas: Record<keyof ModelType, z.ZodType<any>> = {
   filestore: FileStoreSchema,
   userinfo: UserInfoSchema,
   productgroup: ProductGroupSchema,
+  offer: OfferSchema,
 };
 
 export const ModelConfig: {
@@ -87,6 +90,10 @@ export const ModelConfig: {
   },
   productgroup: {
     schema: ProductGroupSchema,
+    columns: [],
+  },
+  offer: {
+    schema: OfferSchema,
     columns: [],
   },
 };

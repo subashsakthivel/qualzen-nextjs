@@ -5,6 +5,7 @@ import { AddressSchema } from "@/schema/Address";
 import { UserInfoSchema } from "@/schema/UserInfo";
 import { tDataModels } from "../util-type";
 import { ContentSchema } from "@/schema/Content";
+import { OfferSchema } from "@/schema/Offer";
 
 interface IDataSourceMap {
   url: string;
@@ -43,5 +44,9 @@ export const DataSourceMap: Record<tDataModels, IDataSourceMap> = {
   filestore: {
     url: "/api/dataAPI/category",
     schema: CategorySchema,
+  },
+  offer: {
+    url: "/api/dataAPI/offer",
+    schema: OfferSchema,
   },
 };

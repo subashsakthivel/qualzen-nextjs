@@ -6,6 +6,7 @@ import DataClientAPI from "@/util/client/data-client-api";
 import Link from "next/link";
 import { TProduct } from "@/schema/Product";
 import { TCategory } from "@/schema/Category";
+import { TOffer } from "@/schema/Offer";
 
 const TITANS = [
   {
@@ -35,10 +36,6 @@ const AUDIENCE = [
     img: "/#",
   },
   {
-    name: "Kids",
-    img: "/#",
-  },
-  {
     name: "Unisex",
     img: "/#",
   },
@@ -60,6 +57,7 @@ export const LandingPageScrollView = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [featuredProducts, setFeaturedProducts] = React.useState<TProduct[]>([]);
   const [categories, setCategories] = useState<TCategory[]>([]);
+  const [offers, setOffers] = useState<TOffer[]>([]);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -93,17 +91,22 @@ export const LandingPageScrollView = () => {
           filter: { img: { exists: true } },
         },
       });
+    const offerResponse = async () =>
+      await DataClientAPI.getData({
+        modelName: "offer",
+        operation: "GET_DATA_MANY",
+        request: { filter: { endDateTime: { exists: true, lte: new Date() } } },
+      });
     response().then((data) => {
       if (data && Array.isArray(data)) setFeaturedProducts(data);
     });
     categoriesResponse().then((data) => {
       if (data && Array.isArray(data)) setCategories(data);
     });
+    offerResponse().then((data) => {
+      if (data && Array.isArray(data)) setOffers(data);
+    });
   }, []);
-
-  if (!featuredProducts || !Array.isArray(featuredProducts)) {
-    return <></>;
-  }
 
   return (
     <div ref={containerRef} className="relative bg-[#050505]">
@@ -288,6 +291,49 @@ export const LandingPageScrollView = () => {
               <div className="relative overflow-hidden aspect-square bg-neutral-900 border border-white/5 shadow-2xl">
                 <div className="overflow-hidden group w-full h-full">
                   <Link href={"/explore/audience-" + item.name}>
+                    <Image
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill // Use fill for responsive containers
+                      className="object-cover"
+                    />
+                  </Link>
+                </div>
+              </div>
+
+              <div
+                className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
+                  (idx + 2) % 10
+                )} z-10 bg-black/60 backdrop-blur-sm  p-1 rounded `}
+              >
+                <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
+                  {item.name}
+                </span>
+              </div>
+
+              <div className="absolute -top-4 -left-4 z-0 text-[10vw] font-bold opacity-[0.03] select-none pointer-events-none uppercase">
+                {String(idx + 1).padStart(2, "0")}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Part 2.3 : Grid Section for Collections offers*/}
+      <section className="relative z-10 py-32 px-8 md:px-24 ">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
+          {categories.map((item, idx) => (
+            <motion.div
+              key={item.name}
+              initial={{ opacity: 0, y: 100 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-10%" }}
+              transition={{ duration: 1, delay: idx * 0.1 }}
+              className="relative group cursor-none"
+            >
+              <div className="relative overflow-hidden aspect-square bg-neutral-900 border border-white/5 shadow-2xl">
+                <div className="overflow-hidden group w-full h-full">
+                  <Link href={"/explore/offer-" + item.name}>
                     <Image
                       src={item.image || "/placeholder.svg"}
                       alt={item.name}

@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { ObjectIdSchema } from "./Common";
 
 export const FileStoreSchema = z.object({
-  _id: z.union([z.string(), ObjectIdSchema]).optional(),
+  _id: z.string().optional(),
   key: z.string(),
   refCount: z.number(),
   createdAt: z.date().optional(),
