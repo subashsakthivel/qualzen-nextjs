@@ -10,6 +10,12 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>(
       unique: true,
       trim: true,
     },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     image: { type: String, required: false },
     description: { type: String, required: false },
     parentCategory: {
@@ -17,6 +23,7 @@ const CategoryDbSchema = new mongoose.Schema<TCategory>(
       ref: "Category",
       default: null,
     },
+    level: { type: Number, default: 0 },
     createdAt: {
       type: Date,
       default: Date.now,

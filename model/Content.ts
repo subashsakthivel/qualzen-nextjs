@@ -13,18 +13,18 @@ const ContentDBSchema = new mongoose.Schema<TContent>({
     required: true,
   },
   description: String,
-  bg_img: {
-    type: { img: String, img_link: String },
+  bgImg: {
+    type: { img: String, imgLink: String },
   },
-  click_action: [{ text: String, action: String }],
-  title_link: String,
-  additional_params: [{ key: String, value: String }],
-  is_active: {
+  clickAction: [{ text: String, action: String }],
+  titleLink: String,
+  additionalParams: [{ key: String, value: String }],
+  isActive: {
     type: Boolean,
     required: true,
     default: true,
   },
-  group_name: {
+  groupName: {
     type: String,
     required: false,
     index: true,

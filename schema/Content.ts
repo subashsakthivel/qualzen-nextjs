@@ -6,14 +6,14 @@ export const ContentSchema = z.object({
   identifier: z.string(),
   title: z.string(),
   description: z.string(),
-  title_link: z.string().optional(),
-  bg_img: z
+  titleLink: z.string().optional(),
+  bgImg: z
     .object({
       img: z.string().optional(),
-      img_link: z.string().optional(),
+      imgLink: z.string().optional(),
     })
     .optional(),
-  additional_params: z
+  additionalParams: z
     .array(
       z.object({
         key: z.string(),
@@ -21,14 +21,14 @@ export const ContentSchema = z.object({
       })
     )
     .optional(),
-  click_action: z
+  clickAction: z
     .object({
       text: z.string(),
       action: z.string(),
     })
     .optional(),
-  group_name: z.string().optional(),
-  is_active: z.boolean(),
+  groupName: z.string().optional(),
+  isActive: z.boolean(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
