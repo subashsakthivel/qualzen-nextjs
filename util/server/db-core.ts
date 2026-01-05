@@ -357,7 +357,7 @@ class DBUtil {
       console.error("Invalid data:", error);
       throw new Error("Invalid data");
     }
-    return safeData;
+    return safeData as T;
   }
 
   async execute<T, V>({

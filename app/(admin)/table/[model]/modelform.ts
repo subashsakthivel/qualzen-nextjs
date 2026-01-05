@@ -1,6 +1,6 @@
-import DataAPI from "@/data/data-api";
 import { TCategory } from "@/schema/Category";
-import { z } from "better-auth";
+import DataClientAPI from "@/util/client/data-client-api";
+import z from "zod";
 
 type FieldType =
   | "text"
@@ -12,9 +12,10 @@ type FieldType =
   | "date"
   | "bool"
   | "link"
-  | "unique";
+  | "unique"
+  | "images";
 
-export interface BaseField {
+interface BaseField {
   name: string;
   path?: string;
   displayName?: string;
@@ -24,7 +25,7 @@ export interface BaseField {
   validator?: z.ZodType;
 }
 
-export interface ModelConfig {
+interface ModelConfig {
   fields: BaseField[];
 }
 
@@ -54,11 +55,14 @@ const category: ModelConfig = {
       name: "parentCategory",
       type: "select",
       fetchOptions: async () =>
-        await DataAPI.getData({
+        await DataClientAPI.getData({
           modelName: "category",
-          operation: "GET_DATA_RAW",
+          operation: "GET_DATA_MANY",
           request: {},
-        }).then((res) => res.map((r: TCategory) => ({ value: r._id, name: r.name }))),
+        }).then((res) => {
+          console.log("result options : ", res);
+          return res.map((r: TCategory) => ({ value: r._id, name: r.name }));
+        }),
       validator: z.string().max(100).min(1),
     },
   ],
@@ -168,7 +172,7 @@ const preDefinedZods = {
   link: z.url().max(1000),
 };
 
-export type FormFieldMeta = {
+type FormFieldMeta = {
   name: string;
   displayName: string;
   type: FieldType;
@@ -177,7 +181,7 @@ export type FormFieldMeta = {
   path: string;
 };
 
-export type tFormConfigMeta<T extends z.ZodRawShape = z.ZodRawShape> = {
+export type tFormConfigMeta = {
   fields: FormFieldMeta[];
   schema: z.ZodObject;
 };
@@ -231,16 +235,10 @@ export const fetchFormMetaData = async (
 function toReadableLabel(value: string): string {
   return (
     value
-      // split nested paths
-      .split(".")
-      .map((part) =>
-        part
-          // split camelCase & PascalCase
-          .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-          // split acronyms like URLValue → URL Value
-          .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
-      )
-      .join(" ")
+      // split camelCase & PascalCase
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      // split acronyms like URLValue → URL Value
+      .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
   );
 }
 
