@@ -1,5 +1,5 @@
 "use client";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FieldRenderer } from "./FieldRenderer";
 import { fetchFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
@@ -17,6 +17,8 @@ export function DynamicForm({ model }: DynamicFormProps) {
     handleSubmit,
     setValue,
     formState: { errors },
+    control,
+    getValues,
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
   });
@@ -26,7 +28,8 @@ export function DynamicForm({ model }: DynamicFormProps) {
       const res = await fetchFormMetaData(model);
       setFormConfigMeta(res);
     };
-  });
+    formConfigData();
+  }, [model]);
 
   function buildTranformedObject(flat: Record<string, any>, configMeta: tFormConfigMeta) {
     const result: Record<string, any> = {};
@@ -98,17 +101,29 @@ export function DynamicForm({ model }: DynamicFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {formConfigMeta?.fields.map((field) => (
-        <div key={field.name} style={{ marginBottom: 16 }}>
-          <FieldRenderer field={field} register={register} setValue={setValue} />
-
-          {errors[field.name] && (
-            <p style={{ color: "red" }}>{String(errors[field.name]?.message)}</p>
-          )}
-        </div>
-      ))}
-
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="min-w-full items-center justify-center flex flex-col text-left m-10"
+    >
+      <div className="w-[50vw]  border p-10">
+        {formConfigMeta?.fields.map((field) => (
+          <div
+            key={field.name}
+            style={{ marginBottom: 16 }}
+            className="w-full grid grid-cols-[1fr_3fr] gap-y-2"
+          >
+            <FieldRenderer
+              field={field}
+              register={register}
+              setValue={setValue}
+              getValues={getValues}
+            />
+            {errors[field.name] && (
+              <p style={{ color: "red" }}>{String(errors[field.name]?.message)}</p>
+            )}
+          </div>
+        ))}
+      </div>
       <button type="submit">Submit</button>
     </form>
   );

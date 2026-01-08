@@ -1,13 +1,24 @@
+"use client";
 import { tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
-import { UseFormRegister, UseFormSetValue } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { UseFormGetValues, UseFormRegister, UseFormSetValue } from "react-hook-form";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
   setValue: UseFormSetValue<any>;
+  getValues: UseFormGetValues<Record<string, unknown>>;
 }
 
-export function FieldRenderer({ field, register, setValue }: FieldRendererProps) {
+export function FieldRenderer({ field, register, setValue, getValues }: FieldRendererProps) {
   const label = field.displayName ?? field.name;
 
   switch (field.type) {
@@ -17,7 +28,7 @@ export function FieldRenderer({ field, register, setValue }: FieldRendererProps)
       return (
         <>
           <label>{label}</label>
-          <input type="text" {...register(field.name)} />
+          <Input type="text" {...register(field.name)} />
         </>
       );
 
@@ -25,7 +36,7 @@ export function FieldRenderer({ field, register, setValue }: FieldRendererProps)
       return (
         <>
           <label>{label}</label>
-          <input type="number" {...register(field.name, { valueAsNumber: true })} />
+          <Input type="number" {...register(field.name)} min={0} defaultValue={0} />
         </>
       );
 
@@ -33,16 +44,15 @@ export function FieldRenderer({ field, register, setValue }: FieldRendererProps)
       return (
         <>
           <label>{label}</label>
-          <textarea {...register(field.name)} />
+          <Textarea {...register(field.name)} />
         </>
       );
 
     case "bool":
       return (
         <>
-          <label>
-            <input type="checkbox" {...register(field.name)} /> {label}
-          </label>
+          <label>{label}</label>
+          <Switch {...register(field.name)} />
         </>
       );
 
@@ -50,7 +60,27 @@ export function FieldRenderer({ field, register, setValue }: FieldRendererProps)
       return (
         <>
           <label>{label}</label>
-          <input type="date" {...register(field.name)} />
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn("w-[280px] justify-start text-left font-normal")}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                <>
+                  {getValues(field.name) ? (
+                    format(getValues(field.name) as string, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar mode="single" {...register(field.name)} initialFocus />
+            </PopoverContent>
+          </Popover>
         </>
       );
 
@@ -75,7 +105,7 @@ export function FieldRenderer({ field, register, setValue }: FieldRendererProps)
       return (
         <>
           <label>{label}</label>
-          <textarea placeholder='{"key":"value"}' {...register(field.name)} />
+          <Textarea placeholder='{"key":"value"}' {...register(field.name)} />
         </>
       );
 
