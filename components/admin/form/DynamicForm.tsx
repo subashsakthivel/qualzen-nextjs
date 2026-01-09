@@ -17,6 +17,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
     handleSubmit,
     setValue,
     formState: { errors },
+    watch,
     control,
     getValues,
   } = useForm({
@@ -107,20 +108,24 @@ export function DynamicForm({ model }: DynamicFormProps) {
     >
       <div className="w-[50vw]  border p-10">
         {formConfigMeta?.fields.map((field) => (
-          <div
-            key={field.name}
-            style={{ marginBottom: 16 }}
-            className="w-full grid grid-cols-[1fr_3fr] gap-y-2"
-          >
-            <FieldRenderer
-              field={field}
-              register={register}
-              setValue={setValue}
-              getValues={getValues}
-            />
-            {errors[field.name] && (
-              <p style={{ color: "red" }}>{String(errors[field.name]?.message)}</p>
-            )}
+          <div key={field.name}>
+            <div
+              key={field.name}
+              style={{ marginBottom: 16 }}
+              className="w-full grid grid-cols-[0.5fr_2fr] gap-y-2"
+            >
+              <label className="items-center">{field.displayName ?? field.name}</label>
+              <FieldRenderer
+                field={field}
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                control={control}
+              />
+              {errors[field.name] && (
+                <p style={{ color: "red" }}>{String(errors[field.name]?.message)}</p>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -23,6 +23,7 @@ interface BaseField {
   options?: { name: string; value: string }[];
   fetchOptions?: () => Promise<[{ name: string; value: string }]>;
   validator?: z.ZodType;
+  required?: boolean;
 }
 
 interface ModelConfig {
@@ -179,6 +180,7 @@ type FormFieldMeta = {
   options?: { name: string; value: string }[];
   validator: z.ZodType;
   path: string;
+  required?: boolean;
 };
 
 export type tFormConfigMeta = {

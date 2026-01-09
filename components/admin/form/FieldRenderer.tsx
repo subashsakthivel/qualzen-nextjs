@@ -9,87 +9,79 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { UseFormGetValues, UseFormRegister, UseFormSetValue } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  UseFormGetValues,
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from "react-hook-form";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
   setValue: UseFormSetValue<any>;
-  getValues: UseFormGetValues<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
+  control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }
 
-export function FieldRenderer({ field, register, setValue, getValues }: FieldRendererProps) {
+export function FieldRenderer({ field, register, setValue, watch, control }: FieldRendererProps) {
   const label = field.displayName ?? field.name;
+  const required = field.required ?? true;
 
   switch (field.type) {
     case "text":
     case "link":
     case "unique":
-      return (
-        <>
-          <label>{label}</label>
-          <Input type="text" {...register(field.name)} />
-        </>
-      );
+      return <Input type="text" {...register(field.name)} required={required} />;
 
     case "number":
       return (
-        <>
-          <label>{label}</label>
-          <Input type="number" {...register(field.name)} min={0} defaultValue={0} />
-        </>
+        <Input
+          type="number"
+          {...register(field.name)}
+          min={0}
+          defaultValue={0}
+          required={required}
+        />
       );
 
     case "textarea":
-      return (
-        <>
-          <label>{label}</label>
-          <Textarea {...register(field.name)} />
-        </>
-      );
+      return <Textarea {...register(field.name)} required={required} />;
 
     case "bool":
-      return (
-        <>
-          <label>{label}</label>
-          <Switch {...register(field.name)} />
-        </>
-      );
+      return <Switch {...register(field.name)} required={required} />;
 
     case "date":
       return (
-        <>
-          <label>{label}</label>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn("w-[280px] justify-start text-left font-normal")}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                <>
-                  {getValues(field.name) ? (
-                    format(getValues(field.name) as string, "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar mode="single" {...register(field.name)} initialFocus />
-            </PopoverContent>
-          </Popover>
-        </>
+        <Controller
+          name={field.name}
+          control={control}
+          render={({ field }) => (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="data-[empty=true]:text-muted-foreground w-[280px] justify-start text-left font-normal"
+                >
+                  <CalendarIcon />
+                  {field.value ? format(field.value as number, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" onSelect={field.onChange} required={required} />
+              </PopoverContent>
+            </Popover>
+          )}
+        />
       );
 
     case "select":
       return (
         <>
-          <label>{label}</label>
           {field.options && (
-            <select {...register(field.name)}>
+            <select {...register(field.name)} required={required}>
               <option value="">Select</option>
               {field.options.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -103,27 +95,22 @@ export function FieldRenderer({ field, register, setValue, getValues }: FieldRen
 
     case "json":
       return (
-        <>
-          <label>{label}</label>
-          <Textarea placeholder='{"key":"value"}' {...register(field.name)} />
-        </>
+        <Textarea placeholder='{"key":"value"}' {...register(field.name)} required={required} />
       );
 
     case "image":
     case "images":
       return (
-        <>
-          <label>{label}</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              setValue(field.name, file);
-            }}
-            multiple={field.type !== "image"}
-          />
-        </>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            setValue(field.name, file);
+          }}
+          multiple={field.type !== "image"}
+          required={required}
+        />
       );
 
     default:
