@@ -18,10 +18,13 @@ import { ProductGroupSchema } from "@/schema/ProductGroup";
 import { ProductGroupModel } from "../ProductGroup";
 import { FileStoreSchema } from "@/schema/FileStore";
 import { FileStoreModel } from "../FileStore";
+import { OfferSchema } from "@/schema/Offer";
+import { OfferModel } from "../Offer";
 export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   subdocs?: [{ path: string; dbModel: mongoose.PaginateModel<any> | mongoose.Model<any> }];
+  fileObjects?: { path: string; multi: boolean }[];
 }
 
 export const DataModelMap: Record<tDataModels, DataModelInterface> = {
@@ -62,5 +65,9 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   filestore: {
     schema: FileStoreSchema,
     dbModel: FileStoreModel,
+  },
+  offer: {
+    schema: OfferSchema,
+    dbModel: OfferModel,
   },
 };

@@ -2,16 +2,19 @@
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FieldRenderer } from "./FieldRenderer";
-import { fetchFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
+import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import DataClientAPI from "@/util/client/data-client-api";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import ObjectUtil from "@/util/ObjectUtil";
+import { v4 as uuidv4 } from "uuid";
 
 interface DynamicFormProps {
   model: "category" | "content" | "offer";
 }
 
 export function DynamicForm({ model }: DynamicFormProps) {
-  const [formConfigMeta, setFormConfigMeta] = useState<tFormConfigMeta>();
+  const [formConfigMeta, setFormConfigMeta] = useState<tFormConfigMeta>(getFormMetaData(model));
   const {
     register,
     handleSubmit,
@@ -23,14 +26,6 @@ export function DynamicForm({ model }: DynamicFormProps) {
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
   });
-
-  useEffect(() => {
-    const formConfigData = async () => {
-      const res = await fetchFormMetaData(model);
-      setFormConfigMeta(res);
-    };
-    formConfigData();
-  }, [model]);
 
   function buildTranformedObject(flat: Record<string, any>, configMeta: tFormConfigMeta) {
     const result: Record<string, any> = {};
@@ -56,26 +51,35 @@ export function DynamicForm({ model }: DynamicFormProps) {
   }
 
   const onSubmit = async (data: any) => {
+    debugger;
+    console.log(data);
     const transformedData = buildTranformedObject(data, formConfigMeta!);
-    const response = await DataClientAPI.saveData({
-      modelName: model,
-      request: {
-        transformedData,
-        operation: "SAVE_DATA",
-      },
-    });
-    if (response.success) {
-      const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
-      await Promise.all(
-        imageFields.map((field) => {
-          const file = data[field.name];
-          uploadFile(response.data, file);
-        })
-      );
-    } else {
-      throw new Error(response.message);
-    }
+    const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
+    imageFields.map((field) =>
+      ObjectUtil.setValue({ obj: transformedData, path: field.path, value: uuidv4() })
+    );
+    console.log(transformedData);
+    // const response = await DataClientAPI.saveData({
+    //   modelName: model,
+    //   request: {
+    //     transformedData,
+    //     operation: "SAVE_DATA",
+    //   },
+    // });
+    // if (response.success) {
+    //   debugger;
+    //   const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
+    //   await Promise.all(
+    //     imageFields.map((field) => {
+    //       const files = data[field.name] as File[];
+    //       files.map(async (file) => await uploadFile(response.data, file));
+    //     })
+    //   );
+    // } else {
+    //   throw new Error(response.message);
+    // }
   };
+
   async function uploadFile(data: any, imageFile: File) {
     const response = await fetch("/api/upload", {
       method: "POST",
@@ -104,7 +108,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="min-w-full items-center justify-center flex flex-col text-left m-10"
+      className="min-w-full items-center justify-center flex flex-col text-left m-10 pb-10"
     >
       <div className="w-[50vw]  border p-10">
         {formConfigMeta?.fields.map((field) => (
@@ -123,13 +127,19 @@ export function DynamicForm({ model }: DynamicFormProps) {
                 control={control}
               />
               {errors[field.name] && (
-                <p style={{ color: "red" }}>{String(errors[field.name]?.message)}</p>
+                <div className="col-span-2">
+                  <p className="text-red-900 overflow-auto text-right">
+                    {String(errors[field.name]?.message)}
+                  </p>
+                </div>
               )}
             </div>
           </div>
         ))}
+        <div className="w-full justify-end mt-10">
+          <Button type="submit">Submit</Button>
+        </div>
       </div>
-      <button type="submit">Submit</button>
     </form>
   );
 }

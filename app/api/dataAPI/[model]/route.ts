@@ -6,6 +6,8 @@ import z, { ZodError } from "zod";
 import { auth } from "@/lib/auth";
 import { tModels } from "@/data/model-config";
 import { zGet } from "@/types/api-type";
+import ObjectUtil from "@/util/ObjectUtil";
+import { v4 as uuidv4 } from "uuid";
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +37,7 @@ export async function GET(
         staus: 400,
         error: err.issues.map((issue) => ({
           message: issue.message,
-          path: issue.path.reduce((pre, curr) => pre + "." + curr, ""),
+          path: issue.path.reduce((pre, curr) => String(pre) + "." + String(curr), ""),
         })),
         zodError: err,
       });
@@ -61,14 +63,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
       request: {},
     };
 
-    if (req.headers.get("Content-Type")?.includes("application/json")) {
-      const { data, operation } = await req.json();
-      dataReq.operation = operation;
-      dataReq.request = data;
-    } else {
+    if (!req.headers.get("Content-Type")?.includes("application/json")) {
       throw new Error("Unsupported content type");
     }
+    const { data, operation } = await req.json();
+    dataReq.operation = operation;
+    dataReq.request = data;
     //todo : check if request and operation and modelName are valid with zod
+    //tranformers
+    if (dataModel.fileObjects?.length) {
+      dataModel.fileObjects.forEach(({ path }) => {
+        const currentValue = ObjectUtil.getValue({ obj: data, path });
+
+        const newValue = Array.isArray(currentValue) ? currentValue.map(() => uuidv4()) : uuidv4();
+
+        ObjectUtil.setValue({
+          obj: data,
+          path,
+          value: newValue,
+        });
+      });
+    }
+
+    //
     const responseData = await DataAPI.saveData(dataReq);
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {
@@ -128,7 +145,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ m
   } catch (err) {
     console.error("Delete request Error :", err);
     const errorMessage =
-      err instanceof ZodError ? err.errors : err instanceof Error ? err.message : "Unknown error";
+      err instanceof ZodError ? err.issues : err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
   }
 }

@@ -20,8 +20,7 @@ interface BaseField {
   path?: string;
   displayName?: string;
   type?: FieldType;
-  options?: { name: string; value: string }[];
-  fetchOptions?: () => Promise<[{ name: string; value: string }]>;
+  options?: () => Promise<{ name: string; value: string }[]> | { name: string; value: string }[];
   validator?: z.ZodType;
   required?: boolean;
 }
@@ -42,6 +41,14 @@ const category: ModelConfig = {
     {
       name: "image",
       type: "image",
+      validator: z
+        .instanceof(File, { message: "File is required" })
+        .refine((file) => file.size <= 5 * 1024 * 1024, {
+          message: "File size must be under 5MB",
+        })
+        .refine((file) => ["image/png", "image/jpeg", "image/jpg"].includes(file.type), {
+          message: "Invalid file type",
+        }),
     },
     {
       name: "description",
@@ -55,15 +62,17 @@ const category: ModelConfig = {
     {
       name: "parentCategory",
       type: "select",
-      fetchOptions: async () =>
-        await DataClientAPI.getData({
+      required: false,
+      options: async (): Promise<{ value: string; name: string }[]> => {
+        return await DataClientAPI.getData({
           modelName: "category",
           operation: "GET_DATA_MANY",
           request: {},
         }).then((res) => {
           console.log("result options : ", res);
           return res.map((r: TCategory) => ({ value: r._id, name: r.name }));
-        }),
+        });
+      },
       validator: z.string().max(100).min(1),
     },
   ],
@@ -173,11 +182,11 @@ const preDefinedZods = {
   link: z.url().max(1000),
 };
 
-type FormFieldMeta = {
+export type FormFieldMeta = {
   name: string;
   displayName: string;
   type: FieldType;
-  options?: { name: string; value: string }[];
+  options?: () => Promise<{ name: string; value: string }[]> | { name: string; value: string }[];
   validator: z.ZodType;
   path: string;
   required?: boolean;
@@ -188,48 +197,39 @@ export type tFormConfigMeta = {
   schema: z.ZodObject;
 };
 
-export const fetchFormMetaData = async (
-  modelName: "category" | "content" | "offer"
-): Promise<tFormConfigMeta> => {
+export const getFormMetaData = (modelName: "category" | "content" | "offer"): tFormConfigMeta => {
   const fields = modelForm[modelName].fields;
   const shape: Record<string, z.ZodType<any>> = {};
-  const resolvedFields: FormFieldMeta[] = await Promise.all(
-    fields.map(async (field): Promise<FormFieldMeta> => {
-      const type = field.type ?? "text";
+  const resolvedFields: FormFieldMeta[] = fields.map((field): FormFieldMeta => {
+    const type = field.type ?? "text";
 
-      const base = {
-        name: field.name,
-        displayName: field.displayName ?? toDisplayLabel(field.name),
-      };
+    const base = {
+      name: field.name,
+      displayName: field.displayName ?? toDisplayLabel(field.name),
+    };
 
-      if (type === "select") {
-        return {
-          ...base,
-          type: "select",
-          options: field.options
-            ? field.options
-            : field.fetchOptions
-            ? await field.fetchOptions()
-            : [],
-          validator: field.validator ?? preDefinedZods.text,
-          path: field.path ?? field.name,
-        };
-      }
-
-      const resolvedType =
-        field.type === undefined || field.type === "unique" ? "text" : field.type;
-      shape[field.name] = field.validator ?? z.any();
+    if (type === "select") {
       return {
         ...base,
-        type: resolvedType,
-        validator:
-          field.validator ??
-          preDefinedZods[resolvedType as keyof typeof preDefinedZods] ??
-          preDefinedZods.text,
+        type: "select",
+        options: field.options,
+        validator: field.validator ?? preDefinedZods.text,
         path: field.path ?? field.name,
       };
-    })
-  );
+    }
+
+    const resolvedType = field.type === undefined || field.type === "unique" ? "text" : field.type;
+    shape[field.name] = field.validator ?? z.any();
+    return {
+      ...base,
+      type: resolvedType,
+      validator:
+        field.validator ??
+        preDefinedZods[resolvedType as keyof typeof preDefinedZods] ??
+        preDefinedZods.text,
+      path: field.path ?? field.name,
+    };
+  });
 
   return { fields: resolvedFields, schema: z.object(shape) };
 };

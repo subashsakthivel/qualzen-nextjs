@@ -18,10 +18,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en" className="h-full">
-      <body className={imffcs.className}>{children}</body>
+      <body className={imffcs.className + " min-w-full max-w-full overflow-x-hidden "}>
+        {children}
+      </body>
     </html>
   );
 }

@@ -6,17 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Upload } from "lucide-react";
 import { format } from "date-fns";
 import {
   Control,
   Controller,
-  UseFormGetValues,
   UseFormRegister,
   UseFormSetValue,
   UseFormWatch,
 } from "react-hook-form";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import Image from "next/image";
+import { file } from "zod";
+import FormatUtil from "@/util/formetUtil";
+import { StaticImport } from "next/dist/shared/lib/get-img-props";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
@@ -40,7 +43,7 @@ export function FieldRenderer({ field, register, setValue, watch, control }: Fie
       return (
         <Input
           type="number"
-          {...register(field.name)}
+          {...register(field.name, { valueAsNumber: true })}
           min={0}
           defaultValue={0}
           required={required}
@@ -80,8 +83,8 @@ export function FieldRenderer({ field, register, setValue, watch, control }: Fie
     case "select":
       return (
         <>
-          {field.options && (
-            <select {...register(field.name)} required={required}>
+          {/* {field.options && typeof field.options !== "function" && Array.isArray(field.options) && (
+            <select {...register(field.name)} required={false}>
               <option value="">Select</option>
               {field.options.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -89,7 +92,7 @@ export function FieldRenderer({ field, register, setValue, watch, control }: Fie
                 </option>
               ))}
             </select>
-          )}
+          )} */}
         </>
       );
 
@@ -101,15 +104,48 @@ export function FieldRenderer({ field, register, setValue, watch, control }: Fie
     case "image":
     case "images":
       return (
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            setValue(field.name, file);
-          }}
-          multiple={field.type !== "image"}
-          required={required}
+        <Controller
+          name={field.name}
+          control={control}
+          render={({ field }) => (
+            <Card className="overflow-hidden">
+              <CardContent>
+                <div className="flex justify-center relative m-10">
+                  {(field.value instanceof File || typeof field.value === "string") && (
+                    <Image
+                      alt="Product image"
+                      className="aspect-square rounded-md object-cover"
+                      height={300}
+                      width={300}
+                      src={
+                        typeof field.value === "string"
+                          ? field.value
+                          : URL.createObjectURL(field.value)
+                      }
+                    />
+                  )}
+
+                  <label
+                    className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${
+                      field.value ? "shadow-lg min-w-20" : "shadow-sm min-h-80"
+                    }`}
+                  >
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/png,image/gif,image/jpeg,image/jpg"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) field.onChange(file);
+                      }}
+                    />
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         />
       );
 

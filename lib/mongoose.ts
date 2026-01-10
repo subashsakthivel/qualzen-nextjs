@@ -7,8 +7,10 @@ async function dbConnect() {
     if (connection.isConnected) {
       return;
     }
-
-    const db = await mongoose.connect(process.env.MONGODB_URI!);
+    console.log("connecting to db : ", process.env.MONGODB_URI);
+    const db = await mongoose.connect(process.env.MONGODB_URI!, {
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log("connected to db : ", process.env.MONGODB_URI, db.connection.readyState);
     connection.isConnected = db.connection.readyState;
   } catch (error) {

@@ -1,6 +1,7 @@
 import { tGet } from "@/types/api-type";
 import Persistance from "../util/server/db-core";
 import { tDataModels } from "../util/util-type";
+import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 
 class DataAPIclass {
   async getData({ modelName, operation, request }: tGet): Promise<any> {
@@ -26,6 +27,11 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
+      const data = this.buildTranformedObject(
+        request.request,
+        getFormMetaData(modelName as "category" | "content" | "offer")
+      );
+      request.request = data;
       const response = await Persistance.saveData({ modelName, operation, data: request });
       return response;
     } catch (err) {
@@ -93,6 +99,29 @@ class DataAPIclass {
       console.error("Error in getData:", err);
       throw new Error("Failed to fetch data");
     }
+  }
+
+  buildTranformedObject(flat: Record<string, any>, configMeta: tFormConfigMeta) {
+    const result: Record<string, any> = {};
+
+    for (const { name, path } of configMeta.fields) {
+      const value = flat[name];
+      if (value === undefined) continue;
+
+      const keys = path.split(".");
+      let current = result;
+
+      keys.forEach((key, index) => {
+        if (index === keys.length - 1) {
+          current[key] = value;
+        } else {
+          current[key] ??= {};
+          current = current[key];
+        }
+      });
+    }
+
+    return result;
   }
 }
 
