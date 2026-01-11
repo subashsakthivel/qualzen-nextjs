@@ -1,13 +1,24 @@
-export const ERROR_MESSAGES = {
-  1000: "VALIDATION_ERROR",
-};
+function getClientStatusCode(code: number) {
+  // HTTP code
+  switch (code) {
+    case 11000: //duplicate entry
+      return 439;
+    default:
+      return 500;
+  }
+}
 
-class ValidationError extends Error {
+export class ClientError extends Error {
   code: number;
-  constructor(message: string) {
-    super(message);
-    this.name = "ValidationError";
-    this.code = 1000;
+  error: string;
+  name: string;
+  clientCode: number;
+  constructor(error: string, code: number, message: string, cause?: ErrorOptions) {
+    super(message, cause);
+    this.code = code;
+    this.error = error;
+    this.name = "ClientError";
+    this.clientCode = getClientStatusCode(code);
   }
 
   getCode() {
@@ -16,5 +27,15 @@ class ValidationError extends Error {
 
   getMessage() {
     return this.message;
+  }
+
+  toJSon() {
+    return {
+      message: this.message,
+      cause: this.cause,
+      code: this.code,
+      error: this.error,
+      status: this.clientCode,
+    };
   }
 }

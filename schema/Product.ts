@@ -11,7 +11,7 @@ export const ProductAttributeSchema = z.object({
 export const ProductSchema = z.object({
   _id: z.string().optional(),
   category: z.union([z.string(), CategorySchema]),
-  categorySlug: z.string(),
+  categorySlug: z.string().optional(),
   name: z.string(),
   audience: z.enum(["men", "women", "kids", "unisex", "boys", "girls", "kids"]).optional(),
   description: z.string(),

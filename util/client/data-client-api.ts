@@ -69,7 +69,7 @@ class DataServiceClass {
       const resJson = await response.json();
 
       if (!response.ok) {
-        throw new Error(resJson.message || "Request failed");
+        return { success: false, ...resJson };
       }
 
       return { success: true, data: resJson.data };

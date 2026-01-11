@@ -2,6 +2,8 @@ import { tGet } from "@/types/api-type";
 import Persistance from "../util/server/db-core";
 import { tDataModels } from "../util/util-type";
 import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
+import { MongoError, MongoServerError } from "mongodb";
+import { ClientError } from "@/lib/error-codes";
 
 class DataAPIclass {
   async getData({ modelName, operation, request }: tGet): Promise<any> {
@@ -27,14 +29,27 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      const data = this.buildTranformedObject(
-        request.request,
+      request = this.buildTranformedObject(
+        request,
         getFormMetaData(modelName as "category" | "content" | "offer")
       );
-      request.request = data;
+
       const response = await Persistance.saveData({ modelName, operation, data: request });
       return response;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "MongoServerError") {
+        //duplicate entry
+        if (err.code === 11000) {
+          const field = Object.keys(err.keyValue)[0];
+          const value = err.keyValue[field];
+          const error = new ClientError(
+            "DUPLICATE_ENTRY",
+            err.code,
+            `${field} "${value}" already exists`
+          );
+          throw error;
+        }
+      }
       console.error("Error in saveData:", err);
       throw new Error("Failed to add data");
     }
@@ -103,22 +118,23 @@ class DataAPIclass {
 
   buildTranformedObject(flat: Record<string, any>, configMeta: tFormConfigMeta) {
     const result: Record<string, any> = {};
-
     for (const { name, path } of configMeta.fields) {
-      const value = flat[name];
-      if (value === undefined) continue;
+      if (flat[name]) {
+        const value = flat[name];
+        if (value === undefined) continue;
 
-      const keys = path.split(".");
-      let current = result;
+        const keys = path.split(".");
+        let current = result;
 
-      keys.forEach((key, index) => {
-        if (index === keys.length - 1) {
-          current[key] = value;
-        } else {
-          current[key] ??= {};
-          current = current[key];
-        }
-      });
+        keys.forEach((key, index) => {
+          if (index === keys.length - 1) {
+            current[key] = value;
+          } else {
+            current[key] ??= {};
+            current = current[key];
+          }
+        });
+      }
     }
 
     return result;

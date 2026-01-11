@@ -1,3 +1,4 @@
+"use client";
 import { FormFieldMeta, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Select } from "@radix-ui/react-select";
@@ -26,25 +27,30 @@ const SelectInput = ({
         const options = await selectOptions();
         setOptions(options);
       };
+      fetchOptions();
     } else if (selectOptions) {
       setOptions(selectOptions);
     }
   }, [selectOptions]);
   return (
     <div>
-      <Select {...register(name)}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select subcategory" />
-        </SelectTrigger>
+      {options && options.length > 0 ? (
+        <Select {...register(name)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select subcategory" />
+          </SelectTrigger>
 
-        <SelectContent>
-          {options.map((c, i) => (
-            <SelectItem key={i} value={c.value || ""}>
-              {c.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectContent>
+            {options.map((c, i) => (
+              <SelectItem key={i} value={c.value || ""}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <div className="underline">None</div>
+      )}
     </div>
   );
 };

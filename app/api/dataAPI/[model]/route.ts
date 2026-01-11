@@ -8,6 +8,7 @@ import { tModels } from "@/data/model-config";
 import { zGet } from "@/types/api-type";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
+import { ClientError } from "@/lib/error-codes";
 
 export async function GET(
   request: NextRequest,
@@ -85,12 +86,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
       });
     }
 
-    //
     const responseData = await DataAPI.saveData(dataReq);
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Post request Error :", err);
+    if (err?.name == "ClientError") {
+      const clientError = err as ClientError;
+      return NextResponse.json({ ...clientError.toJSon() }, { status: clientError.clientCode });
+    }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
   }
 }

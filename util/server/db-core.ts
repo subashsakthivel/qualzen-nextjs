@@ -371,8 +371,12 @@ class DBUtil {
     operation: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE";
     execution: tExecution<T, V> | tUpdateExecution<T, V>;
   }): Promise<T | undefined> {
-    await dbConnect();
-    const session = await mongoose.startSession();
+    const db = await dbConnect();
+    if (!db) {
+      throw new Error("DB connection Issue");
+    }
+    let error: Error | undefined = undefined;
+    const session = await db.startSession();
     try {
       const result = await session.withTransaction(async () => {
         const response = (await callback(session)) as any;
@@ -384,12 +388,17 @@ class DBUtil {
       return result as any;
     } catch (err) {
       console.error("Execution error:", err);
+      error = err as Error;
       if (session.inTransaction()) {
         await session.abortTransaction();
       }
       if (onFailure) await onFailure();
+      throw err;
     } finally {
       session.endSession();
+      if (error) {
+        throw error;
+      }
     }
   }
 

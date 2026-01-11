@@ -20,6 +20,7 @@ import Image from "next/image";
 import { file } from "zod";
 import FormatUtil from "@/util/formetUtil";
 import { StaticImport } from "next/dist/shared/lib/get-img-props";
+import SelectInput from "./components/select-input";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
@@ -30,7 +31,6 @@ interface FieldRendererProps {
 }
 
 export function FieldRenderer({ field, register, setValue, watch, control }: FieldRendererProps) {
-  const label = field.displayName ?? field.name;
   const required = field.required ?? true;
 
   switch (field.type) {
@@ -83,16 +83,7 @@ export function FieldRenderer({ field, register, setValue, watch, control }: Fie
     case "select":
       return (
         <>
-          {/* {field.options && typeof field.options !== "function" && Array.isArray(field.options) && (
-            <select {...register(field.name)} required={false}>
-              <option value="">Select</option>
-              {field.options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-          )} */}
+          <SelectInput name={field.name} register={register} selectOptions={field.options} />
         </>
       );
 

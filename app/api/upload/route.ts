@@ -30,7 +30,14 @@ async function handleRequest(modelName: string, request: any) {
     if (data && data.images) {
       const uploadUrls = await Promise.all(
         data.images.map((imageName) =>
-          R2API.getUploadUrl(modelName, imageName, "img/jpg/jpeg/png/gif")
+          R2API.getUploadUrl(
+            modelName,
+            imageName,
+            (request.contentType && request.contentType.startsWith("image")) ||
+              request.contentType.startsWith("img")
+              ? request.contentType
+              : "img/jpg/jpeg/png/gif/image/jpeg"
+          )
         )
       );
 
@@ -49,7 +56,14 @@ async function handleRequest(modelName: string, request: any) {
     });
 
     if (data && data.image) {
-      return await R2API.getUploadUrl(modelName, data.image, "img/jpg/jpeg/png/gif");
+      return await R2API.getUploadUrl(
+        modelName,
+        data.image,
+        (request.contentType && request.contentType.startsWith("image")) ||
+          request.contentType.startsWith("img")
+          ? request.contentType
+          : "img/jpg/jpeg/png/gif/image/jpeg"
+      );
     }
   }
   return [];

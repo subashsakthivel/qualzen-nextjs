@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
+import { setErrorMap } from "zod/v3";
 
 interface DynamicFormProps {
   model: "category" | "content" | "offer";
@@ -15,6 +16,7 @@ interface DynamicFormProps {
 
 export function DynamicForm({ model }: DynamicFormProps) {
   const [formConfigMeta, setFormConfigMeta] = useState<tFormConfigMeta>(getFormMetaData(model));
+  const [error, SetError] = useState<string | undefined>(undefined);
   const {
     register,
     handleSubmit,
@@ -22,62 +24,40 @@ export function DynamicForm({ model }: DynamicFormProps) {
     formState: { errors },
     watch,
     control,
-    getValues,
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
   });
 
-  function buildTranformedObject(flat: Record<string, any>, configMeta: tFormConfigMeta) {
-    const result: Record<string, any> = {};
-
-    for (const { name, path } of configMeta.fields) {
-      const value = flat[name];
-      if (value === undefined) continue;
-
-      const keys = path.split(".");
-      let current = result;
-
-      keys.forEach((key, index) => {
-        if (index === keys.length - 1) {
-          current[key] = value;
-        } else {
-          current[key] ??= {};
-          current = current[key];
-        }
-      });
-    }
-
-    return result;
-  }
-
   const onSubmit = async (data: any) => {
-    debugger;
-    console.log(data);
-    const transformedData = buildTranformedObject(data, formConfigMeta!);
+    SetError(undefined);
+    const requestData = {} as any;
+    formConfigMeta!.fields.map((field) => {
+      requestData[field.name] = data[field.name];
+    });
     const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
     imageFields.map((field) =>
-      ObjectUtil.setValue({ obj: transformedData, path: field.path, value: uuidv4() })
+      ObjectUtil.setValue({ obj: requestData, path: field.path, value: uuidv4() })
     );
-    console.log(transformedData);
-    // const response = await DataClientAPI.saveData({
-    //   modelName: model,
-    //   request: {
-    //     transformedData,
-    //     operation: "SAVE_DATA",
-    //   },
-    // });
-    // if (response.success) {
-    //   debugger;
-    //   const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
-    //   await Promise.all(
-    //     imageFields.map((field) => {
-    //       const files = data[field.name] as File[];
-    //       files.map(async (file) => await uploadFile(response.data, file));
-    //     })
-    //   );
-    // } else {
-    //   throw new Error(response.message);
-    // }
+    console.log(requestData);
+    const response = await DataClientAPI.saveData({
+      modelName: model,
+      request: {
+        data: requestData,
+        operation: "SAVE_DATA",
+      },
+    });
+    if (response.success) {
+      const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
+
+      imageFields.map(async (field) => {
+        const files = Array.isArray(data[field.name])
+          ? (data[field.name] as File[])
+          : ([data[field.name]] as File[]);
+        await Promise.all(files.map((file) => uploadFile(response.data, file)));
+      });
+    } else {
+      SetError(response.message ?? "Something not correct, please wait and resubmit");
+    }
   };
 
   async function uploadFile(data: any, imageFile: File) {
@@ -86,6 +66,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
       body: JSON.stringify({
         modelName: model,
         id: data._id,
+        contentType: imageFile.type,
       }),
     });
     if (response && response.ok) {
@@ -98,6 +79,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
           key: string;
         };
       };
+      debugger;
       await fetch(uploadUrl, {
         method: "PUT",
         body: imageFile,
@@ -109,6 +91,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="min-w-full items-center justify-center flex flex-col text-left m-10 pb-10"
+      autoComplete="true"
     >
       <div className="w-[50vw]  border p-10">
         {formConfigMeta?.fields.map((field) => (
@@ -138,6 +121,11 @@ export function DynamicForm({ model }: DynamicFormProps) {
         ))}
         <div className="w-full justify-end mt-10">
           <Button type="submit">Submit</Button>
+          {error && (
+            <span className="w-80 border p-2 m-2 ml-10 bg-red-600 rounded-md text-white">
+              {error}
+            </span>
+          )}
         </div>
       </div>
     </form>
