@@ -25,12 +25,11 @@ import SelectInput from "./components/select-input";
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
-  setValue: UseFormSetValue<any>;
-  watch: UseFormWatch<Record<string, unknown>>;
+
   control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }
 
-export function FieldRenderer({ field, register, setValue, watch, control }: FieldRendererProps) {
+export function FieldRenderer({ field, register, control }: FieldRendererProps) {
   const required = field.required ?? true;
 
   switch (field.type) {

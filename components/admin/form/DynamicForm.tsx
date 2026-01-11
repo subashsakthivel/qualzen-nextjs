@@ -1,14 +1,13 @@
 "use client";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FieldRenderer } from "./FieldRenderer";
 import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import DataClientAPI from "@/util/client/data-client-api";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
-import { setErrorMap } from "zod/v3";
 
 interface DynamicFormProps {
   model: "category" | "content" | "offer";
@@ -61,29 +60,33 @@ export function DynamicForm({ model }: DynamicFormProps) {
   };
 
   async function uploadFile(data: any, imageFile: File) {
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: JSON.stringify({
-        modelName: model,
-        id: data._id,
-        contentType: imageFile.type,
-      }),
-    });
-    if (response && response.ok) {
-      const responseJSon = await response.json();
-      const {
-        data: { uploadUrl },
-      } = responseJSon as {
-        data: {
-          uploadUrl: string;
-          key: string;
-        };
-      };
-      debugger;
-      await fetch(uploadUrl, {
-        method: "PUT",
-        body: imageFile,
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: JSON.stringify({
+          modelName: model,
+          id: data._id,
+          contentType: imageFile.type,
+        }),
       });
+      if (response && response.ok) {
+        const responseJSon = await response.json();
+        const {
+          data: { uploadUrl },
+        } = responseJSon as {
+          data: {
+            uploadUrl: string;
+            key: string;
+          };
+        };
+        debugger;
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: imageFile,
+        });
+      }
+    } catch (err) {
+      SetError(`Error while uploading image ${imageFile.name}`);
     }
   }
 
@@ -102,13 +105,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
               className="w-full grid grid-cols-[0.5fr_2fr] gap-y-2"
             >
               <label className="items-center">{field.displayName ?? field.name}</label>
-              <FieldRenderer
-                field={field}
-                register={register}
-                setValue={setValue}
-                watch={watch}
-                control={control}
-              />
+              <FieldRenderer field={field} register={register} control={control} />
               {errors[field.name] && (
                 <div className="col-span-2">
                   <p className="text-red-900 overflow-auto text-right">
