@@ -1,5 +1,6 @@
 import { TCategory } from "@/schema/Category";
 import DataClientAPI from "@/util/client/data-client-api";
+import { tDataModels } from "@/util/util-type";
 import z from "zod";
 
 type FieldType =
@@ -197,8 +198,10 @@ export type tFormConfigMeta = {
   schema: z.ZodObject;
 };
 
-export const getFormMetaData = (modelName: "category" | "content" | "offer"): tFormConfigMeta => {
-  const fields = modelForm[modelName].fields;
+export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
+  //"category" | "content" | "offer"
+
+  const fields = modelForm[modelName as "category" | "content" | "offer"].fields;
   const shape: Record<string, z.ZodType<any>> = {};
   const resolvedFields: FormFieldMeta[] = fields.map((field): FormFieldMeta => {
     const type = field.type ?? "text";

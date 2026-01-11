@@ -5,12 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tDataModels } from "@/util/util-type";
 import { useEffect, useState } from "react";
-import CategoryForm from "./admin/form/CategoryForm";
 import ProductForm from "./admin/form/ProductForm";
 import { Button } from "./ui/button";
+import { DynamicForm } from "./admin/form/DynamicForm";
 
 const FormVsModel: Record<string, ({ id }: { id?: string }) => JSX.Element> = {
-  category: CategoryForm,
   product: ProductForm,
 };
 
@@ -58,6 +57,7 @@ export default function TableLayout({ model }: { model: tDataModels }) {
             </TabsContent>
 
             <TabsContent value="data" className="space-y-4">
+              <DynamicForm model={model} />
               <FormComponent id={id} />
             </TabsContent>
           </Tabs>

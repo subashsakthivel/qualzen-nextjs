@@ -149,6 +149,9 @@ class S3Util {
       Bucket: BUCKET_NAME,
       Key: fileKey,
       ContentType: contentType,
+      Metadata: {
+        originalname: "client-file", // optional
+      },
     });
 
     const url = await getSignedUrl(this.client, command, { expiresIn: 60 });

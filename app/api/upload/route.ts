@@ -33,9 +33,9 @@ async function handleRequest(modelName: string, request: any) {
           R2API.getUploadUrl(
             modelName,
             imageName,
-            (request.contentType && request.contentType.startsWith("image")) ||
-              request.contentType.startsWith("img")
-              ? request.contentType
+            (request.fileType && request.contentType.startsWith("image")) ||
+              request.fileType.startsWith("img")
+              ? request.fileType
               : "img/jpg/jpeg/png/gif/image/jpeg"
           )
         )
@@ -59,9 +59,9 @@ async function handleRequest(modelName: string, request: any) {
       return await R2API.getUploadUrl(
         modelName,
         data.image,
-        (request.contentType && request.contentType.startsWith("image")) ||
-          request.contentType.startsWith("img")
-          ? request.contentType
+        request.fileType &&
+          (request.fileType.startsWith("image") || request.fileType.startsWith("img"))
+          ? request.fileType
           : "img/jpg/jpeg/png/gif/image/jpeg"
       );
     }

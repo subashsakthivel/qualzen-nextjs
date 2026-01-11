@@ -8,9 +8,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
+import { tDataModels } from "@/util/util-type";
 
 interface DynamicFormProps {
-  model: "category" | "content" | "offer";
+  model: tDataModels; //"category" | "content" | "offer"
 }
 
 export function DynamicForm({ model }: DynamicFormProps) {
@@ -19,9 +20,8 @@ export function DynamicForm({ model }: DynamicFormProps) {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
-    watch,
+
     control,
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
@@ -61,12 +61,16 @@ export function DynamicForm({ model }: DynamicFormProps) {
 
   async function uploadFile(data: any, imageFile: File) {
     try {
+      if (imageFile instanceof File) {
+        console.log(imageFile);
+      }
+
       const response = await fetch("/api/upload", {
         method: "POST",
         body: JSON.stringify({
           modelName: model,
           id: data._id,
-          contentType: imageFile.type,
+          fileType: imageFile.type,
         }),
       });
       if (response && response.ok) {
@@ -116,11 +120,11 @@ export function DynamicForm({ model }: DynamicFormProps) {
             </div>
           </div>
         ))}
-        <div className="w-full justify-end mt-10">
+        <div className="w-full justify-center mt-10 grid grid-cols-4 items-start">
           <Button type="submit">Submit</Button>
           {error && (
-            <span className="w-80 border p-2 m-2 ml-10 bg-red-600 rounded-md text-white">
-              {error}
+            <span className="w-80 border p-2 ml-10 text-red-600 rounded-md text-wrap col-span-3 text-sm">
+              - {error}
             </span>
           )}
         </div>
