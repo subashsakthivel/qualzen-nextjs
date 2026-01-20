@@ -15,8 +15,8 @@ interface DynamicFormProps {
 }
 
 export function DynamicForm({ model }: DynamicFormProps) {
-  const [formConfigMeta, setFormConfigMeta] = useState<tFormConfigMeta>(getFormMetaData(model));
   const [error, SetError] = useState<string | undefined>(undefined);
+  const formConfigMeta = getFormMetaData(model);
   const {
     register,
     handleSubmit,

@@ -58,7 +58,7 @@ export default function TableLayout({ model }: { model: tDataModels }) {
 
             <TabsContent value="data" className="space-y-4">
               <DynamicForm model={model} />
-              <FormComponent id={id} />
+              {/* <FormComponent id={id} /> */}
             </TabsContent>
           </Tabs>
         </CardContent>

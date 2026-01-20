@@ -29,7 +29,13 @@ interface BaseField {
 interface ModelConfig {
   fields: BaseField[];
 }
-
+const product: ModelConfig = {
+  fields: [
+    {
+      name: "name",
+    },
+  ],
+};
 const category: ModelConfig = {
   fields: [
     {
