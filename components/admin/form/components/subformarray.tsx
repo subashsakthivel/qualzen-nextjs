@@ -9,13 +9,14 @@ interface FieldRendererProps {
   Pfield: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
   name: string;
+  Pname?: string;
   control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }
 
-const SubFormArray = ({ Pfield, register, control, name }: FieldRendererProps) => {
+const SubFormArray = ({ Pfield, register, control, name, Pname }: FieldRendererProps) => {
   const { fields, append, remove } = useFieldArray<Record<string, any>>({
     control,
-    name: name,
+    name: Pname ?? name,
   });
 
   function defaultValue() {
@@ -41,7 +42,12 @@ const SubFormArray = ({ Pfield, register, control, name }: FieldRendererProps) =
                   field={field}
                   register={register}
                   control={control}
-                  name={`${Pfield.name}.${index}.${field.name}`}
+                  name={
+                    Pname
+                      ? `${Pname}.${Pfield.name}.${index}.${field.name}`
+                      : `${Pfield.name}.${index}.${field.name}`
+                  }
+                  Pname={`${name}`}
                 />
               </div>
             </div>

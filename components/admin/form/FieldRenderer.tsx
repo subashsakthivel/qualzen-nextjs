@@ -8,37 +8,29 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarIcon, Upload } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Control,
-  Controller,
-  UseFormRegister,
-  UseFormSetValue,
-  UseFormWatch,
-} from "react-hook-form";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Control, Controller, UseFormRegister } from "react-hook-form";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import { file } from "zod";
-import FormatUtil from "@/util/formetUtil";
-import { StaticImport } from "next/dist/shared/lib/get-img-props";
 import SelectInput from "./components/select-input";
 import SubFormArray from "./components/subformarray";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
   name: string;
+  Pname?: string;
   imageFiles?: File[];
   control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }
 
-export function FieldRenderer({ field, register, control, name, imageFiles }: FieldRendererProps) {
+export function FieldRenderer({
+  field,
+  register,
+  control,
+  name,
+  imageFiles,
+  Pname,
+}: FieldRendererProps) {
   const required = field.required ?? true;
   const type = field.type ?? "text";
 
@@ -47,13 +39,13 @@ export function FieldRenderer({ field, register, control, name, imageFiles }: Fi
     case "link":
     case "unique":
     case "tags":
-      return <Input type="text" {...register(field.name)} required={required} />;
+      return <Input type="text" {...register(name)} required={required} />;
 
     case "number":
       return (
         <Input
           type="number"
-          {...register(field.name, { valueAsNumber: true })}
+          {...register(name, { valueAsNumber: true })}
           min={0}
           defaultValue={0}
           required={required}
@@ -61,15 +53,15 @@ export function FieldRenderer({ field, register, control, name, imageFiles }: Fi
       );
 
     case "textarea":
-      return <Textarea {...register(field.name)} required={required} />;
+      return <Textarea {...register(name)} required={required} />;
 
     case "bool":
-      return <Switch {...register(field.name)} required={required} />;
+      return <Switch {...register(name)} required={required} />;
 
     case "date":
       return (
         <Controller
-          name={field.name}
+          name={name}
           control={control}
           render={({ field }) => (
             <Popover>
@@ -93,20 +85,18 @@ export function FieldRenderer({ field, register, control, name, imageFiles }: Fi
     case "select":
       return (
         <>
-          <SelectInput name={field.name} selectOptions={field.options} control={control} />
+          <SelectInput name={name} selectOptions={field.options} control={control} />
         </>
       );
 
     case "json":
-      return (
-        <Textarea placeholder='{"key":"value"}' {...register(field.name)} required={required} />
-      );
+      return <Textarea placeholder='{"key":"value"}' {...register(name)} required={required} />;
 
     case "image":
     case "images":
       return (
         <Controller
-          name={field.name}
+          name={name}
           control={control}
           render={({ field }) => (
             <Card className="overflow-hidden">
@@ -172,7 +162,13 @@ export function FieldRenderer({ field, register, control, name, imageFiles }: Fi
     case "subFormArray":
       return (
         <div className="m-2  bg-gray-100 p-2">
-          <SubFormArray Pfield={field} control={control} register={register} name={name} />
+          <SubFormArray
+            Pfield={field}
+            control={control}
+            register={register}
+            name={name}
+            Pname={Pname}
+          />
         </div>
       );
 

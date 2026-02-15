@@ -133,6 +133,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
             </div>
           </div>
         ))}
+        <input {...register("attributes.0.name")} />
         <div className="w-full justify-center mt-10 grid grid-cols-4 items-start">
           <Button type="submit">Submit</Button>
           {error && (
