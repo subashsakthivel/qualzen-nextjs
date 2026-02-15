@@ -3,16 +3,16 @@ import { FormFieldMeta, tFormConfigMeta } from "@/app/(admin)/table/[model]/mode
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Select } from "@radix-ui/react-select";
 import React, { useEffect, useState } from "react";
-import { UseFormRegister } from "react-hook-form";
+import { Control, Controller, UseFormRegister } from "react-hook-form";
 
 const SelectInput = ({
   name,
   selectOptions,
-  register,
+  control,
 }: {
   name: string;
   selectOptions: FormFieldMeta["options"];
-  register: UseFormRegister<any>;
+  control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }) => {
   const [options, setOptions] = useState<
     {
@@ -35,19 +35,25 @@ const SelectInput = ({
   return (
     <div>
       {options && options.length > 0 ? (
-        <Select {...register(name)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select subcategory" />
-          </SelectTrigger>
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
 
-          <SelectContent>
-            {options.map((c, i) => (
-              <SelectItem key={i} value={c.value || ""}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              <SelectContent>
+                {options.map((c, i) => (
+                  <SelectItem key={i} value={c.value || ""}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       ) : (
         <div className="underline">None</div>
       )}

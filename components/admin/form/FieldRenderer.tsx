@@ -21,21 +21,32 @@ import { file } from "zod";
 import FormatUtil from "@/util/formetUtil";
 import { StaticImport } from "next/dist/shared/lib/get-img-props";
 import SelectInput from "./components/select-input";
+import SubFormArray from "./components/subformarray";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
   register: UseFormRegister<any>;
-
+  name: string;
+  imageFiles?: File[];
   control: Control<Record<string, unknown>, unknown, Record<string, unknown>>;
 }
 
-export function FieldRenderer({ field, register, control }: FieldRendererProps) {
+export function FieldRenderer({ field, register, control, name, imageFiles }: FieldRendererProps) {
   const required = field.required ?? true;
+  const type = field.type ?? "text";
 
   switch (field.type) {
     case "text":
     case "link":
     case "unique":
+    case "tags":
       return <Input type="text" {...register(field.name)} required={required} />;
 
     case "number":
@@ -82,7 +93,7 @@ export function FieldRenderer({ field, register, control }: FieldRendererProps) 
     case "select":
       return (
         <>
-          <SelectInput name={field.name} register={register} selectOptions={field.options} />
+          <SelectInput name={field.name} selectOptions={field.options} control={control} />
         </>
       );
 
@@ -114,6 +125,20 @@ export function FieldRenderer({ field, register, control }: FieldRendererProps) 
                       }
                     />
                   )}
+                  {Array.isArray(field.value) && (
+                    <div className="grid grid-cols-2 gap-2 m-2">
+                      {field.value.map((file: File | string, index: number) => (
+                        <Image
+                          key={index}
+                          alt={`Product image ${index + 1}`}
+                          className="aspect-square rounded-md object-cover"
+                          height={300}
+                          width={300}
+                          src={typeof file === "string" ? file : URL.createObjectURL(file)}
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   <label
                     className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${
@@ -121,14 +146,20 @@ export function FieldRenderer({ field, register, control }: FieldRendererProps) 
                     }`}
                   >
                     <Upload className="h-4 w-4 text-muted-foreground" />
-
                     <input
                       type="file"
+                      multiple={type === "images"}
                       className="hidden"
                       accept="image/png,image/gif,image/jpeg,image/jpg"
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) field.onChange(file);
+                        debugger;
+                        if (type === "images") {
+                          const file = Array.from(e.target.files || []);
+                          if (file) field.onChange(file);
+                        } else {
+                          const file = e.target.files?.[0];
+                          if (file) field.onChange(file);
+                        }
                       }}
                     />
                   </label>
@@ -137,6 +168,12 @@ export function FieldRenderer({ field, register, control }: FieldRendererProps) 
             </Card>
           )}
         />
+      );
+    case "subFormArray":
+      return (
+        <div className="m-2  bg-gray-100 p-2">
+          <SubFormArray Pfield={field} control={control} register={register} name={name} />
+        </div>
       );
 
     default:

@@ -1,6 +1,7 @@
 import { TCategory } from "@/schema/Category";
 import DataClientAPI from "@/util/client/data-client-api";
 import { tDataModels } from "@/util/util-type";
+import { resolve } from "path";
 import z from "zod";
 
 type FieldType =
@@ -14,7 +15,9 @@ type FieldType =
   | "bool"
   | "link"
   | "unique"
-  | "images";
+  | "images"
+  | "subFormArray"
+  | "tags";
 
 interface BaseField {
   name: string;
@@ -24,15 +27,141 @@ interface BaseField {
   options?: () => Promise<{ name: string; value: string }[]> | { name: string; value: string }[];
   validator?: z.ZodType;
   required?: boolean;
+  subFormConfig?: ModelConfig;
 }
 
 interface ModelConfig {
   fields: BaseField[];
 }
+
+const attributes: ModelConfig = {
+  fields: [
+    {
+      name: "name",
+    },
+    {
+      name: "value",
+    },
+    {
+      name: "sortOrder",
+      type: "number",
+    },
+  ],
+};
+
+const variants: ModelConfig = {
+  fields: [
+    {
+      name: "sku",
+    },
+    {
+      name: "price",
+      type: "number",
+    },
+    {
+      name: "sellingPrice",
+      type: "number",
+    },
+    {
+      name: "stockQuantity",
+      type: "number",
+    },
+    {
+      name: "attributes",
+      type: "subFormArray",
+      subFormConfig: attributes,
+    },
+  ],
+};
+
 const product: ModelConfig = {
   fields: [
     {
       name: "name",
+    },
+    {
+      name: "category",
+      type: "select",
+      required: false,
+      options: async (): Promise<{ value: string; name: string }[]> => {
+        return await DataClientAPI.getData({
+          modelName: "category",
+          operation: "GET_DATA_MANY",
+          request: {},
+        }).then((res) => {
+          console.log("result options : ", res);
+          return res.map((r: TCategory) => ({ value: r._id, name: r.name }));
+        });
+      },
+      validator: z.string().max(100).min(1),
+    },
+    {
+      name: "slug",
+    },
+    {
+      name: "audience",
+      type: "select",
+      options: () =>
+        [
+          { name: "All", value: "all" },
+          { name: "Men", value: "men" },
+          { name: "Women", value: "women" },
+          { name: "Kids", value: "kids" },
+          { name: "Unisex", value: "unisex" },
+          { name: "Boys", value: "boys" },
+          { name: "Girls", value: "girls" },
+          { name: "Teens", value: "teens" },
+        ] as { name: string; value: string }[],
+    },
+    {
+      name: "description",
+      type: "textarea",
+    },
+    {
+      name: "images",
+      type: "images",
+      validator: z.array(z.instanceof(File)).max(10).min(1),
+    },
+    {
+      name: "brand",
+    },
+    {
+      name: "attributes",
+      type: "subFormArray",
+      subFormConfig: attributes,
+    },
+    {
+      name: "variants",
+      type: "subFormArray",
+      subFormConfig: variants,
+    },
+    {
+      name: "tags",
+      type: "tags",
+    },
+    {
+      name: "otherdetails",
+      type: "json",
+      required: false,
+    },
+    {
+      name: "relatedLinks",
+      type: "subFormArray",
+      subFormConfig: {
+        fields: [
+          {
+            name: "name",
+          },
+          {
+            name: "url",
+            type: "link",
+          },
+        ],
+      },
+    },
+    {
+      name: "feature_location",
+      type: "text",
     },
   ],
 };
@@ -80,7 +209,7 @@ const category: ModelConfig = {
           return res.map((r: TCategory) => ({ value: r._id, name: r.name }));
         });
       },
-      validator: z.string().max(100).min(1),
+      validator: z.string().max(100).min(1).optional(),
     },
   ],
 };
@@ -172,6 +301,7 @@ const offer: ModelConfig = {
 };
 
 const modelForm = {
+  product,
   category,
   content,
   offer,
@@ -197,21 +327,30 @@ export type FormFieldMeta = {
   validator: z.ZodType;
   path: string;
   required?: boolean;
+  subFormConfig?: {
+    fields: FormFieldMeta[];
+  };
 };
 
 export type tFormConfigMeta = {
   fields: FormFieldMeta[];
   schema: z.ZodObject;
 };
-
-export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
-  //"category" | "content" | "offer"
-
-  const fields = modelForm[modelName as "category" | "content" | "offer"].fields;
-  const shape: Record<string, z.ZodType<any>> = {};
-  const resolvedFields: FormFieldMeta[] = fields.map((field): FormFieldMeta => {
+const resolveFormFields = (fields: BaseField[]): FormFieldMeta[] => {
+  const resolveField = (field: BaseField): FormFieldMeta => {
     const type = field.type ?? "text";
-
+    if (type === "subFormArray" && field.subFormConfig && field.subFormConfig.fields) {
+      return {
+        name: field.name,
+        displayName: field.displayName ?? toDisplayLabel(field.name),
+        type: "subFormArray",
+        subFormConfig: {
+          fields: resolveFormFields(field.subFormConfig.fields),
+        },
+        path: field.path ?? field.name,
+        validator: z.array(z.any()),
+      };
+    }
     const base = {
       name: field.name,
       displayName: field.displayName ?? toDisplayLabel(field.name),
@@ -228,7 +367,6 @@ export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
     }
 
     const resolvedType = field.type === undefined || field.type === "unique" ? "text" : field.type;
-    shape[field.name] = field.validator ?? z.any();
     return {
       ...base,
       type: resolvedType,
@@ -238,6 +376,18 @@ export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
         preDefinedZods.text,
       path: field.path ?? field.name,
     };
+  };
+  return fields.map((field) => resolveField(field));
+};
+
+export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
+  //"category" | "content" | "offer"
+
+  const fields = modelForm[modelName as "category" | "content" | "offer" | "product"].fields;
+  const shape: Record<string, z.ZodType<any>> = {};
+  const resolvedFields: FormFieldMeta[] = resolveFormFields(fields);
+  resolvedFields.map((field) => {
+    shape[field.name] = field.validator ?? z.any();
   });
 
   return { fields: resolvedFields, schema: z.object(shape) };
