@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FieldRenderer } from "./FieldRenderer";
+import { FieldRenderer } from "./components/input-field-render";
 import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import DataClientAPI from "@/util/client/data-client-api";
 import { useState } from "react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
 import { tDataModels } from "@/util/util-type";
-import { da } from "zod/v4/locales";
+import FormRender from "./components/form-render";
 
 interface DynamicFormProps {
   model: tDataModels; //"category" | "content" | "offer"
@@ -40,31 +40,55 @@ export function DynamicForm({ model }: DynamicFormProps) {
         requestData[field.name] = data[field.name];
       }
     });
-    const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
-    imageFields.map((field) =>
-      ObjectUtil.setValue({ obj: requestData, path: field.path, value: uuidv4() }),
+    const imageFields = formConfigMeta!.fields.filter(
+      (field) => field.type === "image" || field.type == "images",
     );
+    imageFields.map((field) => {
+      if (field.type == "images") {
+        debugger;
+        const images: File[] = ObjectUtil.getValue({
+          obj: data,
+          path: field.path,
+        });
+
+        const value = Array.from({ length: images.length }).map((_, index) => uuidv4());
+        ObjectUtil.setValue({
+          obj: requestData,
+          path: field.path,
+          value: value,
+        });
+      } else {
+        ObjectUtil.setValue({
+          obj: requestData,
+          path: field.path,
+          value: uuidv4(),
+        });
+      }
+    });
 
     console.log(requestData);
-    // const response = await DataClientAPI.saveData({
-    //   modelName: model,
-    //   request: {
-    //     data: requestData,
-    //     operation: "SAVE_DATA",
-    //   },
-    // });
-    // if (response.success) {
-    //   const imageFields = formConfigMeta!.fields.filter((field) => field.type === "image");
+    const response = await DataClientAPI.saveData({
+      modelName: model,
+      request: {
+        data: requestData,
+        operation: "SAVE_DATA",
+      },
+    });
+    if (response.success) {
+      debugger;
+      const imageFields = formConfigMeta!.fields.filter(
+        (field) => field.type === "image" || field.type === "images",
+      );
 
-    //   imageFields.map(async (field) => {
-    //     const files = Array.isArray(data[field.name])
-    //       ? (data[field.name] as File[])
-    //       : ([data[field.name]] as File[]);
-    //     await Promise.all(files.map((file) => uploadFile(response.data, file)));
-    //   });
-    // } else {
-    //   SetError(response.message ?? "Something not correct, please try again later.");
-    // }
+      imageFields.map(async (field) => {
+        const files = Array.isArray(data[field.name])
+          ? (data[field.name] as File[])
+          : ([data[field.name]] as File[]);
+        await Promise.all(files.map((file) => uploadFile(response.data, file)));
+      });
+    } else {
+      SetError(response.message ?? "Something not correct, please try again later.");
+    }
   };
 
   async function uploadFile(data: any, imageFile: File) {
@@ -109,31 +133,14 @@ export function DynamicForm({ model }: DynamicFormProps) {
       autoComplete="true"
     >
       <div className="w-[50vw]  border p-10">
-        {formConfigMeta?.fields.map((field) => (
-          <div key={field.name}>
-            <div
-              key={field.name}
-              style={{ marginBottom: 16 }}
-              className="w-full grid grid-cols-[0.5fr_2fr] gap-y-2"
-            >
-              <label className="items-center">{field.displayName ?? field.name}</label>
-              <FieldRenderer
-                field={field}
-                register={register}
-                control={control}
-                name={field.name}
-              />
-              {errors[field.name] && (
-                <div className="col-span-2">
-                  <p className="text-red-900 overflow-auto text-right">
-                    {String(errors[field.name]?.message)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-        <input {...register("attributes.0.name")} />
+        <FormRender
+          control={control}
+          errors={errors}
+          fields={formConfigMeta["fields"]}
+          register={register}
+          name=""
+        />
+        {/* <input {...register("attributes.0.name")} /> */}
         <div className="w-full justify-center mt-10 grid grid-cols-4 items-start">
           <Button type="submit">Submit</Button>
           {error && (

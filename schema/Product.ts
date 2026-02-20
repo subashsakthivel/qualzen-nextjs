@@ -13,7 +13,7 @@ export const ProductSchema = z.object({
   category: z.union([z.string(), CategorySchema]),
   categorySlug: z.string().optional(),
   name: z.string(),
-  audience: z.enum(["men", "women", "kids", "unisex", "boys", "girls", "kids"]).optional(),
+  audience: z.enum(["all", "unisex", "teens", "kids", "men", "women", "boys", "girls"]).optional(),
   description: z.string(),
   images: z.array(z.string()).min(1).max(10),
   brand: z.string().optional(),

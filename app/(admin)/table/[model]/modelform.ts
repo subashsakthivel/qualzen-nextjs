@@ -1,7 +1,7 @@
 import { TCategory } from "@/schema/Category";
 import DataClientAPI from "@/util/client/data-client-api";
 import { tDataModels } from "@/util/util-type";
-import { resolve } from "path";
+
 import z from "zod";
 
 type FieldType =
@@ -96,6 +96,11 @@ const product: ModelConfig = {
       validator: z.string().max(100).min(1),
     },
     {
+      name: "categorySlug",
+      type: "text",
+      validator: z.string().max(100).min(1),
+    },
+    {
       name: "slug",
     },
     {
@@ -120,7 +125,7 @@ const product: ModelConfig = {
     {
       name: "images",
       type: "images",
-      validator: z.array(z.instanceof(File)).max(10).min(1),
+      validator: z.union([z.array(z.string()), z.array(z.instanceof(File)).max(10).min(1)]),
     },
     {
       name: "brand",

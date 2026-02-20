@@ -11,8 +11,8 @@ import { format } from "date-fns";
 import { Control, Controller, UseFormRegister } from "react-hook-form";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import SelectInput from "./components/select-input";
-import SubFormArray from "./components/subformarray";
+import SelectInput from "./select-input";
+import SubFormArray from "./subformarray";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
@@ -39,24 +39,42 @@ export function FieldRenderer({
     case "link":
     case "unique":
     case "tags":
-      return <Input type="text" {...register(name)} required={required} />;
+      return (
+        <>
+          <Input type="text" {...register(name)} required={required} />
+          <span className="text-red-700">{name}</span>
+        </>
+      );
 
     case "number":
       return (
-        <Input
-          type="number"
-          {...register(name, { valueAsNumber: true })}
-          min={0}
-          defaultValue={0}
-          required={required}
-        />
+        <>
+          <Input
+            type="number"
+            {...register(name, { valueAsNumber: true })}
+            min={0}
+            defaultValue={0}
+            required={required}
+          />
+          <span className="text-red-700">{name}</span>
+        </>
       );
 
     case "textarea":
-      return <Textarea {...register(name)} required={required} />;
+      return (
+        <>
+          <Textarea {...register(name)} required={required} />
+          <span className="text-red-700">{name}</span>
+        </>
+      );
 
     case "bool":
-      return <Switch {...register(name)} required={required} />;
+      return (
+        <>
+          <Switch {...register(name)} required={required} />
+          <span className="text-red-700">{name}</span>
+        </>
+      );
 
     case "date":
       return (
@@ -86,11 +104,17 @@ export function FieldRenderer({
       return (
         <>
           <SelectInput name={name} selectOptions={field.options} control={control} />
+          <span className="text-red-700">{name}</span>
         </>
       );
 
     case "json":
-      return <Textarea placeholder='{"key":"value"}' {...register(name)} required={required} />;
+      return (
+        <>
+          <Textarea placeholder='{"key":"value"}' {...register(name)} required={required} />
+          <span className="text-red-700">{name}</span>
+        </>
+      );
 
     case "image":
     case "images":
@@ -169,6 +193,9 @@ export function FieldRenderer({
             name={name}
             Pname={Pname}
           />
+          <>
+            <span className="text-red-700">{name}</span>
+          </>
         </div>
       );
 
