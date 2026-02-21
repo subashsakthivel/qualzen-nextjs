@@ -11,6 +11,7 @@ import { ErrorRequest } from "../../responseUtil";
 import crypto from "crypto";
 import { FileStoreModel } from "@/model/FileStore";
 import mongoose from "mongoose";
+import DataAPI from "@/data/data-api";
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const BUCKET_REGION = process.env.R2_BUCKET_REGION || "auto";
@@ -70,7 +71,7 @@ class S3Util {
     file: File,
     ACL?: ObjectCannedACL,
     mimeType?: string,
-    session?: mongoose.ClientSession
+    session?: mongoose.ClientSession,
   ): Promise<string> {
     const buffer = Buffer.from(await file.arrayBuffer());
     // use sharp to reize the image if needed
@@ -84,7 +85,7 @@ class S3Util {
     await FileStoreModel.updateOne(
       { key: fileKey },
       { $inc: { refCount: 1 } },
-      { upsert: true, session }
+      { upsert: true, session },
     ).exec();
     console.log("Going to upload a image ", fileKey);
     const response = await this.client.send(command);
@@ -97,7 +98,7 @@ class S3Util {
     const fileRecord = await FileStoreModel.findOneAndUpdate(
       { key: fileKey },
       { $inc: { refCount: -1 } },
-      { session, new: true }
+      { session, new: true },
     ).exec();
     console.log("Going to delete a image ", fileKey);
     if (fileRecord && fileRecord.refCount <= 0) {
@@ -142,9 +143,7 @@ class S3Util {
     }
   }
 
-  async getUploadUrl(modelName: string, key: string, contentType: string) {
-    const fileKey = `${modelName}/${key}`;
-
+  async getUploadUrl(fileKey: string, contentType: string) {
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: fileKey,
@@ -158,8 +157,54 @@ class S3Util {
 
     return {
       uploadUrl: url,
-      key,
+      fileKey,
     };
+  }
+
+  async isFileExists(fileKey: string): Promise<boolean> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+      });
+      await this.client.send(command);
+      return true;
+    } catch (err: any) {
+      if (err.name === "NoSuchKey") {
+        return false;
+      }
+      console.error("Error checking file existence:", err);
+      throw new ErrorRequest("Error checking file existence", 500);
+    }
+  }
+
+  async isFileExistsInDB(fileKey: string | string[]): Promise<boolean> {
+    const existingFiles = await DataAPI.getData({
+      modelName: "filestore",
+      operation: "GET_DATA",
+      request: {
+        options: {
+          filter: {
+            CompositeFilters: [
+              {
+                ArrayFilters: [
+                  {
+                    FieldName: "key",
+                    Filter: {
+                      Comparison: "IN",
+                      Value: Array.isArray(fileKey) ? fileKey : [fileKey],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+          select: "key",
+        },
+      },
+    });
+    console.log("Existing files in DB for keys ", fileKey, " are ", existingFiles);
+    return existingFiles.length === (Array.isArray(fileKey) ? fileKey.length : 1);
   }
 }
 

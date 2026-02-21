@@ -10,6 +10,8 @@ import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
 import { tDataModels } from "@/util/util-type";
 import FormRender from "./components/form-render";
+import { fi } from "zod/v4/locales";
+import { file } from "zod";
 
 interface DynamicFormProps {
   model: tDataModels; //"category" | "content" | "offer"
@@ -40,29 +42,40 @@ export function DynamicForm({ model }: DynamicFormProps) {
         requestData[field.name] = data[field.name];
       }
     });
-    const imageFields = formConfigMeta!.fields.filter(
+    const fileFields = formConfigMeta!.fields.filter(
       (field) => field.type === "image" || field.type == "images",
     );
-    imageFields.map((field) => {
-      if (field.type == "images") {
-        debugger;
-        const images: File[] = ObjectUtil.getValue({
-          obj: data,
-          path: field.path,
-        });
-
-        const value = Array.from({ length: images.length }).map((_, index) => uuidv4());
-        ObjectUtil.setValue({
-          obj: requestData,
-          path: field.path,
-          value: value,
-        });
-      } else {
-        ObjectUtil.setValue({
-          obj: requestData,
-          path: field.path,
-          value: uuidv4(),
-        });
+    const uploadRequest: { files: { key: string; type: string }[]; path: string }[] = [];
+    const uploadFiles: { key: string; file: File; type: string }[] = [];
+    fileFields.map((field, uploadIndex) => {
+      const files: File | File[] = ObjectUtil.getValue({
+        obj: data,
+        path: field.path,
+      });
+      if (files) {
+        uploadRequest.push({ files: [], path: field.path });
+        if (Array.isArray(files)) {
+          const value: string[] = [];
+          files.map((file: File, index: number) => {
+            value.push(uuidv4());
+            uploadRequest[uploadIndex].files.push({ key: value[index], type: file.type });
+            uploadFiles.push({ key: value[index], file, type: file.type });
+            ObjectUtil.setValue({
+              obj: requestData,
+              path: field.path,
+              value: value,
+            });
+          });
+        } else {
+          const value: string = uuidv4();
+          uploadRequest[uploadIndex].files.push({ key: value, type: files.type });
+          uploadFiles.push({ key: value, file: files, type: files.type });
+          ObjectUtil.setValue({
+            obj: requestData,
+            path: field.path,
+            value: value,
+          });
+        }
       }
     });
 
@@ -74,55 +87,40 @@ export function DynamicForm({ model }: DynamicFormProps) {
         operation: "SAVE_DATA",
       },
     });
-    if (response.success) {
+    if (response.success && uploadRequest && uploadRequest.length) {
       debugger;
-      const imageFields = formConfigMeta!.fields.filter(
-        (field) => field.type === "image" || field.type === "images",
-      );
 
-      imageFields.map(async (field) => {
-        const files = Array.isArray(data[field.name])
-          ? (data[field.name] as File[])
-          : ([data[field.name]] as File[]);
-        await Promise.all(files.map((file) => uploadFile(response.data, file)));
+      const resUpload = await fetch("/api/upload", {
+        method: "POST",
+        body: JSON.stringify({
+          modelName: model,
+          id: response.data._id,
+          uploadRequest: uploadRequest,
+        }),
       });
+      if (resUpload && resUpload.ok) {
+        const responseJSon = await resUpload.json();
+        const { uploadUrls }: { uploadUrls: { key: string; url: string }[] } = responseJSon;
+        const uploadRequests = uploadFiles.map((uploadFile) => ({
+          file: uploadFile.file,
+          url: uploadUrls.find((uploadUrl) => uploadUrl.key === uploadFile.key)?.url,
+          key: uploadFile.key,
+        }));
+        await Promise.all(uploadRequests.map(({ key, file, url }) => uploadFile(key, file, url!)));
+      }
     } else {
       SetError(response.message ?? "Something not correct, please try again later.");
     }
   };
 
-  async function uploadFile(data: any, imageFile: File) {
+  async function uploadFile(key: string, file: File, url: string) {
     try {
-      if (imageFile instanceof File) {
-        console.log(imageFile);
-      }
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: JSON.stringify({
-          modelName: model,
-          id: data._id,
-          fileType: imageFile.type,
-        }),
+      await fetch(url, {
+        method: "PUT",
+        body: file,
       });
-      if (response && response.ok) {
-        const responseJSon = await response.json();
-        const {
-          data: { uploadUrl },
-        } = responseJSon as {
-          data: {
-            uploadUrl: string;
-            key: string;
-          };
-        };
-        debugger;
-        await fetch(uploadUrl, {
-          method: "PUT",
-          body: imageFile,
-        });
-      }
     } catch (err) {
-      SetError(`Error while uploading image ${imageFile.name}`);
+      SetError(`Error while uploading image ${key}`);
     }
   }
 

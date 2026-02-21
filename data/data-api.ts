@@ -31,7 +31,7 @@ class DataAPIclass {
     try {
       request = this.buildTranformedObject(
         request,
-        getFormMetaData(modelName as "category" | "content" | "offer")
+        getFormMetaData(modelName as "category" | "content" | "offer"),
       );
 
       const response = await Persistance.saveData({ modelName, operation, data: request });
@@ -45,7 +45,7 @@ class DataAPIclass {
           const error = new ClientError(
             "DUPLICATE_ENTRY",
             err.code,
-            `${field} "${value}" already exists`
+            `${field} "${value}" already exists`,
           );
           throw error;
         }
@@ -89,7 +89,7 @@ class DataAPIclass {
       }
     } catch (err) {
       console.error("Error in getData:", err);
-      throw new Error("Failed to fetch data");
+      throw new Error("Request Failed");
     }
   }
 

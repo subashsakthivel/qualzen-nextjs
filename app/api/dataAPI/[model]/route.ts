@@ -9,10 +9,12 @@ import { zGet } from "@/types/api-type";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
 import { ClientError } from "@/lib/error-codes";
+import { FileStoreModel } from "@/model/FileStore";
+import R2API from "@/util/server/file/S3Util";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ model: string }> }
+  { params }: { params: Promise<{ model: string }> },
 ) {
   try {
     const { model: modelName } = await params;
@@ -73,16 +75,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
     //todo : check if request and operation and modelName are valid with zod
     //tranformers
     if (dataModel.fileObjects?.length) {
-      dataModel.fileObjects.forEach(({ path }) => {
+      dataModel.fileObjects.forEach(async ({ path }) => {
         const currentValue = ObjectUtil.getValue({ obj: data, path });
-
-        const newValue = Array.isArray(currentValue) ? currentValue.map(() => uuidv4()) : uuidv4();
-
-        ObjectUtil.setValue({
-          obj: data,
-          path,
-          value: newValue,
-        });
+        if (Array.isArray(currentValue)) {
+          for (const fileKey of currentValue) {
+            if (await R2API.isFileExists(fileKey)) {
+              throw new ClientError("DUPLICATE_ENTRY", 400, `"${fileKey}" file already exists`);
+            }
+          }
+        } else {
+          if (await R2API.isFileExists(currentValue)) {
+            throw new ClientError("DUPLICATE_ENTRY", 400, `"${currentValue}" file already exists`);
+          }
+        }
       });
     }
 
@@ -90,12 +95,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mod
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err: any) {
     console.error("Post request Error :", err);
-    if (err?.name == "ClientError") {
-      const clientError = err as ClientError;
-      return NextResponse.json({ ...clientError.toJSon() }, { status: clientError.clientCode });
+    if (err instanceof ClientError) {
+      return NextResponse.json({ ...err.toJSon() }, { status: err.clientCode });
     }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
-
     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
   }
 }

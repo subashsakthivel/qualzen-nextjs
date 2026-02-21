@@ -24,7 +24,7 @@ export interface DataModelInterface {
   schema: z.ZodObject<any>;
   dbModel: mongoose.PaginateModel<any> | mongoose.Model<any>;
   subdocs?: [{ path: string; dbModel: mongoose.PaginateModel<any> | mongoose.Model<any> }];
-  fileObjects?: { path: string; multi: boolean }[];
+  fileObjects?: { path: string }[];
 }
 
 export const DataModelMap: Record<tDataModels, DataModelInterface> = {
@@ -39,6 +39,7 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   product: {
     schema: ProductSchema,
     dbModel: ProductModel,
+    fileObjects: [{ path: "images" }],
   },
   address: {
     schema: AddressSchema,

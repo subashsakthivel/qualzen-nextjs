@@ -72,7 +72,7 @@ const zFilterQuery = z.object({
         "lte",
       ]),
       value: z.any(),
-    })
+    }),
   ),
 });
 
@@ -181,7 +181,7 @@ export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
                     "CONTAINS_WORD",
                   ]),
                 }),
-              })
+              }),
             )
             .optional(),
 
@@ -192,7 +192,7 @@ export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
                 Filter: z.object({
                   Value: z.boolean(),
                 }),
-              })
+              }),
             )
             .optional(),
 
@@ -207,7 +207,7 @@ export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
                   z.object({ Lt: z.number() }),
                   z.object({ Lte: z.number() }),
                 ]),
-              })
+              }),
             )
             .optional(),
 
@@ -219,24 +219,24 @@ export const zCompositeFilter: z.ZodType<TCompositeFilter> = z.lazy(() =>
                   Comparison: z.enum(["ALL", "IN", "NOT_IN"]),
                   Value: z.array(z.union([z.string(), z.number()])).min(1),
                 }),
-              })
+              }),
             )
             .optional(),
 
           Operator: z.enum(["AND", "OR"]).optional(),
 
           NestedCompositeFilters: z.array(zCompositeFilter).max(3).optional(),
-        })
+        }),
       )
       .optional(),
 
     CompositeOperator: z.enum(["OR", "AND"]).optional(),
-  })
+  }),
 );
 
 export const zFilter = z.union([
   zCompositeFilter,
-  z.record(z.union([z.number(), z.string(), z.null(), z.undefined()])),
+  z.record(z.string(), z.union([z.number(), z.string(), z.null(), z.undefined()])),
 ]);
 
 export type TFilter = z.infer<typeof zFilter>;

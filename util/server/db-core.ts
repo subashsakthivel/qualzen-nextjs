@@ -58,7 +58,7 @@ class DBUtil {
       } else if (operation === "GET_DATA_ONE") {
         execution.callback = async () => await dbModel.findOne(queryFilter, select, options);
       } else if (operation === "GET_DATA_BY_ID" || operation === "GET_DATA_BY_ID_RAW") {
-        execution.callback = async () => await dbModel.findById(request.id, select, options);
+        execution.callback = async () => await dbModel.findById(request.id, select, options).lean();
       } else if (operation !== "GET_DATA" && operation !== "GET_DATA_RAW") {
         throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
@@ -447,7 +447,7 @@ class DBUtil {
   }
 
   protected parseFilterQuery(
-    filterQuery: Record<string, any> | TCompositeFilter
+    filterQuery: Record<string, any> | TCompositeFilter,
   ): Record<string, any> {
     if (!filterQuery.CompositeFilters || filterQuery.CompositeFilters.length === 0) {
       const parsedFilter = Object.keys(filterQuery as Record<string, any>).reduce(
@@ -465,7 +465,7 @@ class DBUtil {
 
           return acc;
         },
-        {}
+        {},
       );
       return parsedFilter;
     }

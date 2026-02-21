@@ -15,7 +15,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>(
     },
     audience: {
       type: String,
-      enum: ["men", "women", "kids", "unisex", "boys", "girls", "kids"],
+      enum: ["all", "unisex", "teens", "men", "women", "boys", "girls", "kids"],
       required: false,
     },
     category: {
@@ -82,7 +82,7 @@ const ProductDBSchema = new mongoose.Schema<TProduct>(
       default: Date.now,
     },
   },
-  { id: true }
+  { id: true },
 );
 
 ProductDBSchema.plugin(mongoosePaginate); //todo: need to remove paginate later
