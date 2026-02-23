@@ -31,6 +31,7 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   category: {
     schema: CategorySchema,
     dbModel: CategoryModel,
+    fileObjects: [{ path: "image" }],
   },
   userinfo: {
     schema: UserInfoSchema,

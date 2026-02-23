@@ -13,13 +13,15 @@ export default function Home() {
     <>
       <ErrorBoundary fallback={<ErrorPage />}>
         <HeroCarousel />
+        {/* <HeroCarousel />
 
-        {/* <div className="">
+        <div className="">
           <CategorySection />
           <FeaturedProducts />
           <CategoriesCatelog />
         </div> */}
       </ErrorBoundary>
+      <div>comback 3</div>
     </>
   );
 }

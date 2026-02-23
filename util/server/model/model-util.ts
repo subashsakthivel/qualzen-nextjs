@@ -50,7 +50,7 @@ class ModelHandler {
               await FileStoreModel.updateOne(
                 { key: k },
                 { $inc: { refCount: 1 } },
-                { upsert: true, session }
+                { upsert: true, session },
               ).exec();
             });
           }
@@ -139,12 +139,12 @@ class ModelHandler {
           if (Array.isArray(key)) {
             const urls = [];
             for (const k of key) {
-              const url = await R2API.getObjectUrl(modelName, k);
+              const url = await R2API.getObjectUrl(k);
               urls.push(url);
             }
             ObjectUtil.setValue({ obj: doc, path: fileConfig.path, value: urls });
           } else {
-            const url = await R2API.getObjectUrl(modelName, key);
+            const url = await R2API.getObjectUrl(key);
             ObjectUtil.setValue({ obj: doc, path: fileConfig.path, value: url });
           }
         }
@@ -158,7 +158,7 @@ class ModelHandler {
     docs: ModelType[K] | ModelType[K][],
     action: "GET" | "GET_RAW" | "DELETE" | "CREATE" | "UPDATE",
     data?: any,
-    session?: mongoose.ClientSession
+    session?: mongoose.ClientSession,
   ) {
     switch (action) {
       case "GET":

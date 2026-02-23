@@ -194,9 +194,9 @@ function ExhibitionView() {
                     whileHover={{ scale: 1.02 }}
                     transition={{ duration: 2 }}
                   >
-                    {banner.bg_img?.img && (
+                    {banner.bgImg?.img && (
                       <Image
-                        src={banner.bg_img?.img}
+                        src={banner.bgImg?.img}
                         alt={banner.title}
                         fill
                         className="w-full h-full object-cover  transition-all duration-[1.5s]"
@@ -226,7 +226,7 @@ function ExhibitionView() {
                   >
                     <div>
                       <span className="text-[10px] tracking-[0.2em] font-bold">
-                        {banner.click_action?.text}
+                        {banner.clickAction?.text}
                       </span>
                     </div>
                     <div>

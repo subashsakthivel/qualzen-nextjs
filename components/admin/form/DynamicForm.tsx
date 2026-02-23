@@ -19,7 +19,7 @@ interface DynamicFormProps {
 
 export function DynamicForm({ model }: DynamicFormProps) {
   const [error, SetError] = useState<string | undefined>(undefined);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const formConfigMeta = getFormMetaData(model);
   const {
     register,
@@ -34,6 +34,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
   const onSubmit = async (data: any) => {
     debugger;
     SetError(undefined);
+    setStatus("submitting");
     const requestData = {} as any;
     formConfigMeta!.fields.map((field) => {
       if (field.type === "tags") {
@@ -87,30 +88,36 @@ export function DynamicForm({ model }: DynamicFormProps) {
         operation: "SAVE_DATA",
       },
     });
-    if (response.success && uploadRequest && uploadRequest.length) {
+    if (response.success) {
       debugger;
-
-      const resUpload = await fetch("/api/upload", {
-        method: "POST",
-        body: JSON.stringify({
-          modelName: model,
-          id: response.data._id,
-          uploadRequest: uploadRequest,
-        }),
-      });
-      if (resUpload && resUpload.ok) {
-        const responseJSon = await resUpload.json();
-        const { uploadUrls }: { uploadUrls: { key: string; url: string }[] } = responseJSon;
-        const uploadRequests = uploadFiles.map((uploadFile) => ({
-          file: uploadFile.file,
-          url: uploadUrls.find((uploadUrl) => uploadUrl.key === uploadFile.key)?.url,
-          key: uploadFile.key,
-        }));
-        await Promise.all(uploadRequests.map(({ key, file, url }) => uploadFile(key, file, url!)));
+      if (uploadRequest && uploadRequest.length) {
+        const resUpload = await fetch("/api/upload", {
+          method: "POST",
+          body: JSON.stringify({
+            modelName: model,
+            id: response.data._id,
+            uploadRequest: uploadRequest,
+          }),
+        });
+        if (resUpload && resUpload.ok) {
+          const responseJSon = await resUpload.json();
+          const { uploadUrls }: { uploadUrls: { key: string; url: string }[] } = responseJSon;
+          const uploadRequests = uploadFiles.map((uploadFile) => ({
+            file: uploadFile.file,
+            url: uploadUrls.find((uploadUrl) => uploadUrl.key === uploadFile.key)?.url,
+            key: uploadFile.key,
+          }));
+          await Promise.all(
+            uploadRequests.map(({ key, file, url }) => uploadFile(key, file, url!)),
+          );
+        }
       }
+      setStatus("success");
     } else {
       SetError(response.message ?? "Something not correct, please try again later.");
+      setStatus("error");
     }
+    setTimeout(() => setStatus("idle"), 10000);
   };
 
   async function uploadFile(key: string, file: File, url: string) {
@@ -127,7 +134,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="min-w-full items-center justify-center flex flex-col text-left m-10 pb-10"
+      className="min-w-full items-center justify-center flex flex-col text-left m-10 pb-10 relative"
       autoComplete="true"
     >
       <div className="w-[50vw]  border p-10">
@@ -139,12 +146,19 @@ export function DynamicForm({ model }: DynamicFormProps) {
           name=""
         />
         {/* <input {...register("attributes.0.name")} /> */}
-        <div className="w-full justify-center mt-10 grid grid-cols-4 items-start">
-          <Button type="submit">Submit</Button>
-          {error && (
-            <span className="w-80 border p-2 ml-10 text-red-600 rounded-md text-wrap col-span-3 text-sm">
-              - {error}
-            </span>
+        <div className="w-full justify-center mt-10 grid grid-cols-4 items-start ">
+          <Button
+            type="submit"
+            className={`${status === "submitting" ? "disabled:cursor-progress" : ""}`}
+          >
+            Submit {status === "submitting" ? "..." : ""}
+          </Button>
+          {status !== "submitting" && status !== "idle" && (
+            <div
+              className={`ml-10 rounded-md text-wrap col-span-3 text-sm border border-r-2 border-black p-2 fade-out-10 fade-in-10 text-white ${status == "success" ? "bg-green-600" : "bg-red-500"}`}
+            >
+              {status == "success" ? "Sucessfully Added" + status : (error ?? "Failed to Add")}
+            </div>
           )}
         </div>
       </div>

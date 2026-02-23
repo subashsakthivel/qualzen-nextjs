@@ -29,27 +29,31 @@ const TITANS = [
 const AUDIENCE = [
   {
     name: "Men",
-    img: "/#",
+    img: "https://i.pinimg.com/736x/23/8f/2a/238f2a07c905a75449388655e09e8582.jpg",
   },
   {
     name: "Women",
-    img: "/#",
+    img: "https://i.pinimg.com/736x/9b/4d/ca/9b4dca2fe227685920deee41edd5eb1a.jpg",
   },
   {
     name: "Unisex",
-    img: "/#",
+    img: "https://i.pinimg.com/1200x/ac/06/6e/ac066ec1fb08ffe84d90a2bd2ebb66f4.jpg",
   },
   {
     name: "Boys",
-    img: "/#",
+    img: "https://i.pinimg.com/736x/02/5f/3e/025f3e0a029e4af69b2384d10a324f46.jpg",
   },
   {
     name: "Girls",
-    img: "/#",
+    img: "https://i.pinimg.com/1200x/7c/fd/ef/7cfdefa81cba287c4cb6f3ec32588b67.jpg",
+  },
+  {
+    name: "Teens",
+    img: "https://i.pinimg.com/1200x/dd/2b/7a/dd2b7a5668392361c25e0b25315503cb.jpg",
   },
   {
     name: "Kids",
-    img: "/#",
+    img: "https://i.pinimg.com/736x/2a/54/97/2a54979651f3e809836370ba1292b5f3.jpg",
   },
 ];
 
@@ -74,13 +78,17 @@ export const LandingPageScrollView = () => {
   const bgScale = useTransform(smoothProgress, [0, 0.5], [1.1, 1]);
 
   useEffect(() => {
+    debugger;
     const response = async () =>
       await DataClientAPI.getData({
         modelName: "product",
         operation: "GET_DATA_MANY",
         request: {
-          filter: { feature_location: "featured-product" },
-          options: { limit: 8, sort: { updatedAt: -1 } },
+          options: {
+            limit: 8,
+            sort: { updatedAt: -1 },
+            filter: { feature_location: "featured-product" },
+          },
         },
       });
     const categoriesResponse = async () =>
@@ -97,6 +105,7 @@ export const LandingPageScrollView = () => {
         operation: "GET_DATA_MANY",
         request: { filter: { endDateTime: { exists: true, lte: new Date() } } },
       });
+    debugger;
     response().then((data) => {
       if (data && Array.isArray(data)) setFeaturedProducts(data);
     });
@@ -129,7 +138,7 @@ export const LandingPageScrollView = () => {
               <div className="relative overflow-hidden aspect-square bg-neutral-900 border border-white/5 shadow-2xl">
                 <div className="overflow-hidden group w-full h-full">
                   <Image
-                    src={"/products/" + item._id}
+                    src={item.images[0] || "/placeholder.svg"}
                     alt={item.name}
                     fill
                     className="object-cover"
@@ -139,7 +148,7 @@ export const LandingPageScrollView = () => {
 
               <div
                 className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
-                  (idx + 2) % 10
+                  (idx + 2) % 10,
                 )} z-10 backdrop-blur-sm  p-1 rounded `}
               >
                 <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
@@ -191,6 +200,7 @@ export const LandingPageScrollView = () => {
       {/* Part 2: 3D Grid Section */}
       {featuredProducts && (
         <section className="relative z-10 py-32 px-8 md:px-24 ">
+          <div className="text-xl md:text-4xl p-2 m-2 font-bold underline">Just Now Came</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
             {featuredProducts.map((item, idx) => (
               <motion.div
@@ -216,7 +226,7 @@ export const LandingPageScrollView = () => {
 
                 <div
                   className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
-                    (idx + 2) % 10
+                    (idx + 2) % 10,
                   )} z-10 bg-black/60 backdrop-blur-sm  p-1 rounded `}
                 >
                   <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
@@ -235,6 +245,9 @@ export const LandingPageScrollView = () => {
 
       {/* Part 2.1 : Grid Section for Collections Audiance*/}
       <section className="relative z-10 py-32 px-8 md:px-24 ">
+        <div className="text-xl md:text-4xl p-2 m-2 font-bold w-full text-center">
+          Explore Fashion
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
           {AUDIENCE.map((item, idx) => (
             <motion.div
@@ -260,7 +273,7 @@ export const LandingPageScrollView = () => {
 
               <div
                 className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
-                  (idx + 2) % 10
+                  (idx + 2) % 10,
                 )} z-10 bg-black/60 backdrop-blur-sm  p-1 rounded `}
               >
                 <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
@@ -278,6 +291,9 @@ export const LandingPageScrollView = () => {
 
       {/* Part 2.2 : Grid Section for Collections Category*/}
       <section className="relative z-10 py-32 px-8 md:px-24 ">
+        <div className="text-xl md:text-4xl p-2 m-2 font-bold w-full text-center">
+          Top Collections
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
           {categories.map((item, idx) => (
             <motion.div
@@ -303,7 +319,7 @@ export const LandingPageScrollView = () => {
 
               <div
                 className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
-                  (idx + 2) % 10
+                  (idx + 2) % 10,
                 )} z-10 bg-black/60 backdrop-blur-sm  p-1 rounded `}
               >
                 <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
@@ -320,7 +336,7 @@ export const LandingPageScrollView = () => {
       </section>
 
       {/* Part 2.3 : Grid Section for Collections offers*/}
-      <section className="relative z-10 py-32 px-8 md:px-24 ">
+      {/* <section className="relative z-10 py-32 px-8 md:px-24 ">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
           {categories.map((item, idx) => (
             <motion.div
@@ -346,7 +362,7 @@ export const LandingPageScrollView = () => {
 
               <div
                 className={`absolute -bottom-${Math.floor((idx + 3) % 10)} left-${Math.floor(
-                  (idx + 2) % 10
+                  (idx + 2) % 10,
                 )} z-10 bg-black/60 backdrop-blur-sm  p-1 rounded `}
               >
                 <span className="serif text-2xl md:text-4xl font-bold tracking-tight">
@@ -360,7 +376,7 @@ export const LandingPageScrollView = () => {
             </motion.div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Part 3: Titans Section */}
       <section className="relative z-10 min-h-screen py-32 px-8 md:px-24 mt-24 no-scrollbar overflow-hidden">
@@ -372,7 +388,7 @@ export const LandingPageScrollView = () => {
           <div className="flex flex-col md:flex-row justify-between items-end mb-24 border-b border-black/10 pb-12 sticky top-0">
             <div>
               <h2 className="serif text-5xl md:text-8xl italic leading-none border border-gray-300  border-opacity-60 w-full p-5">
-                What them saying ?.
+                Thanks for the trust.
               </h2>
             </div>
             <div className="absolute  border border-gray-300 min-w-[50vh] rounded-full min-h-[50vh] -right-52 top-52 opacity-60 brightness-200 bg-white"></div>
@@ -416,10 +432,10 @@ export const LandingPageScrollView = () => {
         <motion.button whileHover={{ scale: 1.05 }} className="serif text-3xl md:text-5xl ">
           <div className="flex flex-wrap gap-5 m-2 justify-center">
             <div className="border border-white/20 px-12 py-6 hover:bg-white hover:text-black transition-all duration-500">
-              Contact the Studio
+              Contact The Studio
             </div>
             <div className="grid grid-rows-2 grid-cols-1 gap-2 border border-white/20 px-12 py-6 hover:bg-white hover:text-black transition-all duration-500">
-              <div>Dont You thing We should stay connected</div>
+              <div>We Are Sick, Randomly Might Throw OFFERS</div>
               <div className="border border-spacing-10 p-4">Subscribe Now</div>
             </div>
           </div>
