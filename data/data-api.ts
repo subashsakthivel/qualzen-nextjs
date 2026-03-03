@@ -65,28 +65,29 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      if (
-        (request instanceof FormData ? request.get("id") : request.id) &&
-        operation !== "UPDATE_BY_ID"
-      ) {
-        const response = await Persistance.updateOneData({
-          modelName,
-          operation,
-          id: request instanceof FormData ? request.get("id") : request.id,
-          data: request,
-        });
-        return response;
-      } else {
-        const response = await Persistance.updateData({
-          modelName,
-          operation,
-          id: request.id,
-          data: request,
-          updateQuery: request.updateQuery,
-          queryFilter: request.queryFilter,
-        });
-        return response;
-      }
+      // if (
+      //   (request instanceof FormData ? request.get("id") : request.id) &&
+      //   operation !== "UPDATE_BY_ID"
+      // ) {
+      //   const response = await Persistance.updateOneData({
+      //     modelName,
+      //     operation,
+      //     id: request instanceof FormData ? request.get("id") : request.id,
+      //     data: request,
+      //   });
+      //   return response;
+      // } else {
+      console.log(request.updateQuery);
+      const response = await Persistance.updateData({
+        modelName,
+        operation,
+        id: request.id,
+        data: request,
+        updateQuery: request.updateQuery,
+        queryFilter: request.queryFilter,
+      });
+      return response;
+      // }
     } catch (err) {
       console.error("Error in getData:", err);
       throw new Error("Request Failed");

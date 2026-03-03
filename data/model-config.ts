@@ -61,7 +61,7 @@ export const ModelConfig: {
   },
   product: {
     schema: ProductSchema,
-    columns: ["name", "description", "category", "brand"],
+    columns: ["_id", "name", "description", "category", "brand"],
     columnConfig: {
       name: {
         parse: (doc: any) => ({ text: doc.name, text_link: `/product/${doc._id}`, type: "url" }),

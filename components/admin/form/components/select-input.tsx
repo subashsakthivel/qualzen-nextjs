@@ -39,7 +39,7 @@ const SelectInput = ({
           name={name}
           control={control}
           render={({ field }) => (
-            <Select onValueChange={field.onChange}>
+            <Select onValueChange={field.onChange} defaultValue={field.value as string}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>

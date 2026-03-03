@@ -11,9 +11,9 @@ class DataServiceClass {
     try {
       const { url } = DataSourceMap[modelName];
 
-      const encodedUrl = this.buildEncodedUrl(url, { request, operation });
+      const encodedUrl = this.buildEncodedUrl(url, { request, operation, id });
 
-      const response = await fetch(encodedUrl);
+      const response = await fetch("http://localhost:3000" + encodedUrl); //hostname not added issue
 
       const resJson = await response.json();
 
@@ -92,7 +92,13 @@ class DataServiceClass {
     try {
       const { url } = DataSourceMap[modelName];
 
-      const response = await fetch(url, { body: request, method: "PATCH" });
+      const response = await fetch(url, {
+        body: JSON.stringify(request),
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
 
       const resJson = await response.json();
 

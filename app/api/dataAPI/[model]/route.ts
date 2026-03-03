@@ -111,26 +111,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ mo
       throw new Error("Invalid request");
     }
     const dataReq = {
-      modelName: modelName as tDataModels,
-      operation: "",
-      request: {},
       id: "",
-      updateQuery: "",
-      queryFilter: "",
+      updateQuery: {},
+      queryFilter: {},
     };
 
     if (req.headers.get("Content-Type")?.includes("application/json")) {
-      const { data, operation } = await req.json();
-      dataReq.operation = operation;
-      dataReq.request = data;
+      const { updateQuery, queryFilter, operation, id } = await req.json();
+      dataReq.updateQuery = updateQuery;
+      dataReq.queryFilter = queryFilter;
+      dataReq.id = id;
+      const responseData = await DataAPI.updateData({ modelName: modelName as tDataModels, operation, request: dataReq });
+      return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
     } else {
-      throw new Error("Unsupported content type");
+      throw new ClientError("UNSUPPORTED_CONTENT_TYPE", 400, "Unsupported content type");
     }
     //todo : check if request and operation and modelName are valid
-    const responseData = await DataAPI.updateData(dataReq);
-    return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
-  } catch (err) {
-    console.error("Patch request Error :", err);
+
+  } catch (err: any) {
+    console.error("Patch request Error :", JSON.stringify(err, null, 2));
+    if (err instanceof ClientError) {
+      return NextResponse.json({ ...err.toJSon() }, { status: err.clientCode });
+    }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: errorMessage, status: 500 }, { status: 500 });
   }

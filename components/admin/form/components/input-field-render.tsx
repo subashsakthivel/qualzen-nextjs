@@ -155,9 +155,8 @@ export function FieldRenderer({
                   )}
 
                   <label
-                    className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${
-                      field.value ? "shadow-lg min-w-20" : "shadow-sm min-h-80"
-                    }`}
+                    className={`w-full flex flex-col items-center justify-center border border-dashed rounded-sm cursor-pointer text-sm ${field.value ? "shadow-lg min-w-20" : "shadow-sm min-h-80"
+                      }`}
                   >
                     <Upload className="h-4 w-4 text-muted-foreground" />
                     <input

@@ -1,39 +1,39 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FieldRenderer } from "./components/input-field-render";
-import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
+import { FormFieldMeta, getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import DataClientAPI from "@/util/client/data-client-api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";
 import { v4 as uuidv4 } from "uuid";
-import { tDataModels } from "@/util/util-type";
+import { tDataModels, TUpdate } from "@/util/util-type";
 import FormRender from "./components/form-render";
-import { fi } from "zod/v4/locales";
-import { file } from "zod";
+
 
 interface DynamicFormProps {
   model: tDataModels; //"category" | "content" | "offer"
+  id?: string;
 }
 
-export function DynamicForm({ model }: DynamicFormProps) {
-  const [error, SetError] = useState<string | undefined>(undefined);
+export function DynamicForm({ model, id }: DynamicFormProps) {
+  const [error, setError] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const formConfigMeta = getFormMetaData(model);
+  const [oldData, setOldData] = useState<any>(undefined);
   const {
     register,
     handleSubmit,
     formState: { errors },
-
     control,
+    reset,
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
   });
 
   const onSubmit = async (data: any) => {
     debugger;
-    SetError(undefined);
+    setError(undefined);
     setStatus("submitting");
     const requestData = {} as any;
     formConfigMeta!.fields.map((field) => {
@@ -49,7 +49,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
     const uploadRequest: { files: { key: string; type: string }[]; path: string }[] = [];
     const uploadFiles: { key: string; file: File; type: string }[] = [];
     fileFields.map((field, uploadIndex) => {
-      const files: File | File[] = ObjectUtil.getValue({
+      const files: File | File[] | string | string[] = ObjectUtil.getValue({
         obj: data,
         path: field.path,
       });
@@ -57,7 +57,7 @@ export function DynamicForm({ model }: DynamicFormProps) {
         uploadRequest.push({ files: [], path: field.path });
         if (Array.isArray(files)) {
           const value: string[] = [];
-          files.map((file: File, index: number) => {
+          files.filter((file: File | string) => file instanceof File).map((file: File, index: number) => {
             value.push(uuidv4());
             uploadRequest[uploadIndex].files.push({ key: value[index], type: file.type });
             uploadFiles.push({ key: value[index], file, type: file.type });
@@ -68,54 +68,58 @@ export function DynamicForm({ model }: DynamicFormProps) {
             });
           });
         } else {
-          const value: string = uuidv4();
-          uploadRequest[uploadIndex].files.push({ key: value, type: files.type });
-          uploadFiles.push({ key: value, file: files, type: files.type });
-          ObjectUtil.setValue({
-            obj: requestData,
-            path: field.path,
-            value: value,
-          });
+          if (files instanceof File) {
+            const value: string = uuidv4();
+            uploadRequest[uploadIndex].files.push({ key: value, type: files.type });
+            uploadFiles.push({ key: value, file: files, type: files.type });
+            ObjectUtil.setValue({
+              obj: requestData,
+              path: field.path,
+              value: value,
+            });
+          }
         }
       }
     });
 
     console.log(requestData);
-    const response = await DataClientAPI.saveData({
-      modelName: model,
-      request: {
-        data: requestData,
-        operation: "SAVE_DATA",
-      },
-    });
-    if (response.success) {
-      debugger;
-      if (uploadRequest && uploadRequest.length) {
-        const resUpload = await fetch("/api/upload", {
-          method: "POST",
-          body: JSON.stringify({
-            modelName: model,
-            id: response.data._id,
-            uploadRequest: uploadRequest,
-          }),
-        });
-        if (resUpload && resUpload.ok) {
-          const responseJSon = await resUpload.json();
-          const { uploadUrls }: { uploadUrls: { key: string; url: string }[] } = responseJSon;
-          const uploadRequests = uploadFiles.map((uploadFile) => ({
-            file: uploadFile.file,
-            url: uploadUrls.find((uploadUrl) => uploadUrl.key === uploadFile.key)?.url,
-            key: uploadFile.key,
-          }));
-          await Promise.all(
-            uploadRequests.map(({ key, file, url }) => uploadFile(key, file, url!)),
-          );
-        }
+    if (id) {
+      //update
+      const updateQuery: TUpdate<any> = {};
+      const deleteFilesRequest: { key: string }[] = [];
+      formUpdateQuery(formConfigMeta.fields, data, oldData, updateQuery, deleteFilesRequest);
+      console.log(updateQuery);
+      const response = await DataClientAPI.patchData({
+        modelName: model,
+        request: {
+          updateQuery,
+          operation: "UPDATE_DATA_BY_ID",
+          id,
+        },
+      });
+      if (response.success) {
+        await processUploadFileRequests(uploadRequest, uploadFiles, response);
+        setStatus("success");
+      } else {
+        setError(response.message ?? "Something not correct, please try again later.");
+        setStatus("error");
       }
-      setStatus("success");
     } else {
-      SetError(response.message ?? "Something not correct, please try again later.");
-      setStatus("error");
+      const response = await DataClientAPI.saveData({
+        modelName: model,
+        request: {
+          data: requestData,
+          operation: "SAVE_DATA",
+        },
+      });
+      if (response.success) {
+        debugger;
+        await processUploadFileRequests(uploadRequest, uploadFiles, response);
+        setStatus("success");
+      } else {
+        setError(response.message ?? "Something not correct, please try again later.");
+        setStatus("error");
+      }
     }
     setTimeout(() => setStatus("idle"), 10000);
   };
@@ -127,9 +131,105 @@ export function DynamicForm({ model }: DynamicFormProps) {
         body: file,
       });
     } catch (err) {
-      SetError(`Error while uploading image ${key}`);
+      setError(`Error while uploading image ${key}`);
     }
   }
+
+  async function processUploadFileRequests(uploadRequest: { files: { key: string; type: string }[]; path: string }[], uploadFiles: { key: string; file: File; type: string }[], response: any) {
+    if (uploadRequest && uploadRequest.length) {
+      const resUpload = await fetch("/api/upload", {
+        method: "POST",
+        body: JSON.stringify({
+          modelName: model,
+          id: response.data._id,
+          uploadRequest: uploadRequest,
+        }),
+      });
+      if (resUpload && resUpload.ok) {
+        const responseJSon = await resUpload.json();
+        const { uploadUrls }: { uploadUrls: { key: string; url: string }[] } = responseJSon;
+        const uploadRequests = uploadFiles.map((uploadFile) => ({
+          file: uploadFile.file,
+          url: uploadUrls.find((uploadUrl) => uploadUrl.key === uploadFile.key)?.url,
+          key: uploadFile.key,
+        }));
+        await Promise.all(
+          uploadRequests.map(({ key, file, url }) => uploadFile(key, file, url!)),
+        );
+      }
+    }
+  }
+
+  function formUpdateQuery(fields: FormFieldMeta[], data: any, oldData: any, updateQuery: TUpdate<any>, deleteFilesRequest: { key: string }[], parantObj?: string) {
+    debugger;
+    fields.map((field) => {
+      const currValue = ObjectUtil.getValue({ obj: data, path: field.path });
+      const oldValue = ObjectUtil.getValue({ obj: oldData, path: field.path });
+      const fieldPath = parantObj ? parantObj + "." + field.path : field.path;
+      switch (field.type) {
+        case "text":
+        case "textarea":
+        case "bool":
+        case "link":
+        case "number":
+        case "unique":
+        case "tags":
+        case "select":
+          if (currValue && !ObjectUtil.isEqualObject(currValue, oldValue)) {
+            if (!updateQuery.set) {
+              updateQuery.set = {}
+            }
+            updateQuery.set[fieldPath] = currValue;
+          }
+          break;
+        case "image":
+        case "images":
+          if (currValue && !ObjectUtil.isEqualObject(currValue, oldValue)) {
+            if (!updateQuery.set) {
+              updateQuery.set! = {}
+            }
+            updateQuery.set[field.path] = currValue;
+            if (Array.isArray(oldValue)) {
+              deleteFilesRequest.push(...oldValue.map((k: string) => ({ key: k })));
+            } else if (oldValue) {
+              deleteFilesRequest.push({ key: oldValue });
+            }
+          }
+          break;
+        case "subFormArray":
+          if (currValue && oldValue && field.subFormConfig?.fields && Array.isArray(currValue)) {
+            currValue.map((item, index) => {
+              formUpdateQuery(field.subFormConfig?.fields!, item, oldValue[index], updateQuery, deleteFilesRequest, field.name + "." + index);
+            })
+          } else {
+            if (!updateQuery.set) {
+              updateQuery.set = {}
+            }
+            updateQuery.set[field.path] = currValue;
+          }
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
+  useEffect(() => {
+    if (id) {
+      const fetchData = async () => {
+        const response = await DataClientAPI.getData({
+          modelName: model,
+          operation: "GET_DATA_BY_ID",
+          request: {
+            id
+          },
+        });
+        reset(response);
+        setOldData(response);
+      }
+      fetchData();
+    }
+  }, [])
 
   return (
     <form

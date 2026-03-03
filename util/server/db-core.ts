@@ -6,7 +6,8 @@ import {
   TFilter,
   tGetResponse,
   TUpdate,
-  zUpdateueryAndFilter,
+  zCompositeFilter,
+  zUpdateQuery,
 } from "../util-type";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import dbConnect from "@/lib/mongoose";
@@ -39,10 +40,10 @@ class DBUtil {
       const { dbModel } = DataModelMap[modelName];
       const options = request.options
         ? {
-            limit: Math.min(request.options.limit ?? 10, 100), // Limit to a maximum of 100
-            page: request.options.page ?? 1,
-            select: request.options.select,
-          }
+          limit: Math.min(request.options.limit ?? 10, 100), // Limit to a maximum of 100
+          page: request.options.page ?? 1,
+          select: request.options.select,
+        }
         : undefined;
 
       const queryFilter = request?.options?.filter
@@ -130,23 +131,27 @@ class DBUtil {
     data: T;
   }): Promise<T | undefined> {
     const { dbModel } = DataModelMap[modelName];
-    const {
-      data: updateQueryAndFilter,
-      error,
-      success,
-    } = zUpdateueryAndFilter.safeParse({ updateQuery, queryFilter });
+    let parsedQueryFilter = {} as any;
+    console.log(updateQuery);
+    const { data: safeUpdateQuery, error, success } = zUpdateQuery.safeParse(updateQuery);
     if (!success) {
       console.error("Invalid data:", error);
       throw new Error("Invalid data");
+    } else if (!id && queryFilter) {
+      const { data: safeQueryFilter, error, success } = zCompositeFilter.safeParse(queryFilter);
+      parsedQueryFilter = safeQueryFilter?.CompositeFilters
+        ? this.parseFilterQuery(safeQueryFilter)
+        : safeQueryFilter;
+      if (!success) {
+        console.error("Invalid data:", error);
+        throw new Error("Invalid data");
+      }
     }
 
     try {
-      const query = this.parseUpdateQuery(updateQueryAndFilter.updateQuery as TUpdate<T>);
-      const queryFilter = updateQueryAndFilter.queryFilter?.CompositeFilters
-        ? this.parseFilterQuery(updateQueryAndFilter.queryFilter)
-        : updateQueryAndFilter.queryFilter;
+      const query = this.parseUpdateQuery(safeUpdateQuery as TUpdate<T>);
       const execution: tUpdateExecution<T, T> = {
-        callback: async () => (await dbModel.updateOne(queryFilter, query)) as UpdateResult | T,
+        callback: async () => (await dbModel.updateOne(parsedQueryFilter, query)) as UpdateResult | T,
       };
       switch (operation) {
         case "UPDATE_DATA_BY_ID":
@@ -164,7 +169,7 @@ class DBUtil {
           break;
         case "UPDATE_DATA_MANY":
           execution.callback = async (session) =>
-            (await dbModel.updateMany(queryFilter, query, {
+            (await dbModel.updateMany(parsedQueryFilter, query, {
               upsert: true,
               runValidators: true,
               session,
@@ -184,6 +189,7 @@ class DBUtil {
     }
   }
 
+  //alpha
   async updateOneData<T>({
     modelName,
     operation = "UPDATE_ONE_BY_ID",

@@ -200,7 +200,7 @@ export const LandingPageScrollView = () => {
       {/* Part 2: 3D Grid Section */}
       {featuredProducts && (
         <section className="relative z-10 py-32 px-8 md:px-24 ">
-          <div className="text-xl md:text-4xl p-2 m-2 font-bold underline">Just Now Came</div>
+          <div className="text-xl md:text-4xl p-2 m-2 font-bold ">ON AIR</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-32 ">
             {featuredProducts.map((item, idx) => (
               <motion.div

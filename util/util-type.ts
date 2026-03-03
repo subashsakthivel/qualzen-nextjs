@@ -39,23 +39,61 @@ export type TCriteria<T> = {
 };
 
 export type TUpdate<T> =
-  | {
-      [K in TUpdateOperator]: {
-        [U in keyof T]: T[U] extends (infer V)[] ? V | V[] : T[U];
-      };
-    }
-  | {
-      [K in Extract<TUpdateOperator, "push" | "pull" | "addToSet">]: {
-        each: {
-          [U in keyof T]: T[U];
-        };
+  {
+    [K in TUpdateOperator]?: {
+      [U in keyof T]?: T[U] extends (infer V)[] ? V | V[] : T[U];
+    };
+  }
+  & {
+    [K in Extract<TUpdateOperator, "push" | "pull" | "addToSet">]?: {
+      each: {
+        [U in keyof T]: T[U];
       };
     };
-const zUpdateQuery = z.union([
-  z.record(zUpdateOperator, z.any()),
-  z.record(z.enum(["push", "pull", "addToSet"]), z.object({ each: z.any() })),
-]);
-const zFilterQuery = z.object({
+  };
+export const zUpdateQuery = z
+  .object({
+    // normal operators
+    set: z.record(z.string(), z.any()).optional(),
+    inc: z.record(z.string(), z.any()).optional(),
+    unset: z.record(z.string(), z.any()).optional(),
+    mul: z.record(z.string(), z.any()).optional(),
+    min: z.record(z.string(), z.any()).optional(),
+    max: z.record(z.string(), z.any()).optional(),
+    rename: z.record(z.string(), z.any()).optional(),
+    setOnInsert: z.record(z.string(), z.any()).optional(),
+    currentDate: z.record(z.string(), z.any()).optional(),
+
+    // array operators (support both direct and $each style)
+    push: z
+      .union([
+        z.record(z.string(), z.any()),
+        z.object({
+          each: z.record(z.string(), z.any()),
+        }),
+      ])
+      .optional(),
+
+    pull: z
+      .union([
+        z.record(z.string(), z.any()),
+        z.object({
+          each: z.record(z.string(), z.any()),
+        }),
+      ])
+      .optional(),
+
+    addToSet: z
+      .union([
+        z.record(z.string(), z.any()),
+        z.object({
+          each: z.record(z.string(), z.any()),
+        }),
+      ])
+      .optional(),
+  })
+  .partial();
+export const zFilterQuery = z.object({
   logic: z.enum(["and", "or"]),
   criteria: z.array(
     z.object({
@@ -130,13 +168,13 @@ export type TCompositeFilter = {
       Filter: {
         Value: string;
         Comparison:
-          | "EQUALS"
-          | "PREFIX"
-          | "NOT_EQUALS"
-          | "PREFIX_NOT_EQUALS"
-          | "CONTAINS"
-          | "NOT_CONTAINS"
-          | "CONTAINS_WORD";
+        | "EQUALS"
+        | "PREFIX"
+        | "NOT_EQUALS"
+        | "PREFIX_NOT_EQUALS"
+        | "CONTAINS"
+        | "NOT_CONTAINS"
+        | "CONTAINS_WORD";
       };
     }[];
     BooleanFilters?: {
@@ -253,7 +291,7 @@ export interface tGetDataParams<T> {
   id?: string;
 }
 
-export const zUpdateueryAndFilter = z.object({
+export const zUpdateQueryAndFilter = z.object({
   updateQuery: zUpdateQuery,
   queryFilter: zCompositeFilter,
 });
