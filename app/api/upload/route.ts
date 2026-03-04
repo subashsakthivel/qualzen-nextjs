@@ -25,6 +25,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const requestJson = await request.json();
+    const { keys } = requestJson;
+    await deleteFiles(keys);
+    return NextResponse.json({ message: "success" }, { status: 200 });
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return NextResponse.json({ ...e.toJSon() }, { status: e.clientCode });
+    }
+    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+  }
+}
+
+async function deleteFiles(keys: string[] | string) {
+  const keysArray = Array.isArray(keys) ? keys : [keys];
+  await Promise.all(keysArray.map((key) => R2API.deleteFile(key)));
+}
+
 async function handleRequest(
   modelName: tDataModels,
   id: string,

@@ -182,14 +182,14 @@ const category: ModelConfig = {
     {
       name: "image",
       type: "image",
-      validator: z
+      validator: z.union([z
         .instanceof(File, { message: "File is required" })
         .refine((file) => file.size <= 5 * 1024 * 1024, {
           message: "File size must be under 5MB",
         })
         .refine((file) => ["image/png", "image/jpeg", "image/jpg"].includes(file.type), {
           message: "Invalid file type",
-        }),
+        }), z.string()]),
     },
     {
       name: "description",
@@ -240,23 +240,31 @@ const content: ModelConfig = {
     {
       displayName: "Backgroud image",
       type: "image",
-      name: "backgroudImage",
+      name: "bgImg.img",
+      validator: z.union([z
+        .instanceof(File, { message: "File is required" })
+        .refine((file) => file.size <= 5 * 1024 * 1024, {
+          message: "File size must be under 5MB",
+        })
+        .refine((file) => ["image/png", "image/jpeg", "image/jpg"].includes(file.type), {
+          message: "Invalid file type",
+        }), z.string()]),
       path: "bgImg.img",
     },
     {
       displayName: "Background image redirect link",
       type: "link",
-      name: "backgorudImageonClickPage",
+      name: "bgImg.imgLink",
       path: "bgImg.imgLink",
     },
     {
       displayName: "Click Text",
-      name: "RedirectText",
+      name: "clickAction.text",
       path: "clickAction.text",
     },
     {
       displayName: "Click Action",
-      name: "RedirectPage",
+      name: "clickAction.action",
       path: "clickAction.action",
     },
     {
@@ -321,7 +329,7 @@ const preDefinedZods = {
     .regex(/^[a-zA-Z][a-zA-Z0-9]*$/)
     .max(50)
     .min(5),
-  link: z.url().max(1000),
+  link: z.union([z.string().max(10000), z.url().max(1000)]),
 };
 
 export type FormFieldMeta = {
@@ -341,6 +349,7 @@ export type tFormConfigMeta = {
   fields: FormFieldMeta[];
   schema: z.ZodObject;
 };
+
 const resolveFormFields = (fields: BaseField[]): FormFieldMeta[] => {
   const resolveField = (field: BaseField): FormFieldMeta => {
     const type = field.type ?? "text";
@@ -384,6 +393,39 @@ const resolveFormFields = (fields: BaseField[]): FormFieldMeta[] => {
   };
   return fields.map((field) => resolveField(field));
 };
+const setNestedShape = (
+  shape: Record<string, any>,
+  path: string,
+  validator: z.ZodTypeAny
+) => {
+  const keys = path.split(".");
+  let current = shape;
+
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      current[key] = validator;
+    } else {
+      if (!current[key]) {
+        current[key] = z.object({});
+      }
+      current = current[key];
+    }
+  });
+};
+
+const buildZodObject = (obj: any): z.ZodObject => {
+  const newShape: any = {};
+
+  for (const key in obj) {
+    if (obj[key] instanceof z.ZodType) {
+      newShape[key] = obj[key];
+    } else {
+      newShape[key] = buildZodObject(obj[key]);
+    }
+  }
+
+  return z.object(newShape);
+};
 
 export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
   //"category" | "content" | "offer"
@@ -392,10 +434,10 @@ export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
   const shape: Record<string, z.ZodType<any>> = {};
   const resolvedFields: FormFieldMeta[] = resolveFormFields(fields);
   resolvedFields.map((field) => {
-    shape[field.name] = field.validator ?? z.any();
+    setNestedShape(shape, field.path, field.validator)
   });
 
-  return { fields: resolvedFields, schema: z.object(shape) };
+  return { fields: resolvedFields, schema: buildZodObject(shape) };
 };
 
 function toReadableLabel(value: string): string {

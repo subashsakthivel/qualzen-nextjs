@@ -24,25 +24,33 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, ...others },
     control,
     reset,
+    watch
   } = useForm({
     resolver: formConfigMeta?.schema ? zodResolver(formConfigMeta.schema) : undefined,
   });
 
+
   const onSubmit = async (data: any) => {
     debugger;
+    console.log("WATCH:", watch(), "errors : ", errors);
     setError(undefined);
     setStatus("submitting");
+    console.log("form Data ", JSON.parse(JSON.stringify(data)))
     const requestData = {} as any;
     formConfigMeta!.fields.map((field) => {
+      const value = ObjectUtil.getValue({ obj: data, path: field.path });
       if (field.type === "tags") {
-        requestData[field.name] = data[field.name].split(",").map((tag: string) => tag.trim());
+        ObjectUtil.setValue({ obj: requestData, path: field.path, value: Array.isArray(value) ? value : value.split(",").map((tag: string) => tag.trim()) });
+      } else if (field.type === "bool") {
+        ObjectUtil.setValue({ obj: requestData, path: field.path, value: value === "true" || value === true });
       } else {
-        requestData[field.name] = data[field.name];
+        ObjectUtil.setValue({ obj: requestData, path: field.path, value });
       }
     });
+    console.log("request Data ", requestData)
     const fileFields = formConfigMeta!.fields.filter(
       (field) => field.type === "image" || field.type == "images",
     );
@@ -87,7 +95,7 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
       //update
       const updateQuery: TUpdate<any> = {};
       const deleteFilesRequest: { key: string }[] = [];
-      formUpdateQuery(formConfigMeta.fields, data, oldData, updateQuery, deleteFilesRequest);
+      formUpdateQuery(formConfigMeta.fields, requestData, oldData, updateQuery, deleteFilesRequest);
       console.log(updateQuery);
       const response = await DataClientAPI.patchData({
         modelName: model,
@@ -197,11 +205,11 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
           }
           break;
         case "subFormArray":
-          if (currValue && oldValue && field.subFormConfig?.fields && Array.isArray(currValue)) {
+          if (currValue && (Array.isArray(oldValue) && oldValue.length > 0) && Array.isArray(currValue) && field.subFormConfig?.fields) {
             currValue.map((item, index) => {
               formUpdateQuery(field.subFormConfig?.fields!, item, oldValue[index], updateQuery, deleteFilesRequest, field.name + "." + index);
             })
-          } else {
+          } else if (currValue && Array.isArray(currValue)) {
             if (!updateQuery.set) {
               updateQuery.set = {}
             }
@@ -233,6 +241,7 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
 
   return (
     <form
+      id="dynamic-form"
       onSubmit={handleSubmit(onSubmit)}
       className="min-w-full items-center justify-center flex flex-col text-left m-10 pb-10 relative"
       autoComplete="true"
@@ -249,6 +258,7 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
         <div className="w-full justify-center mt-10 grid grid-cols-4 items-start ">
           <Button
             type="submit"
+            form="dynamic-form"
             className={`${status === "submitting" ? "disabled:cursor-progress" : ""}`}
           >
             Submit {status === "submitting" ? "..." : ""}

@@ -87,6 +87,7 @@ class DBUtil {
     const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
     const { data: safeData, error, success } = schema.safeParse(inputData);
     if (!success) {
+      console.log("Invalid data:", error, inputData);
       console.error("Invalid data:", error, inputData);
       throw error;
     }
@@ -132,7 +133,6 @@ class DBUtil {
   }): Promise<T | undefined> {
     const { dbModel } = DataModelMap[modelName];
     let parsedQueryFilter = {} as any;
-    console.log(updateQuery);
     const { data: safeUpdateQuery, error, success } = zUpdateQuery.safeParse(updateQuery);
     if (!success) {
       console.error("Invalid data:", error);
@@ -150,6 +150,7 @@ class DBUtil {
 
     try {
       const query = this.parseUpdateQuery(safeUpdateQuery as TUpdate<T>);
+      console.log("updatequery", updateQuery, "parsed updateQuery ", query);
       const execution: tUpdateExecution<T, T> = {
         callback: async () => (await dbModel.updateOne(parsedQueryFilter, query)) as UpdateResult | T,
       };
@@ -178,7 +179,7 @@ class DBUtil {
         default:
           throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
       }
-      return this.execute({
+      return await this.execute({
         modelName,
         operation: "UPDATE",
         data,
@@ -190,73 +191,73 @@ class DBUtil {
   }
 
   //alpha
-  async updateOneData<T>({
-    modelName,
-    operation = "UPDATE_ONE_BY_ID",
-    data,
-    id,
-  }: {
-    modelName: tDataModels;
-    operation?: string;
-    data: T;
-    id: string;
-  }): Promise<T | undefined> {
-    const { dbModel, schema } = DataModelMap[modelName];
-    const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
-    const { data: safeData, error, success } = schema.partial().safeParse(inputData);
-    if (!success) {
-      console.error("Invalid data:", error, inputData);
-      throw error;
-    }
+  // async updateOneData<T>({
+  //   modelName,
+  //   operation = "UPDATE_ONE_BY_ID",
+  //   data,
+  //   id,
+  // }: {
+  //   modelName: tDataModels;
+  //   operation?: string;
+  //   data: T;
+  //   id: string;
+  // }): Promise<T | undefined> {
+  //   const { dbModel, schema } = DataModelMap[modelName];
+  //   const inputData = data instanceof FormData ? JSON.parse(data.get("data") as string) : data;
+  //   const { data: safeData, error, success } = schema.partial().safeParse(inputData);
+  //   if (!success) {
+  //     console.error("Invalid data:", error, inputData);
+  //     throw error;
+  //   }
 
-    const oldData = await this.getData({
-      modelName,
-      operation: "GET_DATA_BY_ID_RAW",
-      request: {
-        id,
-      },
-    }).then((res) => JSON.parse(JSON.stringify(res)));
-    const oldFiles = await ModelHandler.getOldFilesFromObject({
-      modelName,
-      update: safeData,
-      id,
-      oldData,
-    });
-    const update = ObjectUtil.diff(oldData, safeData);
-    const updateQuery = this.parseUpdateObject(update);
-    console.log(updateQuery);
-    const execution: tExecution<T, T> = {
-      callback: async (session) => {
-        const savedData = await dbModel.findByIdAndUpdate(id, updateQuery, { session, new: true });
-        return savedData;
-      },
-      onSuccess: async (response) => {
-        //delete old files
-        if (oldFiles.length > 0) {
-          for (const fileKey of oldFiles) {
-            await R2API.deleteFile(fileKey);
-          }
-        }
-        return response;
-      },
-    };
+  //   const oldData = await this.getData({
+  //     modelName,
+  //     operation: "GET_DATA_BY_ID_RAW",
+  //     request: {
+  //       id,
+  //     },
+  //   }).then((res) => JSON.parse(JSON.stringify(res)));
+  //   const oldFiles = await ModelHandler.getOldFilesFromObject({
+  //     modelName,
+  //     update: safeData,
+  //     id,
+  //     oldData,
+  //   });
+  //   const update = ObjectUtil.diff(oldData, safeData);
+  //   const updateQuery = this.parseUpdateObject(update);
+  //   console.log(updateQuery);
+  //   const execution: tExecution<T, T> = {
+  //     callback: async (session) => {
+  //       const savedData = await dbModel.findByIdAndUpdate(id, updateQuery, { session, new: true });
+  //       return savedData;
+  //     },
+  //     onSuccess: async (response) => {
+  //       //delete old files
+  //       if (oldFiles.length > 0) {
+  //         for (const fileKey of oldFiles) {
+  //           await R2API.deleteFile(fileKey);
+  //         }
+  //       }
+  //       return response;
+  //     },
+  //   };
 
-    try {
-      if (operation !== "UPDATE_ONE_BY_ID") {
-        throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
-      }
-      return this.execute({
-        modelName,
-        data,
-        operation: "UPDATE",
-        execution,
-      });
-    } catch (err) {
-      console.error("Error saving data:", err);
-      if (execution.onFailure) await execution.onFailure();
-      throw new Error("Data saving failed");
-    }
-  }
+  //   try {
+  //     if (operation !== "UPDATE_ONE_BY_ID") {
+  //       throw new Error(`Operation ${operation} is not supported for model ${modelName}`);
+  //     }
+  //     return this.execute({
+  //       modelName,
+  //       data,
+  //       operation: "UPDATE",
+  //       execution,
+  //     });
+  //   } catch (err) {
+  //     console.error("Error saving data:", err);
+  //     if (execution.onFailure) await execution.onFailure();
+  //     throw new Error("Data saving failed");
+  //   }
+  // }
 
   async deleteData<T>({
     modelName,
@@ -302,7 +303,7 @@ class DBUtil {
   protected parseUpdateQuery<T>(updates: TUpdate<T>): UpdateQuery<T> {
     const updateQuery: UpdateQuery<T> = {};
 
-    for (const update in Object.keys(updates)) {
+    for (const update of Object.keys(updates)) {
       const ope = `$${update}` as keyof UpdateQuery<T>;
       updateQuery[ope] = updates[update as keyof TUpdate<T>];
     }

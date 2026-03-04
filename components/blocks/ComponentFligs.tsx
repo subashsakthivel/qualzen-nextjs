@@ -231,7 +231,7 @@ function ExhibitionView() {
                     </div>
                     <div>
                       <span className="text-[9px] tracking-[0.4em] opacity-30 block mb-2 uppercase">
-                        Dress Better Today
+                        {banner.groupName}
                       </span>
                     </div>
                   </motion.div>
@@ -266,11 +266,10 @@ function ExhibitionView() {
                 className="relative w-6 h-6 md:w-8 md:h-8  flex items-center justify-center group"
               >
                 <span
-                  className={` tabular-nums transition-all duration-500 ${
-                    index === i
+                  className={` tabular-nums transition-all duration-500 ${index === i
                       ? "opacity-100 scale-125"
                       : "opacity-20 scale-100 group-hover:opacity-40"
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </span>

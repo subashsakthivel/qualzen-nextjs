@@ -13,9 +13,7 @@ const ContentDBSchema = new mongoose.Schema<TContent>({
     required: true,
   },
   description: String,
-  bgImg: {
-    type: { img: String, imgLink: String },
-  },
+  bgImg: { img: String, imgLink: String },
   clickAction: [{ text: String, action: String }],
   titleLink: String,
   additionalParams: [{ key: String, value: String }],
