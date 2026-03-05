@@ -1,5 +1,5 @@
-const matchers = [
-  {
+const matchers = {
+  url: {
     type: "url",
     isValid: (value: string): boolean => {
       try {
@@ -10,13 +10,13 @@ const matchers = [
       }
     },
   },
-  {
+  url_path: {
     type: "url_path",
     isValid: (value: string): boolean => {
       return value.startsWith("/") && !value.includes("<");
     },
   },
-];
+}
 
 class FormatUtilClass {
   getFormat(value: any): string {
@@ -24,13 +24,17 @@ class FormatUtilClass {
       return "undefined";
     }
     if (typeof value === "string") {
-      for (const { isValid, type } of matchers) {
+      for (const { isValid, type } of Object.values(matchers)) {
         if (isValid(value)) {
           return type;
         }
       }
     }
     return "string";
+  }
+
+  isValid(value: string, type: keyof typeof matchers) {
+    return matchers[type].isValid(value);
   }
 }
 const FormatUtil = new FormatUtilClass();

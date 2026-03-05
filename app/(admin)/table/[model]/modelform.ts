@@ -406,7 +406,7 @@ const setNestedShape = (
       current[key] = validator;
     } else {
       if (!current[key]) {
-        current[key] = z.object({});
+        current[key] = {};
       }
       current = current[key];
     }

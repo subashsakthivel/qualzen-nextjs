@@ -57,7 +57,7 @@ export const ModelConfig: {
 } = {
   category: {
     schema: CategorySchema,
-    columns: ["name", "description", "image"],
+    columns: ["_id", "name", "description", "image"],
   },
   product: {
     schema: ProductSchema,
@@ -78,7 +78,7 @@ export const ModelConfig: {
   },
   content: {
     schema: ContentSchema,
-    columns: [],
+    columns: ["_id", "title", "description", "isActive", "groupName"],
   },
   order: {
     schema: ContentSchema,

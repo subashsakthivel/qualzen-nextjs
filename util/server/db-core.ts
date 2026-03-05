@@ -51,7 +51,12 @@ class DBUtil {
         : undefined;
       const select = request.options?.select;
       const execution: tExecution<tGetResponse<T>, tGetResponse<T>> = {
-        callback: async () => await (dbModel as PaginateModel<T>).paginate(queryFilter, options),
+        callback: async () => {
+          if (typeof (dbModel as PaginateModel<T>).paginate === "function") {
+            return await (dbModel as PaginateModel<T>).paginate(queryFilter, options);
+          }
+          return await dbModel.find(queryFilter ?? {}, select, options);
+        },
       };
 
       if (operation === "GET_DATA_MANY") {

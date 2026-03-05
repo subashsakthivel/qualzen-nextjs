@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import SelectInput from "./select-input";
 import SubFormArray from "./subformarray";
+import FormatUtil from "@/util/formetUtil";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
@@ -126,7 +127,7 @@ export function FieldRenderer({
             <Card className="overflow-hidden">
               <CardContent>
                 <div className="flex justify-center relative m-10">
-                  {(field.value instanceof File || typeof field.value === "string") && (
+                  {(field.value instanceof File || (typeof field.value === "string" && FormatUtil.isValid(field.value, "url"))) && (
                     <Image
                       alt="Product image"
                       className="aspect-square rounded-md object-cover"
@@ -142,14 +143,16 @@ export function FieldRenderer({
                   {Array.isArray(field.value) && (
                     <div className="grid grid-cols-2 gap-2 m-2">
                       {field.value.map((file: File | string, index: number) => (
-                        <Image
-                          key={index}
-                          alt={`Product image ${index + 1}`}
-                          className="aspect-square rounded-md object-cover"
-                          height={300}
-                          width={300}
-                          src={typeof file === "string" ? file : URL.createObjectURL(file)}
-                        />
+                        (file instanceof File || (typeof file === "string" && FormatUtil.isValid(file, "url"))) && (
+                          <Image
+                            key={index}
+                            alt={`Product image ${index + 1}`}
+                            className="aspect-square rounded-md object-cover"
+                            height={300}
+                            width={300}
+                            src={typeof file === "string" ? file : URL.createObjectURL(file)}
+                          />
+                        )
                       ))}
                     </div>
                   )}

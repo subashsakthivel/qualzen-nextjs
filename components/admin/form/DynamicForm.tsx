@@ -38,7 +38,7 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
     console.log("WATCH:", watch(), "errors : ", errors);
     setError(undefined);
     setStatus("submitting");
-    console.log("form Data ", JSON.parse(JSON.stringify(data)))
+    console.log("form Data ", data)
     const requestData = {} as any;
     formConfigMeta!.fields.map((field) => {
       const value = ObjectUtil.getValue({ obj: data, path: field.path });

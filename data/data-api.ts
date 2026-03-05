@@ -4,6 +4,7 @@ import { tDataModels } from "../util/util-type";
 import { getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import { MongoError, MongoServerError } from "mongodb";
 import { ClientError } from "@/lib/error-codes";
+import ObjectUtil from "@/util/ObjectUtil";
 
 class DataAPIclass {
   async getData({ modelName, operation, request }: tGet): Promise<any> {
@@ -29,10 +30,6 @@ class DataAPIclass {
     request: any;
   }): Promise<any> {
     try {
-      request = this.buildTranformedObject(
-        request,
-        getFormMetaData(modelName as "category" | "content" | "offer"),
-      );
 
       const response = await Persistance.saveData({ modelName, operation, data: request });
       return response;
@@ -121,20 +118,7 @@ class DataAPIclass {
     const result: Record<string, any> = {};
     for (const { name, path } of configMeta.fields) {
       if (flat[name]) {
-        const value = flat[name];
-        if (value === undefined) continue;
-
-        const keys = path.split(".");
-        let current = result;
-
-        keys.forEach((key, index) => {
-          if (index === keys.length - 1) {
-            current[key] = value;
-          } else {
-            current[key] ??= {};
-            current = current[key];
-          }
-        });
+        ObjectUtil.setValue({ obj: result, path, value: ObjectUtil.getValue({ obj: flat, path: name }) });
       }
     }
 

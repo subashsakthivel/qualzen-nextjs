@@ -26,6 +26,8 @@ import {
   Trash2Icon,
   EditIcon,
   EyeIcon,
+  Delete,
+  DeleteIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,6 +57,7 @@ import { TCategory } from "@/schema/Category";
 import FormatUtil from "@/util/formetUtil";
 import Link from "next/link";
 import { MultiSelect } from "./ui/multi-select";
+import { useRouter } from "next/navigation";
 
 // Data types that the table can detect
 type DataType = "string" | "number" | "date" | "boolean" | "array" | "object" | "unknown";
@@ -105,6 +108,7 @@ export default function DynamicTable({
   const [filter, setFilter] = useState<string>();
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [state, setState] = useState<boolean>(false);
+  const router = useRouter();
 
   const { data: tableData = [], status } = useQuery({
     queryKey: [model, selectedColumns],
@@ -114,6 +118,7 @@ export default function DynamicTable({
   });
 
   async function fetchData() {
+    debugger;
     const options = {
       page: currentPage,
       limit: currentPageSize,
@@ -127,7 +132,8 @@ export default function DynamicTable({
     });
     const modelConfig = ModelConfig[model];
     console.log(modelConfig);
-    const data = tableData.docs.map((doc: Record<string, any>) => {
+    const rows = tableData.docs ? tableData.docs : tableData;
+    const data = rows.map((doc: Record<string, any>) => {
       const columnConfig = (modelConfig.columnConfig ?? {}) as Record<string, any>;
       Object.keys(doc).map((key) => {
         if (columnConfig[key]?.parse) {
@@ -536,6 +542,27 @@ export default function DynamicTable({
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!id) {
+      return;
+    }
+    const response = await DataClientAPI.deleteData({ modelName: model, request: { id } })
+    if (response?.success) {
+      fetchData();
+    }
+  };
+
+  const handleEdit = (id: string) => {
+    if (!id) {
+      return;
+    }
+    router.push(`/form/${model}/${id}?operation=edit`);
+  };
+
+  const handleView = (id: string) => {
+    router.push(`/form/${model}/${id}?operation=view`);
+  };
+
   // Update current page if total pages changes
   useEffect(() => {
     const newTotalPages = Math.ceil(sortedAndGroupedData.length / currentPageSize);
@@ -681,8 +708,8 @@ export default function DynamicTable({
                           <CollapsibleTrigger className="flex items-center w-full">
                             <ChevronRight
                               className={`h-4 w-4 mr-2 transition-transform ${expandedGroups.includes(row.__groupKey)
-                                  ? "transform rotate-90"
-                                  : ""
+                                ? "transform rotate-90"
+                                : ""
                                 }`}
                             />
                             <span className="font-medium">
@@ -741,8 +768,14 @@ export default function DynamicTable({
                             <EditIcon />
                           </Button>
                         )}
-                        <Button>
+                        <Button onClick={() => handleView(row._id)}>
                           <EyeIcon />
+                        </Button>
+                        <Button onClick={() => handleDelete(row._id)}>
+                          <Trash2Icon />
+                        </Button>
+                        <Button onClick={() => handleEdit(row.id)}>
+                          <EditIcon />
                         </Button>
                       </TableCell>
                     </TableRow>
