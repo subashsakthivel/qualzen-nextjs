@@ -3,6 +3,7 @@ import R2API from "../file/S3Util";
 import { ModelType } from "@/data/model-config";
 import mongoose, { PaginateResult } from "mongoose";
 import { FileStoreModel } from "@/model/FileStore";
+import { Content } from "@radix-ui/react-dialog";
 
 //todo: change the any later
 const modelMap: Record<string, any> = {
@@ -19,6 +20,14 @@ const modelMap: Record<string, any> = {
       {
         format: "image/png",
         path: "images",
+      },
+    ],
+  },
+  content: {
+    files: [
+      {
+        format: "image/png",
+        path: "bgImg.img",
       },
     ],
   },
@@ -134,6 +143,7 @@ class ModelHandler {
       for (const doc of documents) {
         for (const fileConfig of modelConfig.files) {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
+
           if (!key) continue;
           if (Array.isArray(key) && key.length === 0) continue;
           if (Array.isArray(key)) {

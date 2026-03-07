@@ -1,4 +1,3 @@
-import { TCategory } from "@/schema/Category";
 import { TContent } from "@/schema/Content";
 import mongoose from "mongoose";
 

@@ -68,7 +68,7 @@ const SubFormArray = ({ Pfield, register, control, name, Pname }: FieldRendererP
             </div>
           </div>
         ))}
-      <Button type="button" onClick={() => append(defaultValue())}>
+      <Button type="button" onClick={() => append(fields.length > 0 ? fields[0] : defaultValue())}>
         Add
       </Button>
     </div>

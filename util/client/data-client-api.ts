@@ -108,7 +108,6 @@ class DataServiceClass {
 
       return { success: true, data: resJson.data };
     } catch (err) {
-      debugger;
       console.error("Error posting data:", err);
       return {
         success: false,

@@ -105,6 +105,7 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
           id,
         },
       });
+      debugger;
       if (response.success) {
         await processUploadFileRequests(uploadRequest, uploadFiles, response);
         setStatus("success");
@@ -121,7 +122,6 @@ export function DynamicForm({ model, id }: DynamicFormProps) {
         },
       });
       if (response.success) {
-        debugger;
         await processUploadFileRequests(uploadRequest, uploadFiles, response);
         setStatus("success");
       } else {
