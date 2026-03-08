@@ -6,11 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Minus, Plus, Truck, Shield, RotateCcw, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 import { useCart } from "./cart-provider";
 import { TProduct } from "@/schema/Product";
-import { FaBuyNLarge } from "react-icons/fa";
+import { useSession } from "@/lib/auth-client";
 
 const ProductShowcase = ({ product }: { product: TProduct }) => {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -19,8 +20,9 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
   const [variant, setVariant] = useState(product.variants[0]);
 
   const { cartItems, addToCart, updateQuantity } = useCart();
+  const router = useRouter();
 
-  // useEffect(() => {
+  const sessions = useSession();
   //   async function loadProduct() {
   //     const fetchProduct = async (): Promise<TProduct | undefined> => {
   //       // const resultData = await getDataFromServer(DataSourceMap["product"], "GET_DATA", {
@@ -109,6 +111,10 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
   }
 
   const handleAddToCart = () => {
+    if (!sessions.data) {
+      router.push("/signin");
+      return;
+    }
     addToCart(product, variant);
   };
 
@@ -161,9 +167,8 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
               <button
                 key={index}
                 onClick={() => setSelectedImage(index)}
-                className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${
-                  selectedImage === index ? "border-primary" : "border-transparent"
-                }`}
+                className={`aspect-square bg-muted rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === index ? "border-primary" : "border-transparent"
+                  }`}
               >
                 <Image
                   src={image}

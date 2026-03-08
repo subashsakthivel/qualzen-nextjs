@@ -1,4 +1,3 @@
-import { group } from "console";
 import { z } from "zod";
 
 export const ContentSchema = z.object({
