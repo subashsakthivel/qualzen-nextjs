@@ -5,22 +5,22 @@ import { Input } from "@/components/ui/input";
 import AuthProviders from "./providers";
 import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export function SignUpForm({
   className,
   callbackUrl,
   ...props
 }: React.ComponentPropsWithoutRef<"form"> & { callbackUrl?: string }) {
+  const router = useRouter();
   async function handleSubmit(formdata: FormData) {
-    const response = await signIn("credentials", {
-      username: formdata.get("username"),
-      email: formdata.get("email"),
-      password: formdata.get("password"),
+    await authClient.signUp.email({
+      name: formdata.get("name") as string,
+      email: formdata.get("email") as string,
+      password: formdata.get("password") as string,
     });
-    if (response?.error) {
-      console.error("Error signing up:", response.error); // Handle error
-    }
+    router.push(AUTH_URLS.SIGN_IN);
   }
 
   return (
@@ -37,16 +37,16 @@ export function SignUpForm({
         </div>
         <div className="relative grid gap-2">
           <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input type="text" placeholder="Enter your username" className="pl-10" />
+          <Input type="text" name="name" placeholder="Enter your name" className="pl-10" />
         </div>
         <div className="relative grid gap-2">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input type="email" placeholder="Enter your email" className="pl-10" />
+          <Input type="email" name="email" placeholder="Enter your email" className="pl-10" />
         </div>
         <div className=" grid gap-2">
           <div className="relative">
             <EyeOffIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground cursor-pointer" />
-            <Input type="password" placeholder="Password" className="pl-10" />
+            <Input type="password" name="password" placeholder="Password" className="pl-10" />
           </div>
         </div>
         <Button type="submit" className="w-full">

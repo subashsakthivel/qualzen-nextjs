@@ -2,25 +2,27 @@ import { betterAuth } from "better-auth";
 import mongodb from "./mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
 export const auth = betterAuth({
+    appName: "Qualzen",
     user: {
         additionalFields: {
             role: {
                 type: "string",
                 default: "user",
                 input: false,
-                required : false
+                required: false
             },
             username: {
                 type: "string",
                 input: true,
-                required : false
+                required: false
             }
         },
-     },
-    
+    },
+
     fetchOptions: {
-        onError: async (context : any) => {
+        onError: async (context: any) => {
             const { response } = context;
             if (response.status === 429) {
                 const retryAfter = response.headers.get("X-Retry-After");
@@ -28,19 +30,22 @@ export const auth = betterAuth({
             }
         },
     },
-    database: mongodbAdapter(mongodb.db , { client : mongodb.client , }),
+    database: mongodbAdapter(mongodb.db, { client: mongodb.client, }),
     emailAndPassword: {
-        enabled : true,
+        enabled: true,
+        autoSignIn: true
     },
     socialProviders: {
-        google : {
-            clientId : process.env.AUTH_GOOGLE_ID as string,
-            clientSecret : process.env.AUTH_GOOGLE_SECRET as string,
+        google: {
+            clientId: process.env.AUTH_GOOGLE_ID as string,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
+            accessType: "offline",
+            prompt: "select_account consent",
             mapProfileToUser: (profile) => {
                 console.log("profile", profile)
                 return {
-                ...profile,
-                username: profile.name,
+                    ...profile,
+                    username: profile.name,
                 };
             },
         }
@@ -57,6 +62,7 @@ export const auth = betterAuth({
         cookiePrefix: "varfeo"
     },
     plugins: [
-        nextCookies() , // make sure this is the last plugin in the array
+        twoFactor(),
+        nextCookies(), // make sure this is the last plugin in the array
     ]
 });

@@ -1,6 +1,9 @@
 import "../globals.css";
 import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,11 +16,18 @@ const imffcs = Noto_Sans({
   variable: "--font-imffcs",
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth.api.getSession({
+    headers: await headers() // you need to pass the headers object.
+  })
+  if (!session) {
+    redirect("/signin")
+  }
+
   return (
     <html lang="en" className="h-full">
       <body className={imffcs.className + " min-w-full max-w-full overflow-x-hidden "}>

@@ -5,14 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthProviders from "./providers";
 import { AUTH_URLS } from "@/constants/url-mapper";
-import { Mail, User } from "lucide-react";
+import { Mail } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export function SignInForm({
   className,
   callbackUrl,
   ...props
 }: React.ComponentPropsWithoutRef<"form"> & { callbackUrl?: string }) {
+  const router = useRouter();
 
+  async function handleSignin(formdata: FormData) {
+    await authClient.signIn.email({
+      email: formdata.get("email") as string,
+      password: formdata.get("password") as string,
+    }, {
+      async onSuccess(context) {
+        if (context.data.twoFactorRedirect) {
+          router.push("/two-factor");
+        } else {
+          router.push("/");
+        }
+      }
+    });
+  }
 
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
@@ -24,27 +41,25 @@ export function SignInForm({
       </div> */}
       <div className="grid gap-6">
         <AuthProviders callbackUrl={callbackUrl} />
-        {/* <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-          <span className="relative z-10 bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div> */}
-        {/* <div className="relative grid gap-2">
-          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input type="username" placeholder="Enter your Username or Email" className="pl-10" />
-        </div>
-        <div className="grid gap-2">
-          <div className="flex items-center">
-            <Label htmlFor="password">Password</Label>
-            <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
-              Forgot your password?
-            </a>
+
+        <form action={handleSignin}>
+          <div className="relative grid gap-2">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input type="email" placeholder="Enter your Email" className="pl-10" />
           </div>
-          <Input id="password" type="password" />
-        </div>
-        <Button type="submit" className="w-full">
-          Login
-        </Button> */}
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <Label htmlFor="password">Password</Label>
+              <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
+                Forgot your password?
+              </a>
+            </div>
+            <Input id="password" type="password" />
+          </div>
+          <Button type="submit" className="w-full">
+            Login
+          </Button>
+        </form>
       </div>
       {/* <div className="text-center text-sm">
         Don&apos;t have an account?{" "}

@@ -7,8 +7,8 @@ import { authClient } from "@/lib/auth-client";
 
 const AuthProviders = ({ callbackUrl }: { callbackUrl?: string }) => {
 
-  const googleSignIn = async() => {
-     await authClient.signIn.social({ provider : "google", callbackURL: callbackUrl , errorCallbackURL : "/auth/error" });
+  const googleSignIn = async () => {
+    await authClient.signIn.social({ provider: "google", callbackURL: callbackUrl, errorCallbackURL: "/auth/error" });
   }
 
   return (
@@ -26,7 +26,7 @@ const AuthProviders = ({ callbackUrl }: { callbackUrl?: string }) => {
         type="button"
         variant="outline"
         className="flex items-center justify-center gap-2"
-        // need to add onClick handler for apple sign in
+      // need to add onClick handler for apple sign in
       >
         <FaApple size={16} />
         <span>Continue with Apple</span>
