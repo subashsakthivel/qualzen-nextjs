@@ -1,14 +1,25 @@
 "use client";
 
-import { Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
+import { createContext, useContext } from "react";
+import { authClient } from "@/lib/auth-client";
 
-export default function SessionProviderClientComponent({
-  children,
-  session,
-}: {
-  children: React.ReactNode;
-  session: Session | null;
-}) {
-  return <SessionProvider session={session}>{children}</SessionProvider>;
+type SessionContextType = {
+  session: ReturnType<typeof authClient.useSession>["data"];
+  isPending: boolean;
+};
+
+const SessionContext = createContext<SessionContextType | null>(null);
+
+export function SessionProviderClientComponent({ children }: { children: React.ReactNode }) {
+  const { data: session, isPending } = authClient.useSession()
+
+  return (
+    <SessionContext.Provider value={{ session, isPending }}>
+      {children}
+    </SessionContext.Provider>
+  );
 }
+
+export const useAppSession = () => {
+  return useContext(SessionContext);
+};

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import "./../globals.css";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
-import SessionProviderClientComponent from "../(auth)/SessionProviderClientComponent";
+import { SessionProviderClientComponent } from "../(auth)/SessionProviderClientComponent";
 import { CartProvider } from "@/components/cart-provider";
-import { Header } from "@/components/Header";
 import { Noto_Sans_Old_Persian } from "next/font/google";
 import FooterSection from "@/components/footer-section";
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,11 +22,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en" className={` ${imffcs.variable}`}>
       <body className={`dark`}>
-        <SessionProviderClientComponent session={session}>
+        <SessionProviderClientComponent>
           <CartProvider>
             <main className="max-w-full ">{children}</main>
             <FooterSection />

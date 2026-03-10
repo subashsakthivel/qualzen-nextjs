@@ -1,10 +1,10 @@
-import SessionProviderClientComponent from "@/app/(auth)/SessionProviderClientComponent";
-import { authOptions } from "@/lib/authOptions";
 import { Inter } from "next/font/google";
 import "../globals.css";
 import type { Metadata } from "next";
-import { getServerSession } from "next-auth";
 import { GalleryVerticalEnd } from "lucide-react";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -17,34 +17,37 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+
+
+
+
   return (
     <html lang="en" className="h-full">
       <body>
-        <SessionProviderClientComponent session={session}>
-          <div className="grid min-h-svh lg:grid-cols-2">
-            <div className="flex flex-col gap-4 p-6 md:p-10">
-              <div className="flex justify-center gap-2 md:justify-start">
-                <a href="#" className="flex items-center gap-2 font-medium">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                    <GalleryVerticalEnd className="size-4" />
-                  </div>
-                  Varfeo
-                </a>
-              </div>
-              <div className="flex flex-1 items-center justify-center">
-                <div className="w-full max-w-xs">{children}</div>
-              </div>
+
+        <div className="grid min-h-svh lg:grid-cols-2">
+          <div className="flex flex-col gap-4 p-6 md:p-10">
+            <div className="flex justify-center gap-2 md:justify-start">
+              <a href="#" className="flex items-center gap-2 font-medium">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <GalleryVerticalEnd className="size-4" />
+                </div>
+                Varfeo
+              </a>
             </div>
-            <div className="relative hidden bg-muted lg:block">
-              {/* <Image
+            <div className="flex flex-1 items-center justify-center">
+              <div className="w-full max-w-xs">{children}</div>
+            </div>
+          </div>
+          <div className="relative hidden bg-muted lg:block">
+            {/* <Image
           src="/examples/authntication-light.png"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         /> */}
-            </div>
           </div>
-        </SessionProviderClientComponent>
+        </div>
+
       </body>
     </html>
   );

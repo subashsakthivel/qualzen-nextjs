@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { TUserInfo, UserInfoSchema } from "@/schema/UserInfo";
 import mongoosePaginate from "mongoose-paginate-v2";
-import { v4 as uuidv4 } from "uuid";
 
 const userInfoDbSchema = new mongoose.Schema<TUserInfo>(
   {
@@ -9,7 +8,6 @@ const userInfoDbSchema = new mongoose.Schema<TUserInfo>(
       type: String,
       immutable: true,
       unique: true,
-      default: uuidv4,
     },
     name: {
       type: String,

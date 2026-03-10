@@ -6,25 +6,52 @@ import AuthProviders from "./providers";
 import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
+import z, { ZodError } from "zod";
+import { passwordSchema } from "@/schema/zod-schema";
+
+const userSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters long"),
+  email: z.email("Invalid email address"),
+  password: passwordSchema,
+});
 
 export function SignUpForm({
   className,
-  callbackUrl,
+  callbackUrl = "/",
   ...props
 }: React.ComponentPropsWithoutRef<"form"> & { callbackUrl?: string }) {
-  const router = useRouter();
-  async function handleSubmit(formdata: FormData) {
-    await authClient.signUp.email({
+  const [state, formAction, isPending] = useActionState(handleSignUp, {
+    message: "",
+    color: "",
+  });
+
+  async function handleSignUp(prevState: { message: string | ZodError; color: string }, formdata: FormData) {
+    let nextState = prevState;
+    const formValues = {
       name: formdata.get("name") as string,
       email: formdata.get("email") as string,
       password: formdata.get("password") as string,
+    }
+    const formValidation = userSchema.safeParse(formValues);
+    if (!formValidation.success) {
+      nextState = { message: formValidation.error, color: "red" };
+      return nextState;
+    }
+    await authClient.signUp.email({
+      callbackURL: callbackUrl,
+      ...formValues,
+    }, {
+      async onError(context) {
+        console.log("Error", context);
+        nextState = { message: context.error.message, color: "red" };
+      }
     });
-    router.push(AUTH_URLS.SIGN_IN);
+    return nextState;
   }
 
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props} action={handleSubmit}>
+    <form className={cn("flex flex-col gap-6", className)} {...props} action={formAction}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Create your account</h1>
       </div>
@@ -49,8 +76,19 @@ export function SignUpForm({
             <Input type="password" name="password" placeholder="Password" className="pl-10" />
           </div>
         </div>
-        <Button type="submit" className="w-full">
-          Create an Account
+        <div>
+          {state.message && (
+            <div className={cn("text-sm ", state.color === "red" ? "text-red-600" : "text-green-700")}>
+              !{typeof state.message === "string" ? <p>{state.message}</p> : <div>
+                {state.message.issues.map((issue, index) => (
+                  <p key={index}>{issue.message}</p>
+                ))}
+              </div>}
+            </div>
+          )}
+        </div>
+        <Button type="submit" className="w-full disabled:opacity-50" disabled={isPending}>
+          {isPending ? "Creating Account..." : "Create an Account"}
         </Button>
       </div>
       <div className="text-center text-sm">
