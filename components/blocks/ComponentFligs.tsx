@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, use } from "react";
 import { motion, AnimatePresence, Variants, useScroll, useMotionValueEvent } from "framer-motion";
 import Image from "next/image";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import { TContent } from "@/schema/Content";
 import { Button } from "../ui/button";
 import Link from "next/link";

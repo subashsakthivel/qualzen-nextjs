@@ -8,19 +8,13 @@ export const auth = betterAuth({
     user: {
         additionalFields: {
             role: {
-                type: "string",
+                type: ["user", "admin"],
                 default: "user",
                 input: false,
-                required: false
-            },
-            username: {
-                type: "string",
-                input: true,
-                required: false
+                required: true
             }
         },
     },
-
     fetchOptions: {
         onError: async (context: any) => {
             const { response } = context;
@@ -51,8 +45,22 @@ export const auth = betterAuth({
         }
     },
     rateLimit: {
+        storage: "database",
         window: 10,
         max: 100,
+        customRules: {
+            "/signin/email": {
+                window: 10,
+                max: 3,
+            },
+            "/two-factor": async (request) => {
+                // custom function to return rate limit window and max
+                return {
+                    window: 10,
+                    max: 3,
+                }
+            }
+        },
         enabled: true,
     },
     advanced: {
@@ -61,8 +69,19 @@ export const auth = betterAuth({
     cookies: {
         cookiePrefix: "varfeo"
     },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // default: 7 days (in seconds)
+        updateAge: 60 * 60 * 24,      // update session every 24 hours
+    },
+    hooks: {
+        async after(inputContext) {
+
+        },
+    },
     plugins: [
         twoFactor(),
         nextCookies(), // make sure this is the last plugin in the array
     ]
 });
+
+type Session = typeof auth.$Infer.Session

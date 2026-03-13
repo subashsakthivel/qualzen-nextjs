@@ -1,7 +1,7 @@
 "use client";
 import { authClient } from '@/lib/auth-client'
 import { TUserInfo } from '@/schema/UserInfo';
-import DataClientAPI from '@/util/client/data-client-api';
+import DataClientAPI from '@/api/client/data-api';
 import React, { useEffect } from 'react'
 import QRCode from 'react-qr-code';
 import { Input } from '../ui/input';

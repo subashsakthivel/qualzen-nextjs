@@ -1,6 +1,6 @@
+import DataAPI from "@/data/data-api";
 import { DataModel } from "@/model/DataModels";
-import { TOrder, TOrderedProducts } from "@/schema/Order";
-import { postData } from "@/util/dataAPI";
+import { TOrder } from "@/schema/Order";
 import Razorpay from "razorpay";
 import { Orders } from "razorpay/dist/types/orders";
 
@@ -26,6 +26,10 @@ export class PaymentService {
       throw new Error("Failed to create Razorpay order");
     }
     orderData.transactionId = order.id;
-    return await postData(DataModel["order"], orderData);
+    return await DataAPI.saveData({
+      modelName: "order",
+      operation: "CREATE",
+      request: orderData,
+    });
   }
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem } from "../ui/carousel";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import Link from "next/link";
 import { TProduct } from "@/schema/Product";
 import { TCategory } from "@/schema/Category";

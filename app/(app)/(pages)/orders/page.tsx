@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Truck, Package, CheckCircle, Clock } from "lucide-react";
 import Image from "next/image";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import { TOrder } from "@/schema/Order";
 
 export const Orders = async () => {

@@ -6,6 +6,7 @@ const options = z.object({
   limit: z.number().min(5).max(50),
   page: z.number().min(1).max(1000),
   select: z.union([z.array(z.string().max(100)).max(10), z.string()]),
+  sort: z.record(z.string().max(100), z.enum(["asc", "desc"]))
 });
 const get_data_by_id = z.object({
   operation: z.enum(["GET_DATA_BY_ID", "GET_DATA_BY_ID_RAW"]),

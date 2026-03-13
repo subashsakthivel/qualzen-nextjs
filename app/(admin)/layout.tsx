@@ -24,13 +24,14 @@ export default async function RootLayout({
   const session = await auth.api.getSession({
     headers: await headers() // you need to pass the headers object.
   })
-  if (!session) {
+  if (!session || !session.user.twoFactorEnabled || session.user.role !== "admin") {
     redirect("/signin")
   }
 
   return (
     <html lang="en" className="h-full">
       <body className={imffcs.className + " min-w-full max-w-full overflow-x-hidden "}>
+        <h1>{session.user.email}</h1>
         {children}
       </body>
     </html>

@@ -51,7 +51,7 @@ import { useQuery } from "@tanstack/react-query";
 // import { FetchDataParams, FilterRule, FilterState, getDataFromServer } from "@/util/dataAPI";
 import { ModelConfig } from "@/data/model-config";
 import { tDataModels, TFilter } from "@/util/util-type";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import FilterBuilder from "./filter-builder";
 import { TCategory } from "@/schema/Category";
 import FormatUtil from "@/util/formetUtil";

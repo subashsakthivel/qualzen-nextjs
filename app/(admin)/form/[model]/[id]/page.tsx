@@ -8,7 +8,6 @@ export default async function Form({
 }): Promise<JSX.Element> {
     const { model, id } = await params;
 
-
     return (
         <div>
             <DynamicForm model={model} id={id} />

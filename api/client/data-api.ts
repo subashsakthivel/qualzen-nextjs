@@ -1,5 +1,4 @@
-import { tDataModels, tGetDataParams } from "../util-type";
-import { DataSourceMap } from "./data-source-mappings";
+import { tDataModels, tGetDataParams } from "@/util/util-type";
 
 class DataServiceClass {
   async getData<T>({
@@ -9,7 +8,7 @@ class DataServiceClass {
     id,
   }: Omit<tGetDataParams<T>, "options"> & { request: any }): Promise<any> {
     try {
-      const { url } = DataSourceMap[modelName];
+      const url = `/api/dataAPI/${modelName}`;
 
       const encodedUrl = this.buildEncodedUrl(url, { request, operation, id });
 
@@ -29,25 +28,6 @@ class DataServiceClass {
       throw new Error("Unknown error");
     }
   }
-  buildEncodedUrl(baseUrl: string, request: Record<string, any>): string {
-    const queryString = this.encodeParams(request);
-    return `${baseUrl}?${queryString}`;
-  }
-  encodeParams(params: Record<string, any>): string {
-    const query = new URLSearchParams();
-
-    for (const key in params) {
-      if (params[key] !== undefined && params[key] !== null) {
-        if (params[key] instanceof Object) {
-          query.append(key, JSON.stringify(params[key]));
-        } else {
-          query.append(key, String(params[key]));
-        }
-      }
-    }
-
-    return query.toString();
-  }
   async saveData({
     modelName,
     request,
@@ -56,7 +36,7 @@ class DataServiceClass {
     request: any;
   }): Promise<{ success: boolean; data: any; message?: string }> {
     try {
-      const { url } = DataSourceMap[modelName];
+      const url = `/api/dataAPI/${modelName}`;
 
       const response = await fetch(url, {
         headers: {
@@ -90,7 +70,7 @@ class DataServiceClass {
     request: any;
   }): Promise<{ success: boolean; data: any; message?: string }> {
     try {
-      const { url } = DataSourceMap[modelName];
+      const url = `/api/dataAPI/${modelName}`;
 
       const response = await fetch(url, {
         body: JSON.stringify(request),
@@ -118,7 +98,7 @@ class DataServiceClass {
   }
   async deleteData({ modelName, request }: { modelName: tDataModels; request: any }) {
     try {
-      const { url } = DataSourceMap[modelName];
+      const url = `/api/dataAPI/${modelName}`;
 
       const response = await fetch(url, {
         body: JSON.stringify({ request: { ...request } }),
@@ -141,6 +121,26 @@ class DataServiceClass {
         message: err instanceof Error ? err.message : "Unknown error",
       };
     }
+  }
+
+  buildEncodedUrl(baseUrl: string, request: Record<string, any>): string {
+    const queryString = this.encodeParams(request);
+    return `${baseUrl}?${queryString}`;
+  }
+  encodeParams(params: Record<string, any>): string {
+    const query = new URLSearchParams();
+
+    for (const key in params) {
+      if (params[key] !== undefined && params[key] !== null) {
+        if (params[key] instanceof Object) {
+          query.append(key, JSON.stringify(params[key]));
+        } else {
+          query.append(key, String(params[key]));
+        }
+      }
+    }
+
+    return query.toString();
   }
 }
 const DataClientAPI = new DataServiceClass();

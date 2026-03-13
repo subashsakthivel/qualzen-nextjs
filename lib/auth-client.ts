@@ -1,9 +1,11 @@
 import { createAuthClient } from "better-auth/react";
 import { nextCookies } from "better-auth/next-js";
-import { twoFactorClient } from "better-auth/client/plugins";
+import { inferAdditionalFields, twoFactorClient } from "better-auth/client/plugins";
+import { auth } from "./auth";
 export const authClient = createAuthClient({
   baseURL: process.env.BASE_URL!, // Optional if the API base URL matches the frontend
   plugins: [
+    inferAdditionalFields<typeof auth>(),
     twoFactorClient({
       onTwoFactorRedirect() {
         window.location.href = "/two-factor" // Handle the 2FA verification redirect

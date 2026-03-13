@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormFieldMeta, getFormMetaData, tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import ObjectUtil from "@/util/ObjectUtil";

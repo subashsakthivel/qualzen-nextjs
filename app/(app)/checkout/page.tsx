@@ -17,7 +17,7 @@ import {
 import { TAddress } from "@/schema/Address";
 import { useSession } from "@/lib/auth-client";
 import { signIn } from "next-auth/react";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import { useCart } from "@/components/cart-provider";
 import { Separator } from "@/components/ui/separator";
 import Script from "next/script";

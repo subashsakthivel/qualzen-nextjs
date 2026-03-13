@@ -1,5 +1,5 @@
 import { TCategory } from "@/schema/Category";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import { tDataModels } from "@/util/util-type";
 
 import z from "zod";

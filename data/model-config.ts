@@ -97,14 +97,3 @@ export const ModelConfig: {
     columns: [],
   },
 };
-
-const groupModel = [
-  {
-    name: "Men",
-    filter: {
-      category: {
-        name: "Tshirt",
-      },
-    },
-  },
-];

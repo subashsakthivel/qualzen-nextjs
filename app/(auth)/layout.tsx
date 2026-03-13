@@ -2,9 +2,6 @@ import { Inter } from "next/font/google";
 import "../globals.css";
 import type { Metadata } from "next";
 import { GalleryVerticalEnd } from "lucide-react";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

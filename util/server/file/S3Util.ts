@@ -7,11 +7,11 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { ErrorRequest } from "../../responseUtil";
 import crypto from "crypto";
 import { FileStoreModel } from "@/model/FileStore";
 import mongoose from "mongoose";
 import DataAPI from "@/data/data-api";
+import { PredefinedErrors } from "@/lib/error-codes";
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const BUCKET_REGION = process.env.R2_BUCKET_REGION || "auto";
@@ -44,7 +44,7 @@ class S3Util {
       });
     } catch (err) {
       console.error("Error initializing S3 client:", err);
-      throw new ErrorRequest("Failed to initialize S3 client", 500);
+      throw PredefinedErrors.Server_Internal_Error;
     }
   }
 
@@ -90,7 +90,9 @@ class S3Util {
     console.log("Going to upload a image ", fileKey);
     const response = await this.client.send(command);
     console.log("debugger : Uploaded : ", fileKey);
-
+    if (!response) {
+      throw PredefinedErrors.File_Upload_Failed;
+    }
     return fileKey;
   }
 
@@ -139,7 +141,7 @@ class S3Util {
       return path;
     } catch (err) {
       console.error(err);
-      throw new ErrorRequest("Cannot delete the files", 543);
+      throw PredefinedErrors.File_Delete_Failed;
     }
   }
 
@@ -174,7 +176,7 @@ class S3Util {
         return false;
       }
       console.error("Error checking file existence:", err);
-      throw new ErrorRequest("Error checking file existence", 500);
+      throw PredefinedErrors.File_Not_Found;
     }
   }
 

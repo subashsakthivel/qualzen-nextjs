@@ -14,7 +14,7 @@ function encodeParams(params: Record<string, any>): string {
   return query.toString();
 }
 
-function decodeParams(queryString: string): Record<string, string> {
+export function decodeParams(queryString: string): Record<string, string> {
   const params = new URLSearchParams(queryString);
   const result: Record<string, string> = {};
 

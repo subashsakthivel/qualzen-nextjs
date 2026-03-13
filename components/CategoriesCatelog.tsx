@@ -14,9 +14,9 @@ export default async function CategoriesCatelog() {
   const grid_col_range =
     categories.length % 2 == 0
       ? ` grid-cols-${Math.max(categories.length / 4, 2)} md:grid-cols-${Math.max(
-          categories.length / 2,
-          2
-        )} `
+        categories.length / 2,
+        2
+      )} `
       : ` grid-cols-${Math.max(categories.length / 2, 2)} `;
   const extra_card = categories.length % 2 != 0 && categories.length % 3 !== 0;
   return (

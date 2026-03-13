@@ -33,7 +33,7 @@ import { TCategory } from "@/schema/Category";
 import { TProduct } from "@/schema/Product";
 import { TProductVariant } from "@/schema/ProductVarient";
 import { v4 as uuidv4 } from "uuid";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 import Link from "next/link";
 
 type TProductFormData = Omit<TProduct, "createdAt" | "updatedAt">;
@@ -405,9 +405,8 @@ export default function ProductForm({ id }: { id?: string }) {
                     )}
 
                     <div
-                      className={`grid grid-flow-* gap-2 ${
-                        (imageFiles?.length ?? 0) > 0 ? "grid-cols-2" : ""
-                      }`}
+                      className={`grid grid-flow-* gap-2 ${(imageFiles?.length ?? 0) > 0 ? "grid-cols-2" : ""
+                        }`}
                     >
                       {imageFiles &&
                         imageFiles.slice(1).map((imageFile, index) => (
@@ -428,11 +427,10 @@ export default function ProductForm({ id }: { id?: string }) {
 
                       <div className="flex justify-center relative ">
                         <label
-                          className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${
-                            (imageFiles?.length ?? 0) > 0
-                              ? "relative shadow-lg min-w-20"
-                              : "shadow-sm min-h-80"
-                          }`}
+                          className={`w-full min-h-20 bg-secondary text-center border border-dashed flex flex-col items-center cursor-pointer justify-center text-sm  rounded-sm   ${(imageFiles?.length ?? 0) > 0
+                            ? "relative shadow-lg min-w-20"
+                            : "shadow-sm min-h-80"
+                            }`}
                         >
                           <Upload className="h-4 w-4 text-muted-foreground" />
                           <input

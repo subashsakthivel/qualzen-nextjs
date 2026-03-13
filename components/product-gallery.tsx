@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { PaginateResult } from "mongoose";
 import React, { useState } from "react";
 import { ProductGrid } from "./product-grid";
-import DataClientAPI from "@/util/client/data-client-api";
+import DataClientAPI from "@/api/client/data-api";
 
 function ProductGallery({ initialProducts }: { initialProducts: PaginateResult<TProduct> }) {
   const [products, setProducts] = useState<TProduct[]>(initialProducts.docs);

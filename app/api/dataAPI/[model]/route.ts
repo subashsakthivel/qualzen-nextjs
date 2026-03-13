@@ -18,7 +18,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const operation = searchParams.get("operation") as string;
     const data = await auth.api.getSession(request);
-    console.log("user", data?.user.username);
+    console.log("user", data?.user.name);
     const requestObj = {
       operation,
       request: JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}"),
