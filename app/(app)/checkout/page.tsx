@@ -89,8 +89,6 @@ export default function Checkout() {
     signIn(undefined, { callbackUrl: "/checkout" });
   }
 
-  console.log("session_checkout", data);
-  debugger;
   if (data && !data.user) {
     return <>Unknown User</>;
   }

@@ -55,7 +55,7 @@ export const DataModelMap: Record<tDataModels, DataModelInterface> = {
   content: {
     schema: ContentSchema,
     dbModel: ContentModel,
-    fileObjects: [{ path: "bgImg.img" }],
+    fileObjects: [{ path: "bgImg.desktop.img" }, { path: "bgImg.mobile.img" }],
   },
   order: {
     schema: OrderSchema,

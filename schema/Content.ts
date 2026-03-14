@@ -8,10 +8,14 @@ export const ContentSchema = z.object({
   titleLink: z.string().optional(),
   bgImg: z
     .object({
-      img: z.string().optional(),
-      imgLink: z.string().optional(),
-    })
-    .optional(),
+      mobile: z.object({
+        img: z.string().optional(),
+      }).optional(),
+      desktop: z.object({
+        img: z.string(),
+      }).optional(),
+      onImageClick: z.string().optional()
+    }).optional(),
   additionalParams: z
     .array(
       z.object({

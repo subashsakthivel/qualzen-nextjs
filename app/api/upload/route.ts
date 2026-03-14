@@ -1,8 +1,8 @@
 import DataAPI from "@/data/data-api";
 import { ClientError } from "@/lib/error-codes";
+import ObjectFileStoreAPI from "@/lib/integration/object-store";
 import { DataModelMap } from "@/model/server/data-model-mappings";
 import ObjectUtil from "@/util/ObjectUtil";
-import R2API from "@/util/server/file/S3Util";
 import { tDataModels } from "@/util/util-type";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -41,7 +41,7 @@ export async function DELETE(request: NextRequest) {
 
 async function deleteFiles(keys: string[] | string) {
   const keysArray = Array.isArray(keys) ? keys : [keys];
-  await Promise.all(keysArray.map((key) => R2API.deleteFile(key)));
+  await Promise.all(keysArray.map((key) => ObjectFileStoreAPI.deleteFile(key)));
 }
 
 async function handleRequest(
@@ -69,7 +69,7 @@ async function handleRequest(
       request: {
         id,
         options: {
-          select: DataModelMap[modelName].fileObjects!.map(({ path }) => path),
+          select: DataModelMap[modelName].fileObjects!.map(({ path }) => path).join(" "),
         },
       },
     });
@@ -84,7 +84,7 @@ async function handleRequest(
       // ensure none of the keys already exist
       for (const { files } of uploadRequests) {
         for (const { key } of files) {
-          if (await R2API.isFileExists(key)) {
+          if (await ObjectFileStoreAPI.isFileExists(key)) {
             throw new ClientError("INVALID_UPLOAD_REQUEST", 401, "invalid file upload operation");
           }
         }
@@ -92,7 +92,7 @@ async function handleRequest(
       // build upload URL promises and await them
       const uploadPromises = uploadRequests.flatMap(({ files }) =>
         files.map(({ key, type }) =>
-          R2API.getUploadUrl(key, type).then((urlResult) => ({
+          ObjectFileStoreAPI.getUploadUrl(key, type).then((urlResult) => ({
             key,
             url:
               typeof urlResult === "string"

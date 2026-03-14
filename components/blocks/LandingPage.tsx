@@ -86,7 +86,7 @@ export const LandingPageScrollView = () => {
         request: {
           options: {
             limit: 8,
-            sort: { updatedAt: -1 },
+            sort: { updatedAt: "desc" },
             filter: { feature_location: "featured-product" },
           },
         },
@@ -96,14 +96,14 @@ export const LandingPageScrollView = () => {
         modelName: "category",
         operation: "GET_DATA_MANY",
         request: {
-          filter: { img: { exists: true } },
+          options: { filter: { img: { exists: true } } },
         },
       });
     const offerResponse = async () =>
       await DataClientAPI.getData({
         modelName: "offer",
         operation: "GET_DATA_MANY",
-        request: { filter: { endDateTime: { exists: true, lte: new Date() } } },
+        request: { options: { filter: { endDateTime: { exists: true, lte: new Date() } } } },
       });
     debugger;
     response().then((data) => {

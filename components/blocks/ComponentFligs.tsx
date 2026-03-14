@@ -4,7 +4,6 @@ import { motion, AnimatePresence, Variants, useScroll, useMotionValueEvent } fro
 import Image from "next/image";
 import DataClientAPI from "@/api/client/data-api";
 import { TContent } from "@/schema/Content";
-import { Button } from "../ui/button";
 import Link from "next/link";
 
 function ExhibitionView() {
@@ -33,7 +32,7 @@ function ExhibitionView() {
       await DataClientAPI.getData({
         modelName: "content",
         operation: "GET_DATA_MANY",
-        request: { filter: { identifier: "home_page_banner" } },
+        request: { options: { filter: { identifier: "home_page_banner" } } },
       });
     response().then((res) => {
       if (res && Array.isArray(res)) {
@@ -147,23 +146,22 @@ function ExhibitionView() {
                   </div>
 
                   {/* Main Glitch Canvas */}
-                  <div className="relative group w-full aspect-[16/9] md:h-[80vh] md:aspect-auto overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] bg-zinc-900">
+                  <div className="relative group w-full md:aspect-[16/9] md:h-[80vh] aspect-square overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] bg-zinc-900">
                     {/* Main Image */}
                     <motion.div
                       className="w-full h-full"
                       whileHover={{ scale: 1.02 }}
                       transition={{ duration: 2 }}
                     >
-                      {banner.bgImg?.img && (
-                        <>
-                          <Image
-                            src={banner.bgImg?.img}
-                            alt={banner.title}
-                            fill
-                            className="w-full h-full object-cover  transition-all duration-[1.5s]"
-                          />
-                          {banner.clickAction?.action && <Link href={banner.clickAction?.action || "#"} className="bottom-4 right-4 px-2 py-1 md:py-4 font-bold text-secondary absolute bg-neutral-200 border border-neutral-200">{banner.clickAction?.text}</Link>}
-                        </>
+                      <Image
+                        src={banner.bgImg?.mobile?.img || banner.bgImg?.desktop?.img || ""}
+                        alt={banner.title}
+                        fill
+                        className="w-full h-full object-cover transition-all duration-[1.5s]"
+                      />
+
+                      {banner.clickAction?.action && (
+                        <Link href={banner.clickAction?.action || "#"} className="z-10 bottom-4 right-4 px-2 py-1 md:py-4 font-bold text-secondary absolute bg-neutral-200 border border-neutral-200">{banner.clickAction?.text}</Link>
                       )}
                     </motion.div>
                   </div>

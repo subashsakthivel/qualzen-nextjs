@@ -14,6 +14,7 @@ import Image from "next/image";
 import SelectInput from "./select-input";
 import SubFormArray from "./subformarray";
 import FormatUtil from "@/util/formetUtil";
+import { convertToWebp } from "@/util/imageUtil";
 
 interface FieldRendererProps {
   field: tFormConfigMeta["fields"][0];
@@ -166,14 +167,14 @@ export function FieldRenderer({
                       type="file"
                       multiple={type === "images"}
                       className="hidden"
-                      accept="image/png,image/gif,image/jpeg,image/jpg"
+                      accept="image/png,image/gif,image/jpeg,image/jpg,image/webp,image/WebP, webp"
                       onChange={(e) => {
                         debugger;
                         if (type === "images") {
                           const file = Array.from(e.target.files || []);
                           if (file) field.onChange(file);
                         } else {
-                          const file = e.target.files?.[0];
+                          const file = (e.target.files?.[0] as File);
                           if (file) field.onChange(file);
                         }
                       }}

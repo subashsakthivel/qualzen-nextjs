@@ -11,7 +11,7 @@ export const auth = betterAuth({
                 type: ["user", "admin"],
                 default: "user",
                 input: false,
-                required: true
+                required: false
             }
         },
     },
@@ -73,11 +73,11 @@ export const auth = betterAuth({
         expiresIn: 60 * 60 * 24 * 7, // default: 7 days (in seconds)
         updateAge: 60 * 60 * 24,      // update session every 24 hours
     },
-    hooks: {
-        async after(inputContext) {
+    // hooks: {
+    //     async after(inputContext) {
 
-        },
-    },
+    //     },
+    // },
     plugins: [
         twoFactor(),
         nextCookies(), // make sure this is the last plugin in the array

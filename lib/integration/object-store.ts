@@ -79,7 +79,7 @@ class ObjectFileStore {
             Bucket: BUCKET_NAME,
             Key: fileKey,
             Body: buffer,
-            ContentType: mimeType || mime.lookup(file.name) || "image/jpeg",
+            ContentType: mimeType || mime.lookup(file.name) || "image/jpeg" || "image/webp",
             ACL: ACL || DEFAULT_FILES_ACL,
         });
         await FileStoreModel.updateOne(
@@ -176,7 +176,8 @@ class ObjectFileStore {
                 return false;
             }
             console.error("Error checking file existence:", err);
-            throw PredefinedErrors.File_Not_Found;
+            // throw PredefinedErrors.File_Not_Found;
+            return false;
         }
     }
 

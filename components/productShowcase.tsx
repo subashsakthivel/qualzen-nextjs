@@ -22,75 +22,7 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
   const { cartItems, addToCart, updateQuantity } = useCart();
   const router = useRouter();
 
-  const sessions = useSession();
-  //   async function loadProduct() {
-  //     const fetchProduct = async (): Promise<TProduct | undefined> => {
-  //       // const resultData = await getDataFromServer(DataSourceMap["product"], "GET_DATA", {
-  //       //   filter: {
-  //       //     logicalOperator: "AND",
-  //       //     rules: [{ field: "_id", operator: "equals", value: productId }],
-  //       //   },
-  //       //   populate: [{ path: "variants" }],
-  //       // });
-  //       const resultData = productsTest;
-  //       if (resultData && resultData.docs && resultData.docs.length == 1) {
-  //         return resultData.docs[0] as TProduct;
-  //       }
-  //       return undefined;
-  //     };
-  //     const product = await fetchProduct();
-  //     const productInfo = {} as TProductInfo;
-  //     if (product) {
-  //       product.attributes = product.attributes.sort((a, b) => a.sortOrder - b.sortOrder);
-
-  //       const varaintAttributes: TAtttributes[] = [];
-  //       product.variants.map((variant) => {
-  //         variant.attributes.map((attr) => {
-  //           const existing = varaintAttributes.find((v) => v.name === v.name);
-  //           if (existing) {
-  //             existing.values.push({
-  //               variantId: variant._id ?? "-",
-  //               value: attr.value,
-  //               stockQuantity: variant.stockQuantity,
-  //             });
-  //             existing.quantity += variant.stockQuantity;
-  //           } else {
-  //             varaintAttributes.push({
-  //               name: attr.name,
-  //               values: [
-  //                 {
-  //                   variantId: variant._id ?? "-",
-  //                   value: attr.value,
-  //                   stockQuantity: variant.stockQuantity,
-  //                 },
-  //               ],
-  //               quantity: variant.stockQuantity,
-  //               sortOrder: attr.sortOrder,
-  //             });
-  //           }
-  //         });
-  //       });
-
-  //       const productAttributes = product.attributes.filter((attr) =>
-  //         varaintAttributes.find((a) => a.name === attr.name)
-  //       );
-  //       product.attributes = product.attributes.filter((attr) =>
-  //         varaintAttributes.find((a) => a.name === attr.name)
-  //       );
-  //       productInfo.product = product;
-  //       productInfo.attributes = varaintAttributes.sort((a, b) => a.sortOrder - b.sortOrder);
-  //       productInfo.sellingPrice = product.sellingPrice;
-  //       debugger;
-  //       const images: string[] = product.images;
-  //       product.variants.map((v) => v.images.map((i) => images.push(i)));
-  //       debugger;
-  //       setImages(images);
-  //       setAttributes(productInfo.attributes);
-  //       setProductInfo(productInfo);
-  //     }
-  //   }
-  //   loadProduct();
-  // }, [productId]);
+  const session = useSession()
 
   function getMatchedVaraints(): TProductVariant[] {
     return product.variants.filter((varaint) =>
@@ -111,8 +43,8 @@ const ProductShowcase = ({ product }: { product: TProduct }) => {
   }
 
   const handleAddToCart = () => {
-    if (!sessions.data) {
-      router.push("/signin");
+    if (!session.data) {
+      router.push("/signin?callbackUrl=/products/" + product._id);
       return;
     }
     addToCart(product, variant);

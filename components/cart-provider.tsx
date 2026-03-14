@@ -54,7 +54,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [cartItems]);
 
   const addToCart = (product: TProductInfo, variant: TProductVariant) => {
-    debugger;
     const existingItem = cartItems.find(
       (item) => item.product._id === product._id && item.variant._id === variant._id
     );

@@ -17,8 +17,8 @@ export async function GET(
     const { model: modelName } = await params;
     const searchParams = request.nextUrl.searchParams;
     const operation = searchParams.get("operation") as string;
-    const data = await auth.api.getSession(request);
-    console.log("user", data?.user.name);
+    // const data = await auth.api.getSession(request);
+    // console.log("user", data?.user.name);
     const requestObj = {
       operation,
       request: JSON.parse(decodeURIComponent(searchParams.get("request") || "") || "{}"),
@@ -31,22 +31,21 @@ export async function GET(
     });
     return NextResponse.json({ message: "success", data: responseData }, { status: 200 });
   } catch (err) {
+    console.log("error", err);
     if (err instanceof ZodError) {
       return NextResponse.json({
         message: err.message,
-        staus: 400,
         error: err.issues.map((issue) => ({
           message: issue.message,
           path: issue.path.reduce((pre, curr) => String(pre) + "." + String(curr), ""),
         })),
         zodError: err,
-      });
+      }, { status: 400 });
     }
     return NextResponse.json({
       error: "something went wrong",
-      status: 500,
       message: err instanceof Error ? err.message : "Unknown error",
-    });
+    }, { status: 500 });
   }
 }
 

@@ -3,35 +3,7 @@ import R2API from "../file/S3Util";
 import { ModelType } from "@/data/model-config";
 import mongoose, { PaginateResult } from "mongoose";
 import { FileStoreModel } from "@/model/FileStore";
-import { Content } from "@radix-ui/react-dialog";
-
-//todo: change the any later
-const modelMap: Record<string, any> = {
-  category: {
-    files: [
-      {
-        format: "image/png",
-        path: "image",
-      },
-    ],
-  },
-  product: {
-    files: [
-      {
-        format: "image/png",
-        path: "images",
-      },
-    ],
-  },
-  content: {
-    files: [
-      {
-        format: "image/png",
-        path: "bgImg.img",
-      },
-    ],
-  },
-};
+import { DataModelMap } from "@/model/server/data-model-mappings";
 
 class ModelHandler {
   static async create<K extends keyof ModelType>({
@@ -45,11 +17,11 @@ class ModelHandler {
     data: any;
     session?: mongoose.ClientSession;
   }) {
-    const modelConfig = modelMap[modelName];
-    if (modelConfig && modelConfig.files) {
+    const modelConfig = DataModelMap[modelName];
+    if (modelConfig && modelConfig.fileObjects) {
       //pre check all files exist
       //upload files
-      modelConfig.files.forEach(async (fileConfig: { format: string; path: string }) => {
+      modelConfig.fileObjects.forEach(async (fileConfig: { path: string }) => {
         const documents = Array.isArray(docs) ? docs : [docs];
         documents.forEach((doc) => {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
@@ -78,11 +50,11 @@ class ModelHandler {
     docs: ModelType[K] | ModelType[K][];
     session?: mongoose.ClientSession;
   }) {
-    const modelConfig = modelMap[modelName];
-    if (modelConfig && modelConfig.files) {
+    const modelConfig = DataModelMap[modelName];
+    if (modelConfig && modelConfig.fileObjects) {
       const documents = Array.isArray(docs) ? docs : [docs];
       for (const doc of documents) {
-        for (const fileConfig of modelConfig.files) {
+        for (const fileConfig of modelConfig.fileObjects) {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
           const keys = Array.isArray(key) ? key : [key];
           keys.forEach(async (k) => {
@@ -106,11 +78,11 @@ class ModelHandler {
     oldData: ModelType[K];
   }): Promise<string[]> {
     //parse updateQuery)
-    const modelConfig = modelMap[modelName];
+    const modelConfig = DataModelMap[modelName];
     const oldFiles: string[] = [];
 
-    if (modelConfig && modelConfig.files) {
-      modelConfig.files.forEach(async (fileConfig: { format: string; path: string }) => {
+    if (modelConfig && modelConfig.fileObjects) {
+      modelConfig.fileObjects.forEach(async (fileConfig: { path: string }) => {
         const key = ObjectUtil.getValue({ obj: update, path: fileConfig.path });
         if (key) {
           const oldKey = ObjectUtil.getValue({ obj: oldData, path: fileConfig.path });
@@ -137,11 +109,11 @@ class ModelHandler {
   }) {
     const result = docs;
     docs = result && "docs" in result ? result.docs : docs;
-    const modelConfig = modelMap[modelName];
-    if (modelConfig && modelConfig.files) {
+    const modelConfig = DataModelMap[modelName];
+    if (modelConfig && modelConfig.fileObjects) {
       const documents = Array.isArray(docs) ? docs : [docs];
       for (const doc of documents) {
-        for (const fileConfig of modelConfig.files) {
+        for (const fileConfig of modelConfig.fileObjects) {
           const key = ObjectUtil.getValue({ obj: doc, path: fileConfig.path });
 
           if (!key) continue;

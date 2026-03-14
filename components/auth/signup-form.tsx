@@ -7,6 +7,7 @@ import { EyeOffIcon, Mail, User } from "lucide-react";
 import { AUTH_URLS } from "@/constants/url-mapper";
 import { authClient } from "@/lib/auth-client";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import z, { ZodError } from "zod";
 import { passwordSchema } from "@/schema/zod-schema";
 
@@ -25,6 +26,7 @@ export function SignUpForm({
     message: "",
     color: "",
   });
+  const router = useRouter();
 
   async function handleSignUp(prevState: { message: string | ZodError; color: string }, formdata: FormData) {
     let nextState = prevState;
@@ -45,6 +47,9 @@ export function SignUpForm({
       async onError(context) {
         console.log("Error", context);
         nextState = { message: context.error.message, color: "red" };
+      },
+      async onSuccess(context) {
+        router.push(callbackUrl);
       }
     });
     return nextState;
@@ -94,7 +99,7 @@ export function SignUpForm({
       <div className="text-center text-sm">
         Already have an account?{" "}
         <a href={AUTH_URLS.SIGN_IN} className="underline underline-offset-4">
-          Sign up
+          Sign In
         </a>
       </div>
     </form>

@@ -86,7 +86,7 @@ const TwoFactor = ({ id, twoFactorEnabled = false }: { id: string, twoFactorEnab
                     </div>
                 )}
             </div>}
-            {(userInfo) && <form action={verifyTOTP} className='gird gap-3'>
+            {(userInfo && (!twoFactorEnabled && totpUri) || (twoFactorEnabled && !totpUri)) && <form action={verifyTOTP} className='gird gap-3'>
                 <Input type="text" name='code' placeholder='eg:1234565' className='mb-2' />
                 <Button type="submit">Verify</Button>
             </form>}

@@ -187,7 +187,7 @@ const category: ModelConfig = {
         .refine((file) => file.size <= 5 * 1024 * 1024, {
           message: "File size must be under 5MB",
         })
-        .refine((file) => ["image/png", "image/jpeg", "image/jpg"].includes(file.type), {
+        .refine((file) => ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/Webp"].includes(file.type), {
           message: "Invalid file type",
         }), z.string()]),
     },
@@ -238,24 +238,40 @@ const content: ModelConfig = {
       type: "link",
     },
     {
-      displayName: "Backgroud image",
+      displayName: "Desktop Backgroud image",
       type: "image",
-      name: "bgImg.img",
+      name: "bgImg.desktop.img",
       validator: z.union([z
         .instanceof(File, { message: "File is required" })
         .refine((file) => file.size <= 5 * 1024 * 1024, {
           message: "File size must be under 5MB",
         })
-        .refine((file) => ["image/png", "image/jpeg", "image/jpg"].includes(file.type), {
+        .refine((file) => ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/Webp"].includes(file.type), {
           message: "Invalid file type",
         }), z.string()]),
-      path: "bgImg.img",
+      path: "bgImg.desktop.img",
+    },
+    {
+      displayName: "Mobile Backgroud image",
+      type: "image",
+      name: "bgImg.mobile.img",
+      validator: z.union([z
+        .instanceof(File, { message: "File is required" })
+        .refine((file) => file.size <= 5 * 1024 * 1024, {
+          message: "File size must be under 5MB",
+        })
+        .refine((file) => ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/Webp"].includes(file.type), {
+          message: "Invalid file type",
+        }), z.string()]),
+      path: "bgImg.mobile.img",
+      required: false,
     },
     {
       displayName: "Background image redirect link",
       type: "link",
-      name: "bgImg.imgLink",
-      path: "bgImg.imgLink",
+      name: "bgImg.onImageClick",
+      path: "bgImg.onImageClick",
+      required: false,
     },
     {
       displayName: "Click Text",
@@ -396,14 +412,15 @@ const resolveFormFields = (fields: BaseField[]): FormFieldMeta[] => {
 const setNestedShape = (
   shape: Record<string, any>,
   path: string,
-  validator: z.ZodTypeAny
+  validator: z.ZodTypeAny,
+  required?: boolean
 ) => {
   const keys = path.split(".");
   let current = shape;
 
   keys.forEach((key, index) => {
     if (index === keys.length - 1) {
-      current[key] = validator;
+      current[key] = required ? validator : validator.optional();
     } else {
       if (!current[key]) {
         current[key] = {};
@@ -434,7 +451,7 @@ export const getFormMetaData = (modelName: tDataModels): tFormConfigMeta => {
   const shape: Record<string, z.ZodType<any>> = {};
   const resolvedFields: FormFieldMeta[] = resolveFormFields(fields);
   resolvedFields.map((field) => {
-    setNestedShape(shape, field.path, field.validator)
+    setNestedShape(shape, field.path, field.validator, field.required ? true : false)
   });
 
   return { fields: resolvedFields, schema: buildZodObject(shape) };

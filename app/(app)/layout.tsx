@@ -26,12 +26,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className={` ${imffcs.variable}`}>
       <body className={`dark`}>
-        <SessionProviderClientComponent>
-          <CartProvider>
-            <main className="max-w-full ">{children}</main>
-            <FooterSection />
-          </CartProvider>
-        </SessionProviderClientComponent>
+        {/* <SessionProviderClientComponent> */}
+        <CartProvider>
+          <main className="max-w-full ">{children}</main>
+          <FooterSection />
+        </CartProvider>
+        {/* </SessionProviderClientComponent> */}
       </body>
     </html>
   );

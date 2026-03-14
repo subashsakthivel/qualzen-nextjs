@@ -1,7 +1,8 @@
+
 import "../globals.css";
 import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -21,11 +22,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
   const session = await auth.api.getSession({
-    headers: await headers() // you need to pass the headers object.
+    headers: headersList,
   })
   if (!session || !session.user.twoFactorEnabled || session.user.role !== "admin") {
-    redirect("/signin")
+    notFound();
   }
 
   return (

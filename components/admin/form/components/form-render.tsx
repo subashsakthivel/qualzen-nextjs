@@ -2,6 +2,7 @@ import { tFormConfigMeta } from "@/app/(admin)/table/[model]/modelform";
 import React from "react";
 import { Control, FieldError, FieldErrors, UseFormRegister } from "react-hook-form";
 import { FieldRenderer } from "./input-field-render";
+import ObjectUtil from "@/util/ObjectUtil";
 
 interface FieldRendererProps {
   fields: tFormConfigMeta["fields"];
@@ -25,10 +26,10 @@ const FormRender = ({ fields, register, control, errors }: FieldRendererProps) =
           >
             <label className="items-center">{field.displayName ?? field.name}</label>
             <FieldRenderer field={field} register={register} control={control} name={field.name} />
-            {errors[field.name] && (
+            {ObjectUtil.getValue({ obj: errors, path: field.name }) && (
               <div className="col-span-2">
                 <p className="text-red-900 overflow-auto text-right">
-                  {String(errors[field.name]?.message)}
+                  {String(ObjectUtil.getValue({ obj: errors, path: field.name })?.message)}
                 </p>
               </div>
             )}

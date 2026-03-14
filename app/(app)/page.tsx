@@ -10,7 +10,6 @@ export default function Home() {
     <>
       <ErrorBoundary fallback={<ErrorPage />}>
         <HeroCarousel />
-        <HeroCarousel />
 
         <div className="">
           <CategorySection />
@@ -18,7 +17,6 @@ export default function Home() {
           <CategoriesCatelog />
         </div>
       </ErrorBoundary>
-      <div>comback 3</div>
     </>
   );
 }

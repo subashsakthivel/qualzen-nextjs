@@ -8,7 +8,8 @@ import { AUTH_URLS } from "@/constants/url-mapper";
 import { EyeOffIcon, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
+import Link from "next/link";
 
 export function SignInForm({
   className,
@@ -73,12 +74,12 @@ export function SignInForm({
           </Button>
         </div>
       </div>
-      {/* <div className="text-center text-sm">
+      <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <a href={AUTH_URLS.SIGN_UP} className="underline underline-offset-4">
+        <Link href={AUTH_URLS.SIGN_UP} className="underline underline-offset-4">
           Sign up
-        </a>
-      </div> */}
+        </Link>
+      </div>
     </form>
   );
 }

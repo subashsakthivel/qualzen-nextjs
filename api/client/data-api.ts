@@ -1,23 +1,22 @@
-import { tDataModels, tGetDataParams } from "@/util/util-type";
+import { tGet } from "@/types/api-type";
+import { tDataModels } from "@/util/util-type";
 
 class DataServiceClass {
   async getData<T>({
     modelName,
     operation = "GET_DATA",
-    request,
-    id,
-  }: Omit<tGetDataParams<T>, "options"> & { request: any }): Promise<any> {
+    request
+  }: tGet): Promise<any> {
     try {
       const url = `/api/dataAPI/${modelName}`;
 
-      const encodedUrl = this.buildEncodedUrl(url, { request, operation, id });
+      const encodedUrl = this.buildEncodedUrl(url, { request, operation });
 
       const response = await fetch("http://localhost:3000" + encodedUrl); //hostname not added issue
 
       const resJson = await response.json();
 
       if (!response.ok) {
-        debugger;
         throw new Error("Request failed");
       }
 
